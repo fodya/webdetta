@@ -1,2 +1,2 @@
-git rm -r --cached
+git rm -r --cached .
 sh sync.sh
