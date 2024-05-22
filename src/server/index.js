@@ -43,7 +43,7 @@ const Server = () => {
       handlers.push(async (req, res) => {
         try {
           let ctx_ = {};
-          await ctx.call(ctx_, req, res));
+          await ctx.call(ctx_, req, res);
           if (res.headersSent) return;
           const name = req.params.name;
           const args = req.body;
