@@ -32,7 +32,7 @@ const Server = ({ port, host }) => {
       app.ws(path, (ws, req) => upgrade(ws));
       return instance;
     },
-    httpApi: (path, { bodyLimit='50mb', getCtx, methods }) => {
+    httpApi: (path, { bodyLimit='50mb', ctx, methods }) => {
       validatePath(path);
       const handlers = [];
       if (bodyLimit) {
