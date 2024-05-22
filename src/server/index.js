@@ -48,9 +48,10 @@ const Server = ({ port, host }) => {
           const args = req.body;
           const [res, err] = await processCall(methods, ctx_, name, args);
           if (err) throw err;
-          res.send(200, JSON.stringify(res));
+          res.status(200).send(JSON.stringify(res));
         } catch (e) {
-          res.send(500, JSON.stringify(e));
+          console.error(e);
+          res.status(500).send(JSON.stringify(e));
         }
       });
       app.post(path, ...handlers);
