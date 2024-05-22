@@ -1,4 +1,2 @@
-import Server from '@lumi/server';
-Server({
-  port: 8000
-}).start();
+import Server from 'webdetta/server';
+console.log(Server);
