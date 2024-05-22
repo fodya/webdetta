@@ -2,7 +2,7 @@ import Server from 'webdetta/server';
 
 const wsConnections = new Set();
 
-const getUser = d => d;
+const getUser = async d => d;
 const auth = async function (token) {
   this.user = await getUser(token);
   return !!this.user;
@@ -23,7 +23,7 @@ Server()
     pool: wsConnections,
     onOpen: conn => console.log('open', conn),
     onClose: conn => console.log('close', conn),
-    async ctx(ws, req, next) {
+    async ctx(req, ws, next) {
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
       if (success) next(); else ws.close();
     },
