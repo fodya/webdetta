@@ -33,7 +33,7 @@ const Server = () => {
       app.ws(path,
         (ws, req, next) => !ctx ? next() :
           ctx.call(ctx_, ws, req, next),
-        (ws, req) => upgrade(ws)
+        (ws, req) => Object.assign(upgrade(ws), _ctx)
       );
       return instance;
     },
