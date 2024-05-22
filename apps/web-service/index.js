@@ -8,12 +8,12 @@ const auth = async function (token) {
   return !!this.user;
 }
 const methods = {
-  sayHi(author) {
-    return `Hello, ${this.user}. From: ${author}`;
+  sayHiTo(someone) {
+    return `Hello, ${someone}. From: ${this.user}`;
   },
-  sayHiToAll(author) {
+  sayHiToAll() {
     for (const conn of wsConnections) if (conn != this)
-      conn.cast('message', methods.sayHi.call(conn, author));
+      conn.cast('message', methods.sayHiTo.call(this, conn.user));
   }
 }
 
