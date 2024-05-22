@@ -23,7 +23,7 @@ Server()
     pool: wsConnections,
     onOpen: conn => console.log('open', conn),
     onClose: conn => console.log('close', conn),
-    async ctx(req, ws) {
+    async ctx(req) {
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
       if (!success) this.close();
     },

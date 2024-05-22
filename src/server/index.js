@@ -29,7 +29,7 @@ const Server = () => {
       upgrade.methods = methods;
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
-      app.ws(path, (ws, req) => ctx.call(req, upgrade(ws)));
+      app.ws(path, (ws, req) => ctx.call(upgrade(ws), req));
       return instance;
     },
     httpApi: (path, { bodyLimit='50mb', ctx, methods }) => {
