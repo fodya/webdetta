@@ -3,12 +3,17 @@ import Server from 'webdetta/server';
 const wsConnections = new Set();
 
 const getUser = d => d;
+const auth = async function (token) {
+  this.user = await getUser(token);
+  return !!this.user;
+}
 const methods = {
-  async login(token) {
-    this.user = await getUser(token);
+  sayHi(author) {
+    return `Hello, ${this.user}. From: ${author}`;
   },
-  sayHi(number) {
-    return `Hello, ${this.user}. Number: ${number}`;
+  sayHiToAll(author) {
+    for (const conn of wsConnections) if (conn != this)
+      conn.cast('message', methods.sayHi.call(this, author));
   }
 }
 
@@ -18,11 +23,16 @@ Server()
     pool: wsConnections,
     onOpen: conn => console.log('open', conn),
     onClose: conn => console.log('close', conn),
+    async ctx(req, res, next) {
+      const success = await auth.call(this, req.headers['authorization']);
+      if (success) next(); else res.status(401);
+    },
     methods: methods
   })
   .httpApi('/api', {
-    async ctx(req) {
-      await methods.login.call(this, req.headers['authorization']);
+    async ctx(req, res, next) {
+      const success = await auth.call(this, req.headers['authorization']);
+      if (success) next(); else res.status(401);
     },
     methods: methods
   })

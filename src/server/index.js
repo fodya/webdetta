@@ -40,9 +40,12 @@ const Server = () => {
         bodyParser.json({limit: bodyLimit}),
         bodyParser.urlencoded({limit: bodyLimit, extended: true})
       );
+      let ctx_ = {};
+      handlers.push(async (req, res, next) => {
+        await ctx.call(ctx_, req, res, next);
+      });
       handlers.push(async (req, res) => {
         try {
-          const ctx_ = {}; await ctx.call(ctx_, req, res)
           const name = req.params.name;
           const args = req.body;
           console.log(path, methods, ctx_, name, args);
