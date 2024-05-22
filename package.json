@@ -11,6 +11,7 @@
     "bytes": "^3.1.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "express-ws": "^5.0.2"
+    "express-ws": "^5.0.2",
+    "msgpackr": "^1.10.2"
   }
 }

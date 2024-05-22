@@ -1,5 +1,4 @@
-import { addExtension, encode } from "./pack.js";
-import { decode } from "./unpack.js";
+import { addExtension, encode, decode } from "msgpackr";
 
 const INCLUDE_STACK_TRACE = false;
 
@@ -16,6 +15,18 @@ addExtension({
   },
 });
 
+export const processCall = async (methods, name, ctx, args) => {
+  let res, err;
+  const method = methods[name];
+  if (typeof m === "function") {
+    try { res = await method.apply(ctx, data.args); }
+    catch (e) { console.error(e); err = e; }
+  } else {
+    err = new Error('Method "' + name + '" is not defined');
+  }
+  return [res, err];
+}
+
 export class RpcError extends Error {
   constructor(base, ...args) {
     super(...args);
@@ -25,7 +36,7 @@ export class RpcError extends Error {
   }
 }
 
-export function Proto(send, methodsBag) {
+export function Proto(send, getMethods) {
   let handlers = {};
   let counter = 0;
   async function process(ctx, data /* : ArrayBuffer */) {
@@ -34,17 +45,8 @@ export function Proto(send, methodsBag) {
       // message ::= { call, from, args } | { to, res|err }
       if ('to' in data) handlers[data.to]?.(data);
       else if ('call' in data && Array.isArray(data.args)) {
-        let response = {}, m = methodsBag.methods[data.call];
-        if (typeof m === "function") {
-          try { response.res = await m.apply(ctx, data.args); }
-          catch (e) { console.error(e); response.err = e; }
-        } else {
-          response.err = new Error('Method "' + data.call + '" is not defined');
-        }
-        if ('from' in data) {
-          response.to = data.from;
-          send(encode(response));
-        }
+        const [res, err] = await processCall(getMethods(), ctx, data.call, data.args);
+        if ('from' in data) send(encode({ to: data.from, res, err }));
       }
     } catch (e) {
       console.error(e);
@@ -54,7 +56,8 @@ export function Proto(send, methodsBag) {
     return new Promise((resolve, reject) => {
       let from = ++counter;
       handlers[from] = (v) => {
-        ('err' in v) ? reject(new RpcError(v.err)) : resolve(v.res);
+        if ('err' in v) reject(new RpcError(v.err));
+        else resolve(v.res);
         delete handlers[from];
       };
       send(encode({ call: target, from, args }));

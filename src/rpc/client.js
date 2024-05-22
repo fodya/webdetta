@@ -61,7 +61,7 @@ export function RpcClient(url, PULSE = 60_000) {
     }
   }
   const self = { methods: {} };
-  const { process, cast, call, abort } = Proto(send, self/*.methods*/);
+  const { process, cast, call, abort } = Proto(send, () => self.methods);
 
   function handleClosing(ws, e) {
     // take care to avoid race conditions with stale websockets

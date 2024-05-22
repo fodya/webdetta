@@ -33,7 +33,7 @@ export function RpcServer({ PULSE = 60_000 } = {}) {
 
     let closePromiseResolve,
         closePromise = new Promise(ok => closePromiseResolve = ok);
-    const { process, cast, call, abort } = Proto(send, upgrade/*.methods*/);
+    const { process, cast, call, abort } = Proto(send, () => upgrade.methods);
     const instance = {
       close() {
         socket.close();

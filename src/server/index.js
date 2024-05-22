@@ -1,4 +1,5 @@
 import { RpcServer } from '../rpc/server.js';
+import { processCall } from '../rpc/proto.js';
 import bytes from 'bytes';
 import express from 'express';
 import expressWs from 'express-ws';
@@ -6,16 +7,11 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 
 const validatePath = path => {
-  if (typeof path != 'string') throw Error('path must be a string');
+  if (typeof path != 'string') throw Error('Path must be a string');
 }
 
-const Server = ({
-  port, host, requestSizeLimit
-}) => {
+const Server = ({ port, host }) => {
   const app = express();
-  app.use(bodyParser.json({limit: requestSizeLimit}));
-  app.use(bodyParser.urlencoded({limit: requestSizeLimit, extended: true}));
-  
   const instance = {
     server: null,
     launch: () => {
@@ -24,9 +20,6 @@ const Server = ({
         console.log('Running', { port, host })
       );
       return instance;
-    },
-    shutdown: async () => {
-      await new Promise(r => server.close(r));
     },
     wsApi: (path, { pool, onOpen, onClose, methods }) => {
       validatePath(path);
@@ -39,8 +32,33 @@ const Server = ({
       app.ws(path, (ws, req) => upgrade(ws));
       return instance;
     },
-    httpApi: (path, methods) => {
+    httpApi: (path, { bodyLimit='50mb', getCtx, methods }) => {
       validatePath(path);
+      const handlers = [];
+      if (bodyLimit) {
+        handlers.push(bodyParser.json({limit: bodyLimit}));
+        handlers.push(bodyParser.urlencoded({limit: bodyLimit, extended: true}));
+      }
+      
+      path = path.replace(/\/$/, '') + '/:name';
+      handlers.push(async (req, res) => {
+        try {
+          const ctx_ = await ctx(req, res);
+          const name = req.params.name;
+          const args = req.body;
+          const [res, err] = await processCall(methods, ctx_, name, args);
+          if (err) throw err;
+          res.send(200, JSON.stringify(res));
+        } catch (e) {
+          res.send(500, JSON.stringify(e));
+        }
+      });
+      app.post(path, ...handlers);
+      return instance;
+    },
+    httpHandler: (method, path, ...args) => {
+      validatePath(path);
+      app[method.toLowerCase()](path, ...args);
       return instance;
     },
     static: (path, ...dirs) => {
@@ -53,7 +71,10 @@ const Server = ({
       validatePath(path);
       app.options(path, cors(options));
       return instance;
-    }
+    },
+    shutdown: async () => {
+      await new Promise(r => server.close(r));
+    },
   }
   return instance;
 }
