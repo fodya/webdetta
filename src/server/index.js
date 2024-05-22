@@ -30,6 +30,7 @@ const Server = () => {
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
       let ctx_ = {};
+      console.log({ pool, onOpen, onClose, ctx, methods })
       app.ws(path,
         (ws, req, next) => !ctx ? next() :
           ctx.call(ctx_, req, ws, next),
