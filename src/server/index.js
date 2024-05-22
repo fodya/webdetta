@@ -46,9 +46,9 @@ const Server = ({ port, host }) => {
           const ctx_ = await ctx(req, res);
           const name = req.params.name;
           const args = req.body;
-          const [res, err] = await processCall(methods, ctx_, name, args);
+          const [result, err] = await processCall(methods, ctx_, name, args);
           if (err) throw err;
-          res.status(200).send(JSON.stringify(res));
+          res.status(200).send(JSON.stringify(result));
         } catch (e) {
           console.error(e);
           res.status(500).send(JSON.stringify(e));
