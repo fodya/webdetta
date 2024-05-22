@@ -35,7 +35,7 @@ const Server = () => {
         (ws, req, next) => !ctx ? next() :
           ctx.call(ctx_, req, ws, next),
         (ws, req) => {
-          const inst = upgrade(ws);
+          const inst = {}//upgrade(ws);
           console.log({ inst, _ctx });
           Object.assign(inst, _ctx);
           console.log({ inst, _ctx });
