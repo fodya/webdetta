@@ -10,14 +10,14 @@ const validatePath = path => {
   if (typeof path != 'string') throw Error('Path must be a string');
 }
 
-const Server = ({ port, host }) => {
+const Server = () => {
   const app = express();
   const instance = {
     server: null,
-    launch: () => {
+    launch: (...args) => {
       if (instance.server) throw Error('The server is already up');
-      instance.server = app.listen(...[port, host].filter(v => v), () =>
-        console.log('Running', { port, host })
+      instance.server = app.listen(...args, () =>
+        console.log('Running', args)
       );
       return instance;
     },
@@ -42,7 +42,7 @@ const Server = ({ port, host }) => {
       );
       handlers.push(async (req, res) => {
         try {
-          const ctx_ = await ctx(req, res);
+          const ctx_ = {}; await ctx.call(ctx_, req, res)
           const name = req.params.name;
           const args = req.body;
           console.log(path, methods, ctx_, name, args);

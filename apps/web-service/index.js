@@ -1,34 +1,29 @@
 import Server from 'webdetta/server';
 
-const connections = new Set();
+const wsConnections = new Set();
 
-Server({ port: 8080, host: '127.0.0.1' })
+const getUser = d => d;
+const methods = {
+  async login(token) {
+    this.user = await getUser(token);
+  },
+  sayHi(number) {
+    return `Hello, ${this.user}. Number: ${number}`;
+  }
+}
+
+Server()
   .static('/', './dist')
   .wsApi('/ws', {
-    pool: connections,
-    onOpen: conn => {
-      console.log('open', conn);
-      conn.cast('displayMessage', 'welcome to the server');
-    },
+    pool: wsConnections,
+    onOpen: conn => console.log('open', conn),
     onClose: conn => console.log('close', conn),
-    methods: {
-      add: (a, b) => a + b,
-      sayHi: function () {
-        for (const conn of connections) {
-          conn.cast('displayMessage', 'hi');
-        }
-      }
-    }
+    methods: methods
   })
   .httpApi('/api', {
-    ctx: (req) => {
-      return { user: req.headers.Authorization }
+    async ctx(req) {
+      await methods.login.call(this, req.headers['authorization']);
     },
-    methods: {
-      sayHi(number) {
-        return `Hello, ${this.user}. Number: ${number}`;
-      }
-    }
+    methods: methods
   })
-  .launch();
-
+  .launch(8080, '127.0.0.1');
