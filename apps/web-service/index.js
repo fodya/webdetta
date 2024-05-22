@@ -23,17 +23,16 @@ Server()
     pool: wsConnections,
     onOpen: conn => console.log('open', conn),
     onClose: conn => console.log('close', conn),
-    async ctx(req, ws, next) {
+    async ctx(req, ws) {
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
-      console.log({success}, this);
-      if (success) next(); else ws.close();
+      if (!success) this.close();
     },
     methods: methods
   })
   .httpApi('/api', {
-    async ctx(req, res, next) {
+    async ctx(req, res) {
       const success = await auth.call(this, req.headers['authorization']);
-      if (success) next(); else res.status(401);
+      if (!success) res.status(401);
     },
     methods: methods
   })

@@ -29,18 +29,7 @@ const Server = () => {
       upgrade.methods = methods;
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
-      let ctx_ = {};
-      console.log({ pool, onOpen, onClose, ctx, methods })
-      app.ws(path,
-        (ws, req, next) => !ctx ? next() :
-          ctx.call(ctx_, req, ws, next),
-        (ws, req) => {
-          const inst = {}//upgrade(ws);
-          console.log({ inst, _ctx });
-          Object.assign(inst, _ctx);
-          console.log({ inst, _ctx });
-        }
-      );
+      app.ws(path, (ws, req) => ctx.call(req, upgrade(ws)));
       return instance;
     },
     httpApi: (path, { bodyLimit='50mb', ctx, methods }) => {
@@ -51,11 +40,11 @@ const Server = () => {
         bodyParser.json({limit: bodyLimit}),
         bodyParser.urlencoded({limit: bodyLimit, extended: true})
       );
-      let ctx_ = {};
-      handlers.push((req, res, next) => !ctx ? next() :
-        ctx.call(ctx_, req, res, next));
       handlers.push(async (req, res) => {
         try {
+          let ctx_ = {};
+          await ctx.call(ctx_, req, res));
+          if (res.headersSent) return;
           const name = req.params.name;
           const args = req.body;
           console.log(path, methods, ctx_, name, args);
