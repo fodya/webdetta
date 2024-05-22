@@ -25,6 +25,7 @@ Server()
     onClose: conn => console.log('close', conn),
     async ctx(req, ws, next) {
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
+      console.log({success}, this);
       if (success) next(); else ws.close();
     },
     methods: methods
