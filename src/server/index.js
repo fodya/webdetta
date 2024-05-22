@@ -1,4 +1,4 @@
-import RpcServer from '../rpc/server.js';
+import { RpcServer } from '../rpc/server.js';
 import bytes from 'bytes';
 import express from 'express';
 import expressWs from 'express-ws';
