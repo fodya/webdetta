@@ -21,7 +21,7 @@ const Server = () => {
       );
       return instance;
     },
-    wsApi: (path, { pool, onOpen, onClose, methods }) => {
+    wsApi: (path, { pool, onOpen, onClose, ctx, methods }) => {
       validatePath(path);
       if (!app.ws) expressWs(app);
       const upgrade = RpcServer();
@@ -29,8 +29,10 @@ const Server = () => {
       upgrade.methods = methods;
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
+      let ctx_ = {};
       app.ws(path,
-        (ws, req, res) => { console.log('>', {res}); req.res.status(401); },
+        (ws, req, next) => !ctx ? next() :
+          ctx.call(ctx_, ws, req, next),
         (ws, req) => upgrade(ws)
       );
       return instance;
@@ -44,9 +46,8 @@ const Server = () => {
         bodyParser.urlencoded({limit: bodyLimit, extended: true})
       );
       let ctx_ = {};
-      handlers.push(async (req, res, next) => {
-        await ctx.call(ctx_, req, res, next);
-      });
+      handlers.push((req, res, next) => !ctx ? next() :
+        ctx.call(ctx_, req, res, next));
       handlers.push(async (req, res) => {
         try {
           const name = req.params.name;
