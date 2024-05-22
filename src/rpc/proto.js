@@ -18,7 +18,7 @@ addExtension({
 export const processCall = async (methods, ctx, name, args) => {
   let res, err;
   const method = methods[name];
-  if (typeof m === "function") {
+  if (typeof method === "function") {
     try { res = await method.apply(ctx, data.args); }
     catch (e) { console.error(e); err = e; }
   } else {
