@@ -15,7 +15,7 @@ addExtension({
   },
 });
 
-export const processCall = async (methods, name, ctx, args) => {
+export const processCall = async (methods, ctx, name, args) => {
   let res, err;
   const method = methods[name];
   if (typeof m === "function") {

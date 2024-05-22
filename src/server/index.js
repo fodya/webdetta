@@ -45,6 +45,7 @@ const Server = ({ port, host }) => {
         try {
           const ctx_ = await ctx(req, res);
           const name = req.params.name;
+          console.log(path, req.params);
           const args = req.body;
           const [result, err] = await processCall(methods, ctx_, name, args);
           if (err) throw err;
