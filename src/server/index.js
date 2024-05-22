@@ -34,19 +34,18 @@ const Server = ({ port, host }) => {
     },
     httpApi: (path, { bodyLimit='50mb', ctx, methods }) => {
       validatePath(path);
-      const handlers = [];
-      if (bodyLimit) {
-        handlers.push(bodyParser.json({limit: bodyLimit}));
-        handlers.push(bodyParser.urlencoded({limit: bodyLimit, extended: true}));
-      }
-      
       path = path.replace(/\/$/, '') + '/:name';
+      const handlers = [];
+      if (bodyLimit) handlers.push(
+        bodyParser.json({limit: bodyLimit}),
+        bodyParser.urlencoded({limit: bodyLimit, extended: true})
+      );
       handlers.push(async (req, res) => {
         try {
           const ctx_ = await ctx(req, res);
           const name = req.params.name;
-          console.log(path, req.params);
           const args = req.body;
+          console.log(path, methods, ctx_, name, args);
           const [result, err] = await processCall(methods, ctx_, name, args);
           if (err) throw err;
           res.status(200).send(JSON.stringify(result));
