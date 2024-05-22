@@ -13,7 +13,7 @@ const methods = {
   },
   sayHiToAll(author) {
     for (const conn of wsConnections) if (conn != this)
-      conn.cast('message', methods.sayHi.call(this, author));
+      conn.cast('message', methods.sayHi.call(conn, author));
   }
 }
 
