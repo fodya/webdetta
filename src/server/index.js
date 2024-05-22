@@ -1,3 +1,4 @@
+import RpcServer from '../rpc/server.js';
 import bytes from 'bytes';
 import express from 'express';
 import expressWs from 'express-ws';
@@ -27,14 +28,14 @@ const Server = ({
     shutdown: async () => {
       await new Promise(r => server.close(r));
     },
-    wsApi: (path, methods) => {
+    wsApi: (path, { onOpen, onClose, methods }) => {
       validatePath(path);
       if (!app.ws) expressWs(app);
-      app.ws('/', (ws, req) => {
-        ws.on('message', msg => {
-          console.log(msg)
-        })
-      });
+      const upgrade = RpcServer();
+      upgrade.methods = methods;
+      upgrade.onOpen = onOpen;
+      upgrade.onClose = onClose;
+      app.ws(path, (ws, req) => upgrade(ws));
       return instance;
     },
     httpApi: (path, methods) => {
