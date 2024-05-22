@@ -28,10 +28,11 @@ const Server = ({
     shutdown: async () => {
       await new Promise(r => server.close(r));
     },
-    wsApi: (path, { onOpen, onClose, methods }) => {
+    wsApi: (path, { pool, onOpen, onClose, methods }) => {
       validatePath(path);
       if (!app.ws) expressWs(app);
       const upgrade = RpcServer();
+      if (pool) upgrade.all = pool;
       upgrade.methods = methods;
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
