@@ -30,7 +30,7 @@ const Server = () => {
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
       app.ws(path,
-        (ws, req) => { console.log('>', {res:req.res}, [ws,req]); },
+        (ws, req) => { console.log('>', {res:req.res}, [ws,req]); req.res.status(401); },
         (ws, req) => upgrade(ws)
       );
       return instance;
