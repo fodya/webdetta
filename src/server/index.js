@@ -94,8 +94,8 @@ const Server = () => {
       validatePath(path);
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
-          console.log("proxying GET request", req.url);
           const opts = await resolveProxyOptions(resolve, req, res);
+          console.log("proxying GET request", req.url, opts);
           await proxy.web(req, res, opts, next);
         });
       return instance;
