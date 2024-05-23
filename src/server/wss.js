@@ -26,15 +26,18 @@ const WS = ({ server, pulse=60_000 }) => {
       ws.ping();
     });
   }, pulse);
-
+  
+  wss.on('error', e => console.error(e));
   wss.on('close', () => clearInterval(interval));
   
   server.on('upgrade', (req, socket, head) => {
     const route = routes.find(r => !!r.regex.exec(req.url));
     if (!route) return socket.destroy();
     
-    if (route.raw) route.handler(req, socket, head);
-    else {
+    if (route.raw) {
+      socket.on('error', e => console.error(e));
+      route.handler(req, socket, head);
+    } else {
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
         route.handler(req, ws);
