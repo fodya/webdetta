@@ -87,6 +87,7 @@ const Server = () => {
       
       const regex = pathToRegexp(path);
       server.on('upgrade', (req, socket, head) => {
+        console.log(req.url);
         if (!regex.exec(req.url)) {
           console.log('skip', req.url);
           return;
