@@ -85,7 +85,7 @@ const Server = () => {
       });
       
       server.on('upgrade', (req, socket, head) => {
-        console.log("proxying upgrade request", {req, head});
+        console.log("proxying upgrade request", {req, head}, head.toString());
         // proxy.ws(req, socket, head);
       });
       return instance;
