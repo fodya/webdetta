@@ -1,5 +1,10 @@
+import 'dotenv/config';
 import Server from 'webdetta/server';
+import { handleUncaught } from 'webdetta/server/utils';
 import { wsConnections, auth, methods } from './src/api.js';
+
+handleUncaught();
+const { PORT, HOST } = process.env;
 
 Server()
   .static('/', './dist')
@@ -20,4 +25,4 @@ Server()
     },
     methods: methods
   })
-  .launch(8080, '127.0.0.1');
+  .launch(PORT, HOST);
