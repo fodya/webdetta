@@ -14,7 +14,7 @@ const WS = ({ server, pulse=60_000 }) => {
   wss.on('connection', (ws, req) => {
     const route = routes.find(r => !!r.regex.exec(req.url));
     if (!route) return ws.close();
-    route.handler(ws, req);
+    route.handler(req, ws);
     ws.isAlive = true;
     ws.on('error', console.error);
     ws.on('pong', heartbeat);
