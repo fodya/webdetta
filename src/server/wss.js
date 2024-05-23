@@ -8,10 +8,16 @@ function heartbeat() {
 const WS = ({ server, pulse=60_000 }) => {
   const wss = new WebSocketServer({ noServer: true });
   const routes = [];
-  const route = (path, handler) =>
-    routes.push({ regex: pathToRegexp(path), handler });
-  const routeRaw = (path, handler) =>
-    routes.push({ regex: pathToRegexp(path), handler, raw: true });
+  const route_ = raw => (path, handler) => routes.push({
+    raw,
+    regex: pathToRegexp(path),
+    handler: async (...a) => {
+      try { await handler(...a); }
+      catch (e) { console.error(e); }
+    }
+  });
+  const route = route_(false);
+  const routeRaw = route_(true);
 
   wss.on('connection', (ws, req) => {
     ws.isAlive = true;

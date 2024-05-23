@@ -20,6 +20,7 @@ const collectMethods = (func, methods) =>
 const Server = () => {
   const app = express();
   const server = http.createServer(app);
+  const proxy = httpProxy.createProxyServer({ ws: true });
   const wss = WSS({ server });
   
   const instance = {
@@ -65,29 +66,35 @@ const Server = () => {
       app.post(path, ...handlers);
       return instance;
     },
+    wsHandler: (path, handler) => {
+      validatePath(path);
+      wss.route(path, handler);
+      return instance;
+    },
     httpHandler: collectMethods((methods=['all'], path, ...args) => {
       validatePath(path);
-      for (const method of methods.map(d => d.toLowerCase())) {
-        if (method == 'ws') wss.route(path, args.at(-1));
-        else app[method](path, ...args);
-      }
+      for (const method of methods) app[method.toLowerCase()](path, ...args);
       return instance;
     }),
-    httpProxy: collectMethods((methods=['all'], path, target, middleware) => {
+    wsProxy: (path, resolve) => {
       validatePath(path);
-      const proxy = httpProxy.createProxyServer({ target, ws: true });
-      
-      for (const method of methods.map(d => d.toLowerCase())) {
-        if (method == 'ws') wss.routeRaw(path, (req, socket, head) => {
-          console.log("proxying upgrade request", req.url, { head: head.toString() });
-          proxy.ws(req, socket, head);
-        });
-        else app[method](path, (req, res) => {
+      wss.routeRaw(path, async (req, socket, head) => {
+        console.log("proxying upgrade request", req.url, { head: head.toString() });
+        const result = await resolve(req, socket, head);
+        const opts = typeof result == 'string' ? { target: result } : result;
+        await proxy.ws(req, socket, head, opts);
+      });
+      return instance;
+    },
+    httpProxy: collectMethods((methods=['all'], path, resolve) => {
+      validatePath(path);
+      for (const method of methods)
+        app[method.toLowerCase()](path, async (req, res, next) => {
           console.log("proxying GET request", req.url);
-          proxy.web(req, res, {});
+          const result = await resolve(req, res);
+          const opts = typeof result == 'string' ? { target: result } : result;
+          await proxy.web(req, res, opts, next);
         });
-      }
-      
       return instance;
     }),
     static: (path, ...dirs) => {
