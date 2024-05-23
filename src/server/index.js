@@ -17,6 +17,11 @@ const collectMethods = (func, methods) =>
     get: (_, key) => collectMethods(func, (methods ?? []).concat(key))
   });
 
+const resolveProxyOptions = async (resolve, ...args) => {
+  const result = typeof resolve == 'string' ? resolve : await resolve(...args);
+  return typeof result == 'string' ? { target: result } : result;
+}
+
 const Server = () => {
   const app = express();
   const server = http.createServer(app);
@@ -80,8 +85,7 @@ const Server = () => {
       validatePath(path);
       wss.routeRaw(path, async (req, socket, head) => {
         console.log("proxying upgrade request", req.url, { head: head.toString() });
-        const result = await resolve(req, socket, head);
-        const opts = typeof result == 'string' ? { target: result } : result;
+        const opts = await resolveProxyOptions(resolve, req, socket, head);
         await proxy.ws(req, socket, head, opts);
       });
       return instance;
@@ -91,8 +95,7 @@ const Server = () => {
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
           console.log("proxying GET request", req.url);
-          const result = await resolve(req, res);
-          const opts = typeof result == 'string' ? { target: result } : result;
+          const opts = await resolveProxyOptions(resolve, req, res);
           await proxy.web(req, res, opts, next);
         });
       return instance;
