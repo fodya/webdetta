@@ -5,6 +5,7 @@ import express from 'express';
 import expressWs from 'express-ws';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import http from 'http';
 import httpProxy from 'http-proxy';
 
 const validatePath = path => {
@@ -13,13 +14,14 @@ const validatePath = path => {
 
 const Server = () => {
   const app = express();
+  const server = http.createServer(app);
+  
   const instance = {
     server: null,
     launch: (...args) => {
       if (instance.server) throw Error('The server is already up');
-      instance.server = app.listen(...args, () =>
-        console.log('Running', args)
-      );
+      server.listen(...args, () => console.log('Running', args));
+      instance.server = server;
       return instance;
     },
     wsApi: (path, { pool, onOpen, onClose, ctx, methods }) => {
@@ -82,8 +84,8 @@ const Server = () => {
         console.log({ws,req});
       });
       
-      app.on('upgrade', (req, socket, head) => {
-        console.log("proxying upgrade request", req.url, head);
+      server.on('upgrade', (req, socket, head) => {
+        console.log("proxying upgrade request", {req, head});
         // proxy.ws(req, socket, head);
       });
       return instance;
