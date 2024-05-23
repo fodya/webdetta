@@ -13,6 +13,11 @@ const validatePath = path => {
   if (typeof path != 'string') throw Error('Path must be a string');
 }
 
+const collectMethods = (func, methods) =>
+  new Proxy((...a) => func(methods, ...a), {
+    get: (_, key) => collectMethods(func, (methods ?? []).concat(key))
+  });
+
 const Server = () => {
   const app = express();
   const server = http.createServer(app);
@@ -63,40 +68,36 @@ const Server = () => {
       app.post(path, ...handlers);
       return instance;
     },
-    httpHandler: (method, path, ...args) => {
+    httpHandler: collectMethods((methods=['all'], path, ...args) => {
       validatePath(path);
-      app[method.toLowerCase()](path, ...args);
+      methods = methods.map(d => d.toLowerCase());
+      for (const method of methods) app[method](path, ...args);
       return instance;
-    },
-    httpProxy: (path, options) => {
+    }),
+    httpProxy: collectMethods((methods=['all'], path, target, middleware) => {
       validatePath(path);
-      const { target, methods=['all'] } = options;
+      methods = methods.map(d => d.toLowerCase());
       const proxy = httpProxy.createProxyServer({ target, ws: true });
       
       for (const method of methods) {
+        if (method == 'ws') continue;
         app[method](path, (req, res) => {
           console.log("proxying GET request", req.url);
-          // proxy.web(req, res, {});
+          proxy.web(req, res, {});
         });
       }
       
-      if (!app.ws) expressWs(app);
-      app.ws(path, (ws, req) => {
-        console.log({ws,req});
-      });
+      if (['all', 'ws'].some(m => methods.include(m))) {
+        const regex = pathToRegexp(path);
+        server.on('upgrade', (req, socket, head) => {
+          if (!regex.exec(req.url)) return;
+          proxy.ws(req, socket, head);
+          console.log("proxying upgrade request", req.url, head.toString());
+        });
+      }
       
-      const regex = pathToRegexp(path);
-      server.on('upgrade', (req, socket, head) => {
-        console.log(req.url);
-        if (!regex.exec(req.url)) {
-          console.log('skip', req.url);
-          return;
-        }
-        console.log("proxying upgrade request", req.url, head.toString());
-        // proxy.ws(req, socket, head);
-      });
       return instance;
-    },
+    }),
     static: (path, ...dirs) => {
       validatePath(path);
       for (const dir of dirs)
