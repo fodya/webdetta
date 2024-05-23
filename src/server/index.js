@@ -79,7 +79,7 @@ const Server = () => {
       
       for (const method of methods.map(d => d.toLowerCase())) {
         if (method == 'ws') wss.routeRaw(path, (req, socket, head) => {
-          console.log("proxying upgrade request", req.url, { head });
+          console.log("proxying upgrade request", req.url, { head: head.toString() });
           proxy.ws(req, socket, head);
         });
         else app[method](path, (req, res) => {

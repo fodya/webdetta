@@ -20,6 +20,7 @@ Server()
   })
   .httpApi('/api', {
     async ctx(req, res) {
+      console.log(req);
       const success = await auth.call(this, req.headers['authorization']);
       if (!success) res.status(401);
     },
