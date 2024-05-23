@@ -3,8 +3,11 @@
   "main": "index.js",
   "type": "module",
   "exports": {
-    "./**/*": "./src/*/*.js",
-    "./*": "./src/*/index.js"
+    "./*": "./src/*/index.js",
+    "./rpc/*": "./src/server/*.js",
+    "./common/*": "./src/common/*.js",
+    "./client/*": "./src/server/*.js",
+    "./server/*": "./src/server/*.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
