@@ -3,7 +3,7 @@
   "main": "index.js",
   "type": "module",
   "exports": {
-    "./*/*": "./src/*/*.js",
+    "./**/*": "./src/*/*.js",
     "./*": "./src/*/index.js"
   },
   "dependencies": {
