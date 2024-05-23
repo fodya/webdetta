@@ -13,6 +13,7 @@ Server()
     onOpen: conn => {},
     onClose: conn => {},
     async ctx(req) {
+      console.log(req);
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
       if (!success) this.close(4401);
     },
@@ -20,7 +21,6 @@ Server()
   })
   .httpApi('/api', {
     async ctx(req, res) {
-      console.log(req);
       const success = await auth.call(this, req.headers['authorization']);
       if (!success) res.status(401);
     },

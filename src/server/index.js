@@ -35,7 +35,7 @@ const Server = () => {
       upgrade.methods = methods;
       upgrade.onOpen = onOpen;
       upgrade.onClose = onClose;
-      wss.route(path, (ws, req) => ctx.call(upgrade(ws), req));
+      wss.route(path, (req, ws) => ctx.call(upgrade(ws), req));
       return instance;
     },
     httpApi: (path, { bodyLimit='50mb', ctx, methods }) => {
