@@ -7,6 +7,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import http from 'http';
 import httpProxy from 'http-proxy';
+import path2regex from 'path-to-regex';
 
 const validatePath = path => {
   if (typeof path != 'string') throw Error('Path must be a string');
@@ -84,8 +85,13 @@ const Server = () => {
         console.log({ws,req});
       });
       
+      const regex = path2regex(path);
       server.on('upgrade', (req, socket, head) => {
-        console.log("proxying upgrade request", {req, head}, head.toString());
+        if (!regex.exec(req.url)) {
+          console.log('skip', req.url);
+          return;
+        }
+        console.log("proxying upgrade request", req.url, head.toString());
         // proxy.ws(req, socket, head);
       });
       return instance;
