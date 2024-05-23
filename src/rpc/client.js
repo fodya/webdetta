@@ -25,8 +25,8 @@ export function assignUid(client, key, remoteMethod, len=32) {
   });
 }
 
-export function RpcClient(url, PULSE = 60_000) {
-  // PULSE is the minimum throughput. The default is one frame per minute.
+export function RpcClient(url, pulse=60_000) {
+  // `pulse` is the minimum throughput. The default is one frame per minute.
   // 2 minutes without communication will close the socket.
 
   url = normUrl(url);
@@ -35,13 +35,13 @@ export function RpcClient(url, PULSE = 60_000) {
   // the keep-alive mechanism allows the client to discover
   // a half-closed TCP socket using only the application layer API
   // and close it if there is no communication with the server
-  // within 2*PULSE time interval
+  // within 2*pulse time interval
   let to;
   function kick(retry = 0) {
     clearTimeout(to);
     if (ws.readyState === WebSocket.OPEN) {
       if (retry < 2) {
-        to = setTimeout(kick, PULSE, retry + 1);
+        to = setTimeout(kick, pulse, retry + 1);
         if (retry !== 0) ws.send(EMPTY);
       } else {
         // console.log('closing the websocket due to communication timeout');
