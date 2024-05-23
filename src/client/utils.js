@@ -1,11 +1,11 @@
-export const handleUncaught = (handlers={}) => {
-  window.addEventListener('unhandledrejection', handlers.rejection ?? (e) => { 
-    console.log(`UNHANDLED PROMISE REJECTION: ${e.reason}`);
+export const handleUncaught = ({ exception, rejection, }) => {
+  window.addEventListener('error', exception ?? ((msg, url, num) => {
+    console.log('Uncaught exception:', msg + ';' + url + ';' + num);
     return true;
-  });
+  }));
 
-  window.addEventListener('error', handlers.exception ?? (msg, url, num) => {
-    console.log(msg + ';' + url + ';' + num);
+  window.addEventListener('unhandledrejection', rejection ?? ((e) => { 
+    console.log('Unhandled rejection:', e.reason);
     return true;
-  });
+  }));
 }
