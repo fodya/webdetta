@@ -7,7 +7,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import http from 'http';
 import httpProxy from 'http-proxy';
-import path2regex from 'path-to-regex';
+import path2regex from 'path-to-regexp';
 
 const validatePath = path => {
   if (typeof path != 'string') throw Error('Path must be a string');
