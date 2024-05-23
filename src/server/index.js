@@ -80,6 +80,11 @@ const Server = () => {
         });
       }
       
+      if (!app.ws) expressWs(app);
+      app.ws(path, (ws, req) => {
+        console.log({ws,req});
+      });
+      
       app.on('upgrade', (req, socket, head) => {
         console.log("proxying upgrade request", req.url, head);
         // proxy.ws(req, socket, head);
