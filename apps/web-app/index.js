@@ -7,7 +7,5 @@ const { PORT, HOST, API_URL } = process.env;
 
 Server()
   .static('/', './dist')
-  .httpProxy.ws.get.post('/api', {
-    target: API_URL
-  })
+  .httpProxy.ws.get.post('/api', API_URL)
   .launch(PORT, HOST);
