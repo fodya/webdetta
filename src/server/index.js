@@ -80,7 +80,7 @@ const Server = () => {
       for (const method of methods.map(d => d.toLowerCase())) {
         if (method == 'ws') wss.route(path, (req, ws) => {
           console.log("proxying upgrade request", req.url);
-          proxy.ws(req, ws, '');
+          proxy.ws(req, ws._socket, '');
         });
         else app[method](path, (req, res) => {
           console.log("proxying GET request", req.url);
