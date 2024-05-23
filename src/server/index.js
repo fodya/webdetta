@@ -78,9 +78,9 @@ const Server = () => {
       const proxy = httpProxy.createProxyServer({ target, ws: true });
       
       for (const method of methods.map(d => d.toLowerCase())) {
-        if (method == 'ws') wss.routeRaw(path, (req, socket) => {
-          console.log("proxying upgrade request", req.url);
-          proxy.ws(req, socket, '');
+        if (method == 'ws') wss.routeRaw(path, (req, socket, head) => {
+          console.log("proxying upgrade request", req.url, { head });
+          proxy.ws(req, socket, head);
         });
         else app[method](path, (req, res) => {
           console.log("proxying GET request", req.url);

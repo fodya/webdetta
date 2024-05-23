@@ -33,7 +33,7 @@ const WS = ({ server, pulse=60_000 }) => {
     const route = routes.find(r => !!r.regex.exec(req.url));
     if (!route) return socket.destroy();
     
-    if (route.raw) route.handler(req, socket);
+    if (route.raw) route.handler(req, socket, head);
     else {
       wss.handleUpgrade(req, socket, head, (ws) => {
         wss.emit('connection', ws, req);
