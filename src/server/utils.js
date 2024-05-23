@@ -1,6 +1,6 @@
 import child_process from 'child_process';
 
-export const handleUncaught = ({ exception, rejection }) => {
+export const handleUncaught = ({ exception, rejection }={}) => {
   process.on('uncaughtException', exception ?? ((err, reason) =>
     console.log('Uncaught exception:', err, '\nReason:', reason)
   ));

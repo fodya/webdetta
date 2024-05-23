@@ -1,4 +1,4 @@
-export const handleUncaught = ({ exception, rejection, }) => {
+export const handleUncaught = ({ exception, rejection }={}) => {
   window.addEventListener('error', exception ?? ((msg, url, num) => {
     console.log('Uncaught exception:', msg + ';' + url + ';' + num);
     return true;
