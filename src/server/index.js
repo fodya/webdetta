@@ -68,10 +68,7 @@ const Server = () => {
     httpProxy: (path, options) => {
       validatePath(path);
       const { target, methods=['all'] } = options;
-      const proxy = httpProxy.createProxyServer({
-        target: 'http://localhost:8080',
-        ws: true
-      });
+      const proxy = httpProxy.createProxyServer({ target, ws: true });
       
       for (const method of methods) {
         app[method](path, (req, res) => {

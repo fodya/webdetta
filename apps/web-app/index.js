@@ -7,7 +7,7 @@ const { PORT, HOST, API_URL } = process.env;
 
 Server()
   .static('/', './dist')
-  .httpProxy('/proxy', {
+  .httpProxy('/api', {
     target: API_URL
   })
   .launch(PORT, HOST);
