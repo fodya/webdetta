@@ -14,8 +14,8 @@ export const subprocess = (cmd, args, params) => {
   const { onData, onError, options } = params;
   const proc = child_process.spawn(cmd, args, options);
   
-  if (onData && process.stdout) process.stdout.on('data', onData);
-  if (onError && process.stderr) process.stderr.on('data', onError);
+  if (onData && proc.stdout) proc.stdout.on('data', onData);
+  if (onError && proc.stderr) proc.stderr.on('data', onError);
   
   const promise = new Promise((resolve, reject) => {
     proc.on('error', reject)
@@ -24,11 +24,11 @@ export const subprocess = (cmd, args, params) => {
       else {
         const err = new Error(`child exited with code ${code}`)
         err.code = code;
-        err.process = process;
+        err.process = proc;
         reject(err);
       }
     })
   })
-  promise.process = process;
+  promise.process = proc;
   return promise;
 }
