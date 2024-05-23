@@ -26,7 +26,7 @@ const Server = () => {
     server: null,
     launch: (...args) => {
       if (instance.server) throw Error('The server is already up');
-      server.listen(...args, () => console.log('Running', args));
+      server.listen(...args);
       instance.server = server;
       return instance;
     },

@@ -25,4 +25,4 @@ Server()
     },
     methods: methods
   })
-  .launch(PORT, HOST);
+  .launch(PORT, HOST, () => console.log('Running', PORT, HOST));
