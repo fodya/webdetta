@@ -7,7 +7,7 @@ handleUncaught();
 const { PORT, HOST } = process.env;
 
 Server()
-  .static('/', './dist')
+  .static('/', './public')
   .wsApi('/ws', {
     pool: wsConnections,
     onOpen: conn => {},
