@@ -1,28 +1,12 @@
 import Server from 'webdetta/server';
-
-const wsConnections = new Set();
-
-const getUser = async d => d;
-const auth = async function (token) {
-  this.user = await getUser(token);
-  return !!this.user;
-}
-const methods = {
-  sayHiTo(someone) {
-    return `Hello, ${someone}. From: ${this.user}`;
-  },
-  sayHiToAll() {
-    for (const conn of wsConnections) if (conn != this)
-      conn.cast('message', methods.sayHiTo.call(this, conn.user));
-  }
-}
+import { wsConnections, auth, methods } from './src/api.js';
 
 Server()
   .static('/', './dist')
   .wsApi('/ws', {
     pool: wsConnections,
-    onOpen: conn => console.log('open', conn),
-    onClose: conn => console.log('close', conn),
+    onOpen: conn => {},
+    onClose: conn => {},
     async ctx(req) {
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
       if (!success) this.close(4401);
