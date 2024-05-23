@@ -17,18 +17,16 @@ export const subprocess = (cmd, args, params) => {
   if (onData && proc.stdout) proc.stdout.on('data', onData);
   if (onError && proc.stderr) proc.stderr.on('data', onError);
   
-  const promise = new Promise((resolve, reject) => {
+  proc.completion = new Promise((resolve, reject) => {
     proc.on('error', reject)
     proc.on('close', code => {
       if (code === 0) resolve(proc);
       else {
         const err = new Error(`child exited with code ${code}`)
         err.code = code;
-        err.process = proc;
         reject(err);
       }
     })
   })
-  promise.process = proc;
-  return promise;
+  return proc;
 }

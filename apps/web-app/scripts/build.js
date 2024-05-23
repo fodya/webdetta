@@ -32,6 +32,11 @@ pkg.imports = imports;
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
 
 await subprocess('npm', ['install'], {
-  onData: console.log,
-  onError: console.error
-});
+  onData: d => console.log(d.toString()),
+  onError: d => console.error(d.toString())
+}).completion;
+
+await subprocess('rollup', ['-c'], {
+  onData: d => console.log(d.toString()),
+  onError: d => console.error(d.toString())
+}).completion;
