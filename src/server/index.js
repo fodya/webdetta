@@ -87,7 +87,7 @@ const Server = () => {
         });
       }
       
-      if (['all', 'ws'].some(m => methods.include(m))) {
+      if (['all', 'ws'].some(m => methods.includes(m))) {
         const regex = pathToRegexp(path);
         server.on('upgrade', (req, socket, head) => {
           if (!regex.exec(req.url)) return;
