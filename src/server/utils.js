@@ -1,5 +1,4 @@
 import child_process from 'child_process';
-import stream from 'stream';
 
 export const handleUncaught = (handlers={}) => {
   process.on('uncaughtException', handlers.exception ?? (err, reason) =>
