@@ -66,6 +66,7 @@ const Server = () => {
       return instance;
     },
     httpProxy: (path, options) => {
+      validatePath(path);
       const { target, methods=['all'] } = options;
       const proxy = httpProxy.createProxyServer({
         target: 'http://localhost:8080',
@@ -83,6 +84,7 @@ const Server = () => {
         console.log("proxying upgrade request", req.url, head);
         // proxy.ws(req, socket, head);
       });
+      return instance;
     },
     static: (path, ...dirs) => {
       validatePath(path);
