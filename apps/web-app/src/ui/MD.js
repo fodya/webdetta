@@ -1,4 +1,4 @@
-import md from 'https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/+esm'
+import md from 'markdown-it'
 import { Component, el, v, h } from '#tk';
 import * as product from '#feat/product.js';
 export default Component((text) => {

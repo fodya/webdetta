@@ -1,16 +1,15 @@
 {
   "type": "module",
   "imports": {
-    "markdown-it": "markdown-it@14.1.0",
-    "#cfg/*": "src/cfg/*",
-    "#feat/*": "src/feat/*",
-    "#tk": "src/lib/toolkit/index.js",
-    "#ui": "src/ui/index.js",
-    "#comp": "src/comp/index.js",
-    "#pages": "src/pages/index.js"
+    "#cfg/*": "./src/cfg/*",
+    "#feat/*": "./src/feat/*",
+    "#tk": "./src/lib/toolkit/index.js",
+    "#ui": "./src/ui/index.js",
+    "#comp": "./src/comp/index.js",
+    "#pages": "./src/pages/index.js"
   },
   "scripts": {
-    "build": "rollup -c"
+    "build": "node scripts/build.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.20.2",
@@ -21,6 +20,7 @@
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "dotenv": "^16.4.5",
+    "markdown-it": "^14.1.0",
     "node-html-parser": "^6.1.13",
     "rollup": "2.79",
     "rollup-plugin-copy": "^3.4.0",

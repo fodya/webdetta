@@ -18,25 +18,23 @@ for (let [key, val] of Object.entries(imports)) {
   delete imports[key];
   const source = Object.keys(packageSources).find(d => val.startsWith(d));
   if (source) {
-    val = packageSources[source](val)  
+    const npmpkg = packageSources[source](val);
+    await subprocess('npm', ['install', npmpkg], {
+      onData: d => console.log(d.toString()),
+      onError: d => console.error(d.toString())
+    }).completion;
   } else {
     key = key.replace(/\/$/g, '/*');
     val = val.replace(/\/$/g, '/*');
-    val = path.join('./src', val);
+    imports[key] = './' + path.join('./src', val);
   }
-  imports[key] = val;
 }
 
 const pkg = JSON.parse(fs.readFileSync('package.json'));
 pkg.imports = imports;
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
 
-await subprocess('npm', ['install'], {
-  onData: d => console.log(d.toString()),
-  onError: d => console.error(d.toString())
-}).completion;
-
-await subprocess('rollup', ['-c'], {
+await subprocess('npx', ['rollup', '-c'], {
   onData: d => console.log(d.toString()),
   onError: d => console.error(d.toString())
 }).completion;

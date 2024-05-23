@@ -5,6 +5,7 @@ import express from 'express';
 import expressWs from 'express-ws';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import httpProxy from 'http-proxy';
 
 const validatePath = path => {
   if (typeof path != 'string') throw Error('Path must be a string');
@@ -63,6 +64,25 @@ const Server = () => {
       validatePath(path);
       app[method.toLowerCase()](path, ...args);
       return instance;
+    },
+    httpProxy: (path, options) => {
+      const { target, methods=['all'] } = options;
+      const proxy = httpProxy.createProxyServer({
+        target: 'http://localhost:8080',
+        ws: true
+      });
+      
+      for (const method of methods) {
+        app[method](path, (req, res) => {
+          console.log("proxying GET request", req.url);
+          // proxy.web(req, res, {});
+        });
+      }
+      
+      app.on('upgrade', (req, socket, head) => {
+        console.log("proxying upgrade request", req.url, head);
+        // proxy.ws(req, socket, head);
+      });
     },
     static: (path, ...dirs) => {
       validatePath(path);
