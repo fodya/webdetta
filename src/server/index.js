@@ -18,8 +18,13 @@ const collectMethods = (func, methods) =>
   });
 
 const resolveProxyOptions = async (resolve, ...args) => {
-  const result = typeof resolve == 'string' ? resolve : await resolve(...args);
-  return typeof result == 'string' ? { target: result } : result;
+  try {
+    const result = typeof resolve == 'string' ? resolve : await resolve(...args);
+    return typeof result == 'string' ? { target: result } : result;
+  } catch (e) {
+    console.error(e);
+    return {};
+  }
 }
 
 const Server = () => {
