@@ -2,7 +2,8 @@
 tmp
 log
 node_modules
-dist
-package-lock.json
+scripts/output
+dist/*
 build/*
+package-lock.json
 .env

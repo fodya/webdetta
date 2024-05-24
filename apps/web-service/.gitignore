@@ -1,8 +1,0 @@
-*/**/.git
-tmp
-log
-node_modules
-dist
-package-lock.json
-build/*
-.env
