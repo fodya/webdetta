@@ -1,3 +1,4 @@
+import { safe } from '../common/func.js';
 import { RpcServer } from '../rpc/server.js';
 import { processCall } from '../rpc/proto.js';
 import bytes from 'bytes';
@@ -17,15 +18,10 @@ const collectMethods = (func, methods) =>
     get: (_, key) => collectMethods(func, (methods ?? []).concat(key))
   });
 
-const resolveProxyOptions = async (resolve, ...args) => {
-  try {
-    const result = typeof resolve == 'string' ? resolve : await resolve(...args);
-    return typeof result == 'string' ? { target: result } : result;
-  } catch (e) {
-    console.error(e);
-    return {};
-  }
-}
+const resolveProxyOptions = safe(async (resolve, ...args) => {
+  const result = typeof resolve == 'string' ? resolve : await resolve(...args);
+  return typeof result == 'string' ? { target: result } : result;
+});
 
 const Server = () => {
   const app = express();
@@ -88,8 +84,8 @@ const Server = () => {
     wsProxy: (path, resolve) => {
       validatePath(path);
       wss.routeRaw(path, async (req, socket, head) => {
-        const opts = await resolveProxyOptions(resolve, req, socket, head);
-        await proxy.ws(req, socket, head, opts);
+        const opts = await resolveProxyOptions(resolve, req, socket, head) ?? {};
+        await safe(proxy.ws)(req, socket, head, opts);
       });
       return instance;
     },
@@ -97,8 +93,8 @@ const Server = () => {
       validatePath(path);
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
-          const opts = await resolveProxyOptions(resolve, req, res);
-          await proxy.web(req, res, opts, next);
+          const opts = await resolveProxyOptions(resolve, req, res) ?? {};
+          await safe(proxy.web)(req, res, opts, next);
         });
       return instance;
     }),
