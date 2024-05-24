@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/state/fs.js
+
 import { readFile, writeFile, rename } from 'node:fs/promises';
 import { State as State_ } from './base.js';
 

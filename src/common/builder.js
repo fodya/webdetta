@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/builder.js
+
 const FRAMEORC_BUILDER = Symbol('FRAMEORC_BUILDER');
 
 export function isBuilder(f) {

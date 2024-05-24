@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/state/ls.js
+
 import { State as State_ } from './base.js';
 
 export async function State(path, interval) {

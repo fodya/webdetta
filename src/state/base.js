@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/state/base.js
+
 export async function State({ read, write, interval = 5000 }) {
   let promise, resolve, to, scheduledTime = Infinity;
   function save(after = interval) {

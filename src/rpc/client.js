@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/client.js
+
 import { Proto } from "./proto.js";
 import { Chain, rVal } from "../common/chain.js";
 

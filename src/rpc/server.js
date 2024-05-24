@@ -1,10 +1,13 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/server.js
+
 import { Proto } from "./proto.js";
 
 const EMPTY = new Uint8Array(0);
 
 export function RpcServer({ PULSE = 60_000 } = {}) {
   function upgrade(socket) {
-
     // If the client does not send anything within the 2*PULSE interval,
     // the socket will be closed. The client logic makes sure that at least
     // every 60 seconds rpc call data or empty data (ping) will be sent.

@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/state/temp.js
+
 import fs from "node:fs";
 const { mkdtemp, rm } = fs.promises;
 import { tmpdir } from "node:os";

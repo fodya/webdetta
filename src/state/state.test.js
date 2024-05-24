@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/state/state.test.js
+
 import { expect, test, beforeAll, afterAll } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { tmpFile, cleanup } from './temp.js';

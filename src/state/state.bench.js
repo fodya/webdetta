@@ -1,3 +1,7 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/state/state.bench.js
+
 import { run, bench, group, baseline } from 'mitata';
 import { State } from './fs.js';
 import { tmpFile, cleanup } from './temp.js';
