@@ -20,8 +20,8 @@ const collectMethods = (func, methods) =>
 
 const resolveProxyOptions = safe(async (rslv, req, ...args) => {
   let result = typeof rslv == 'string' ? rslv : await rslv(req, ...args);
-  result = typeof result == 'string' ? { target: result } : result;
-  const url = new URL(result.target);
+  result = typeof result == 'string' ? { url: result } : result;
+  const url = new URL(result.url);
   req.url = url.pathname + url.search;
   result.target = url.origin;
   return result;
