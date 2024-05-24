@@ -6,11 +6,11 @@ const subprocess = (cmd, args, options) => {
   const instance = {
     proc,
     stdout: handler => {
-      if (proc.stdout) && proc.stdout.on('data', handler);
+      if (proc.stdout) proc.stdout.on('data', handler);
       return instance;
     },
     stderr: handler => {
-      if (proc.stdout) && proc.stderr.on('data', handler);
+      if (proc.stdout) proc.stderr.on('data', handler);
       return instance;
     },
     completion: new Promise((resolve, reject) => {
