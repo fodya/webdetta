@@ -12,3 +12,10 @@ export const safe = f => function() {
   catch (e) { safe.errorHandler(e) }
 }
 safe.errorHandler = e => console.error(e);
+
+export function throttle(f) {
+  let p;
+  return (...a) => (
+    p ??= Promise.resolve().then(() => p = null).then(() => f(...a))
+  );
+}
