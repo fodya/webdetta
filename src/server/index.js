@@ -18,9 +18,13 @@ const collectMethods = (func, methods) =>
     get: (_, key) => collectMethods(func, (methods ?? []).concat(key))
   });
 
-const resolveProxyOptions = safe(async (resolve, ...args) => {
-  const result = typeof resolve == 'string' ? resolve : await resolve(...args);
-  return typeof result == 'string' ? { target: result } : result;
+const resolveProxyOptions = safe(async (rslv, req, ...args) => {
+  let result = typeof rslv == 'string' ? rslv : await rslv(req, ...args);
+  result = typeof result == 'string' ? { target: result } : result;
+  const url = new URL(result.target);
+  req.url = url.pathname + url.search;
+  result.target = url.origin;
+  return result;
 });
 
 const Server = () => {
