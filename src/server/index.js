@@ -59,7 +59,6 @@ const Server = () => {
           if (res.headersSent) return;
           const name = req.params.name;
           const args = req.body;
-          console.log(path, methods, ctx_, name, args);
           const [result, err] = await processCall(methods, ctx_, name, args);
           if (err) throw err;
           res.status(200).send(JSON.stringify(result));
@@ -84,7 +83,6 @@ const Server = () => {
     wsProxy: (path, resolve) => {
       validatePath(path);
       wss.routeRaw(path, async (req, socket, head) => {
-        console.log("proxying upgrade request", req.url, { head: head.toString() });
         const opts = await resolveProxyOptions(resolve, req, socket, head);
         await proxy.ws(req, socket, head, opts);
       });
@@ -95,7 +93,6 @@ const Server = () => {
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
           const opts = await resolveProxyOptions(resolve, req, res);
-          console.log("proxying GET request", req.url, opts);
           await proxy.web(req, res, opts, next);
         });
       return instance;

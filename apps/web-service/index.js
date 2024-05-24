@@ -10,10 +10,9 @@ Server()
   .static('/', './public')
   .wsApi('/ws', {
     pool: wsConnections,
-    onOpen: conn => {},
+    onOpen: conn => conn.cast('welcome'),
     onClose: conn => {},
     async ctx(req) {
-      console.log('ws', req.headers.origin);
       const success = await auth.call(this, req.headers['sec-websocket-protocol']);
       if (!success) this.close(4401);
     },

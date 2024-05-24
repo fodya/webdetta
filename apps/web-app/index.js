@@ -6,7 +6,7 @@ handleUncaught();
 const { PORT, HOST, API_URL } = process.env;
 
 Server()
-  .static('/', './dist')
-  .httpProxy('/api', (req) => API_URL)
-  .wsProxy('/ws', (req) => API_URL)
+  .static('/', './src')
+  .httpProxy('/api/*', API_URL)
+  .wsProxy('/ws', API_URL)
   .launch(PORT, HOST);
