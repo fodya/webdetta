@@ -1,9 +1,11 @@
 {
   "name": "webdetta",
   "version": "0.0.2",
+  "author": "Fedot Kriutchenko <fodyadev@gmail.com>",
   "description": "",
-  "main": "index.js",
+  "license": "MIT",
   "type": "module",
+  "main": "index.js",
   "exports": {
     "./*": "./src/*/index.js",
     "./rpc/*": "./src/server/*.js",
