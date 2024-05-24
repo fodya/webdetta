@@ -6,8 +6,9 @@ export const safe = f => function() {
     return isAsync(f)
       ? Promise.resolve()
           .then(() => f.apply(this, arguments))
-          .catch(e => console.error(e))
+          .catch(e => safe.errorHandler(e))
       : f.apply(this, arguments);
   }
-  catch (e) { console.error(e); }
+  catch (e) { safe.errorHandler(e) }
 }
+safe.errorHandler = e => console.error(e);
