@@ -85,7 +85,7 @@ const Server = () => {
       validatePath(path);
       wss.routeRaw(path, async (req, socket, head) => {
         const opts = await resolveProxyOptions(resolve, req, socket, head) ?? {};
-        await safe(proxy.ws)(req, socket, head, opts);
+        await safe(proxy.ws).call(proxy, req, socket, head, opts);
       });
       return instance;
     },
@@ -94,7 +94,7 @@ const Server = () => {
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
           const opts = await resolveProxyOptions(resolve, req, res) ?? {};
-          await safe(proxy.web)(req, res, opts, next);
+          await safe(proxy.web).call(proxy, req, res, opts, next);
         });
       return instance;
     }),
