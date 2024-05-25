@@ -18,9 +18,7 @@ export function Builder(effect, tasks=[], names=[]) {
     : Builder(effect, [...tasks, { names, args }], [])
   ), {
     get: (target, name) =>
-      typeof name == 'symbol'
-      ? target[name]
-      : Builder(effect, tasks, [...names, name]),
+      Builder(effect, tasks, [...names, name])
   });
 }
 Builder.symbol = Symbol('Builder.symbol');
