@@ -15,6 +15,7 @@ function builder(f) {
 
 export function Builder(effect, tasks=[], names=[]) {
   return new Proxy(builder((...args) =>
+    console.log({effect,tasks,names,args})||
     args[0] === FRAMEORC_BUILDER
     ? effect([...tasks, { names, args: [] }], ...args.slice(1))
     : Builder(effect, [...tasks, { names, args }], [])
