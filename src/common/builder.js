@@ -9,7 +9,7 @@ export function isBuilder(f) {
 }
 
 function builder(f) {
-  f[FRAMEORC_BUILDER] = f;
+  f[FRAMEORC_BUILDER] = true;
   return f;
 }
 
@@ -27,5 +27,5 @@ export function Builder(effect, tasks=[], names=[]) {
 }
 
 export function launch(construct, ...args) {
-  return construct[FRAMEORC_BUILDER](FRAMEORC_BUILDER, ...args);
+  return construct(FRAMEORC_BUILDER, ...args);
 }
