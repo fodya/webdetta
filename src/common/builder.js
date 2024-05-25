@@ -27,5 +27,6 @@ export function Builder(effect, tasks=[], names=[]) {
 }
 
 export function launch(construct, ...args) {
+  console.log({construct})
   return construct(FRAMEORC_BUILDER, ...args);
 }
