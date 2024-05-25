@@ -2,32 +2,29 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/builder.js
 
-const FRAMEORC_BUILDER = Symbol('FRAMEORC_BUILDER');
-
 export function isBuilder(f) {
-  return Object.hasOwn(f, FRAMEORC_BUILDER);
+  return Object.hasOwn(f, Builder.symbol);
 }
 
 function builder(f) {
-  f[FRAMEORC_BUILDER] = true;
+  f[Builder.symbol] = true;
   return f;
 }
 
 export function Builder(effect, tasks=[], names=[]) {
   return new Proxy(builder((...args) =>
-    console.log({effect,tasks,names,args})||
-    args[0] === FRAMEORC_BUILDER
+    args[0] === Builder.symbol
     ? effect([...tasks, { names, args: [] }], ...args.slice(1))
     : Builder(effect, [...tasks, { names, args }], [])
   ), {
-    get: (_object, name, _proxy) =>
+    get: (target, name) =>
       typeof name == 'symbol'
-      ? _object[name]
+      ? target[name]
       : Builder(effect, tasks, [...names, name]),
   });
 }
+Builder.symbol = Symbol('Builder.symbol');
 
 export function launch(construct, ...args) {
-  console.log({construct})
-  return construct(FRAMEORC_BUILDER, ...args);
+  return construct(Builder.symbol, ...args);
 }
