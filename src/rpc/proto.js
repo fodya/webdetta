@@ -50,7 +50,11 @@ export function Proto(send, getMethods) {
       if ('to' in data) handlers[data.to]?.(data);
       else if ('call' in data && Array.isArray(data.args)) {
         const [res, err] = await processCall(getMethods(), ctx, data.call, data.args);
-        if ('from' in data) send(encode({ to: data.from, res, err }));
+        if ('from' in data) send(encode({
+          to: data.from,
+          res,
+          ...(err ? { err } : {})
+        }));
       }
     } catch (e) {
       console.error(e);
