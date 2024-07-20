@@ -1,6 +1,5 @@
 import { WebSocketServer } from 'ws';
 import { pathToRegexp } from 'path-to-regexp';
-import { safe } from '../common/func.js';
 
 function heartbeat() {
   this.isAlive = true;
@@ -12,7 +11,10 @@ const WS = ({ server, pulse=60_000 }) => {
   const route_ = raw => (path, handler) => routes.push({
     raw,
     regex: pathToRegexp(path),
-    handler: safe(handler)
+    handler: async (...a) => {
+      try { await handler(...a); }
+      catch (e) { console.error(e); }
+    }
   });
   const route = route_(false);
   const routeRaw = route_(true);

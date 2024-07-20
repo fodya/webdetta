@@ -52,8 +52,7 @@ export function Proto(send, getMethods) {
         const [res, err] = await processCall(getMethods(), ctx, data.call, data.args);
         if ('from' in data) send(encode({
           to: data.from,
-          res,
-          ...(err ? { err } : {})
+          ...(err ? { err } : { res })
         }));
       }
     } catch (e) {
