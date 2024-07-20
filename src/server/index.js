@@ -1,4 +1,7 @@
 import { safe } from '../common/func.js';
+import rpcApiWs from '../rpc-api/ws.js';
+import rpcApiHttp from '../rpc-api/http.js';
+import { generateSDK } from '../rpc-api/sdk.js';
 import bytes from 'bytes';
 import express from 'express';
 import cors from 'cors';
@@ -6,7 +9,6 @@ import bodyParser from 'body-parser';
 import http from 'http';
 import httpProxy from 'http-proxy';
 import WSS from './wss.js';
-import { generateSDK } from '../rpc/sdk.js';
 
 const validatePath = path => {
   if (typeof path != 'string') throw Error('Path must be a string');
@@ -98,7 +100,7 @@ const Server = () => {
       return instance;
     }),
     
-    sdk: (path, methods) => {
+    wsSdk: (path, methods) => {
       const { handlers, clientCode } = generateSDK(methods);
       instance.httpHandler.get(path, (req, res) => {
         const url = Object.assign(new URL('http://localhost'), {
@@ -115,8 +117,7 @@ const Server = () => {
     
     static: (path, ...dirs) => {
       validatePath(path);
-      for (const dir of dirs)
-        app.use(path, express.static(dir));
+      for (const dir of dirs) app.use(path, express.static(dir));
       return instance;
     },
     
