@@ -45,7 +45,7 @@ const Server = () => {
     
     wsApi: (path, { pool, onOpen, onClose, ctx, methods }) => {
       validatePath(path);
-      const upgrade = rpcApiWs({ pool, onOpen, onClose, methods });
+      const api = rpcApiWs({ pool, onOpen, onClose, methods });
       wss.route(path, (req, ws) => ctx.call(api.upgrade(ws), req));
       return instance;
     },
