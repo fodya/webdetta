@@ -1,6 +1,6 @@
 import { processCall } from '../rpc/proto.js';
 export default (methods) => {
-  const processCall = (ctx, name, args) => {
+  const processCall = async (ctx, name, args) => {
     try {
       const [result, err] = await processCall(methods, ctx_, name, args);
       if (err) throw err;
