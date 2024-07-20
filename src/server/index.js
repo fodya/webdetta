@@ -25,7 +25,6 @@ const resolveProxyOptions = safe(async (rslv, req, ...args) => {
   const url = new URL(result.target);
   req.url = url.pathname + url.search;
   result.target = url.origin;
-  console.log(req.url, result);
   return result;
 });
 
