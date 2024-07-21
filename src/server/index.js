@@ -1,7 +1,7 @@
 import { safe } from '../common/func.js';
 import rpcApiWs from '../rpc-api/ws.js';
 import rpcApiHttp from '../rpc-api/http.js';
-import { generateSDK } from '../rpc-api/sdk.js';
+import { SdkServer } from '../rpc-api/sdk.js';
 import bytes from 'bytes';
 import express from 'express';
 import cors from 'cors';
@@ -91,7 +91,7 @@ const Server = () => {
     }),
     
     sdk: (path, { methods }) => {
-      const { handlers, clientCode } = generateSDK(methods);
+      const { handlers, clientCode } = SdkServer(methods);
       instance.httpHandler.get(path, (req, res) => {
         const url = Object.assign(new URL('http://localhost'), {
           host: req.headers.host,
