@@ -81,7 +81,7 @@ const NestedSdkEntry = (func) => val => ({
 
 const remoteFunction = (handlerId, args) => {
   const handler = new Function(...args,
-    `return rpc.call(${JSON.stringify(handlerId)}, ...arguments);`
+    `return this.call(${JSON.stringify(handlerId)}, ...arguments);`
   );
   return {
     rpcHandler: null,
