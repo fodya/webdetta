@@ -18,11 +18,11 @@ const encodeObj = (obj) =>
     : { value: v }
   ])));
   
-const decodeObj = (rpc, instance, str) =>
+const decodeObj = (thisArg, str) =>
   Object.fromEntries(Object.entries(JSON.parse(str)).map(([k, v]) => [
     k,
     v.type == 'function'
-    ? decodeFunction(rpc, instance, v.value.args, v.value.body)
+    ? decodeFunction(thisArg, v.value.args, v.value.body)
     : v.value
   ]));
 
@@ -37,9 +37,9 @@ export const SdkInstance = (rpc, entries) => {
   for (const e of entries) {
     if (!e.isEncoded) continue;
     e.rpcHandler = e.rpcHandler &&
-      decodeFunction(rpc, instance, e.rpcHandler.args, e.rpcHandler.body);
+      decodeFunction(instance, e.rpcHandler.args, e.rpcHandler.body);
     e.propertyDescriptor =
-      decodeObj(rpc, instance, e.propertyDescriptor);
+      decodeObj(rpc, e.propertyDescriptor);
   }
 
   for (const { path, handlerId, rpcHandler, propertyDescriptor } of entries) {
