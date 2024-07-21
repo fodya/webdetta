@@ -51,7 +51,7 @@ export const SdkInstance = (rpc, entries) => {
   for (const e of entries) {
     if (!e.isEncoded) continue;
     e.rpcHandler = e.rpcHandler && decodeFn(e.rpcHandler.args, e.rpcHandler.body);
-    e.instanceProperty = decodeObj(rpc, e.instanceProperty);
+    e.instanceProperty = decodeObj(e.instanceProperty);
   }
 
   for (const { path, handlerId, rpcHandler, instanceProperty } of entries) {

@@ -1,3 +1,3 @@
-// This function decodes stringified functions passed to client from server.
-// It is moved into the separate module with no variables to prevent scope pollution.
+// Decodes stringified functions passed to client from server.
+// The module has no variables to prevent generated function scope pollution.
 export default function() { return new Function(...arguments); }
