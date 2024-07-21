@@ -22,7 +22,7 @@ const decodeObj = (rpc, instance, str) =>
   Object.fromEntries(Object.entries(JSON.parse(str)).map(([k, v]) => [
     k,
     v.type == 'function'
-    ? decodeFunction(rpc, instance, v.args, v.body)
+    ? decodeFunction(rpc, instance, v.value.args, v.value.body)
     : v.value
   ]));
 
