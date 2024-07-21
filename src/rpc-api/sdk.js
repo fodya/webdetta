@@ -32,26 +32,31 @@ export const SdkInstance = (rpc, entries) => {
   const define = (path, descriptor) => {
     let obj = instance;
     for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
-    if ('value' in descriptor) {
-      descriptor.value = bind(descriptor.value);
-    }
+    
+    let { value, get, set, writable } = descriptor;
+    if ('value' in descriptor) value = bind(value);
     if ('get' in descriptor) {
-      const { get } = descriptor;
-      descriptor.get = () => bind(get());
+      const get_ = get;
+      get = () => bind(get_());
     }
-    descriptor.configurable = false;
-    Object.defineProperty(obj, path.at(-1), descriptor);
+    Object.defineProperty(obj, path.at(-1), {
+      value, writable,
+      ...(get ? { get } : {}),
+      ...(set ? { set } : {}),
+      configurable: false,
+      enumerable: true
+    });
   }
   
   for (const e of entries) {
     if (!e.isEncoded) continue;
     e.rpcHandler = e.rpcHandler && decodeFn(e.rpcHandler.args, e.rpcHandler.body);
-    e.propertyDescriptor = decodeObj(rpc, e.propertyDescriptor);
+    e.instanceProperty = decodeObj(rpc, e.instanceProperty);
   }
 
-  for (const { path, handlerId, rpcHandler, propertyDescriptor } of entries) {
+  for (const { path, handlerId, rpcHandler, instanceProperty } of entries) {
     if (rpcHandler && rpc) rpc.methods[handlerId] = rpcHandler;
-    define(path, propertyDescriptor);
+    define(path, instanceProperty);
   }
   
   Object.preventExtensions(instance);
@@ -88,12 +93,12 @@ const NestedSdkEntry = (func) => val => ({
 
 const remoteFunction = (func) => ({
   rpcHandler: null,
-  propertyDescriptor: { value: func }
+  instanceProperty: { writable: false, value: func }
 });
 
 const localFunction = (func) => ({
   rpcHandler: func,
-  propertyDescriptor: { value: func }
+  instanceProperty: { writable: false, value: func }
 });
 
 export const ClientHandler = NestedSdkEntry((val) => {
@@ -144,7 +149,7 @@ export const SdkServer = (sdkDefinition) => {
       clientEntries.push({
         path: fullpath, handlerId, isEncoded: true,
         rpcHandler: cli.rpcHandler && encodeFn(cli.rpcHandler),
-        propertyDescriptor: encodeObj(cli.propertyDescriptor)
+        instanceProperty: encodeObj(cli.instanceProperty)
       });
       
       const srv = d.server(handlerId);
@@ -154,7 +159,7 @@ export const SdkServer = (sdkDefinition) => {
           this.instance ??= SdkInstance(null, serverEntries);
           return srv.rpcHandler.apply(this.instance, arguments);
         },
-        propertyDescriptor: srv.propertyDescriptor
+        instanceProperty: srv.instanceProperty
       });
     }
   }
