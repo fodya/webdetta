@@ -1,8 +1,8 @@
 import FunctionParser from 'parse-function';
-import decodeFunction from './decode-function.js';
+import decodeFn from 'webdetta/common/decode-function';
 
 const parser = FunctionParser();
-const encodeFunction = val => {
+const encodeFn = val => {
   const { args, defaults, body } = parser.parse(val);
   const args_ = args
     .map(d => defaults[d] ? d + '=' + defaults[d] : d)
@@ -14,39 +14,46 @@ const encodeObj = (obj) =>
   JSON.stringify(Object.fromEntries(Object.entries(obj).map(([k, v]) => [
     k,
     typeof v == 'function'
-    ? { type: 'function', value: encodeFunction(v) }
+    ? { type: 'function', value: encodeFn(v) }
     : { value: v }
   ])));
   
-const decodeObj = (thisArg, str) =>
+const decodeObj = (str) =>
   Object.fromEntries(Object.entries(JSON.parse(str)).map(([k, v]) => [
     k,
     v.type == 'function'
-    ? decodeFunction(thisArg, v.value.args, v.value.body)
+    ? decodeFn(v.value.args, v.value.body)
     : v.value
   ]));
 
 export const SdkInstance = (rpc, entries) => {
   const instance = {};
+  const bind = d => typeof d == 'function' ? d.bind(instance) : d;
   const define = (path, descriptor) => {
     let obj = instance;
     for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
+    if ('value' in descriptor) {
+      descriptor.value = bind(descriptor.value);
+    }
+    if ('get' in descriptor) {
+      const { get } = descriptor;
+      descriptor.get = () => bind(get());
+    }
+    descriptor.configurable = false;
     Object.defineProperty(obj, path.at(-1), descriptor);
   }
   
   for (const e of entries) {
     if (!e.isEncoded) continue;
-    e.rpcHandler = e.rpcHandler &&
-      decodeFunction(instance, e.rpcHandler.args, e.rpcHandler.body);
-    e.propertyDescriptor =
-      decodeObj(rpc, e.propertyDescriptor);
+    e.rpcHandler = e.rpcHandler && decodeFn(e.rpcHandler.args, e.rpcHandler.body);
+    e.propertyDescriptor = decodeObj(rpc, e.propertyDescriptor);
   }
 
   for (const { path, handlerId, rpcHandler, propertyDescriptor } of entries) {
     if (rpcHandler && rpc) rpc.methods[handlerId] = rpcHandler;
     define(path, propertyDescriptor);
   }
-    
+  
   Object.preventExtensions(instance);
   return instance;
 }
@@ -79,36 +86,35 @@ const NestedSdkEntry = (func) => val => ({
   ))
 });
 
-const remoteFunction = (handlerId, args) => {
-  const handler = new Function(...args,
-    `return this.call(${JSON.stringify(handlerId)}, ...arguments);`
-  );
-  return {
-    rpcHandler: null,
-    propertyDescriptor: { value: handler }
-  }
-}
+const remoteFunction = (func) => ({
+  rpcHandler: null,
+  propertyDescriptor: { value: func }
+});
 
-const localFunction = (handler) => {
-  return {
-    rpcHandler: handler,
-    propertyDescriptor: { value: handler }
-  };
-}
+const localFunction = (func) => ({
+  rpcHandler: func,
+  propertyDescriptor: { value: func }
+});
 
 export const ClientHandler = NestedSdkEntry((val) => {
-  const { args, body } = encodeFunction(val);
+  const { args, body } = encodeFn(val);
   return {
     client: (handlerId) => localFunction(new Function(...args, body)),
-    server: (handlerId) => remoteFunction(handlerId, args),
+    server: (handlerId) => remoteFunction(function () {
+      return this.call(handlerId, ...arguments);
+    }),
   };
 });
 
 export const ServerHandler = NestedSdkEntry((val) => {
-  const { args, body } = encodeFunction(val);
+  const { args, body } = encodeFn(val);
   return {
-    client: (handlerId) => remoteFunction(handlerId, args),
-    server: (handlerId) => localFunction(val)
+    client: (handlerId) => remoteFunction(new Function(...args,
+      `return this.call(${JSON.stringify(handlerId)}, ...arguments);`
+    )),
+    server: (handlerId, makeInstance) => localFunction(
+      val.bind(this.instance ??= makeInstance())
+    )
   };
 });
 
@@ -123,6 +129,7 @@ export const SdkServer = (sdkDefinition) => {
   
   const serverMethods = {};
   const serverEntries = [];
+  const makeInstance = () => SdkInstance(null, serverEntries);
   
   for (const [key, entry] of Object.entries(sdkDefinition)) {
     if (!(SDK_ENTRY in entry)) {
@@ -139,11 +146,11 @@ export const SdkServer = (sdkDefinition) => {
       const cli = d.client(handlerId);
       clientEntries.push({
         path: fullpath, handlerId, isEncoded: true,
-        rpcHandler: cli.rpcHandler && encodeFunction(cli.rpcHandler),
+        rpcHandler: cli.rpcHandler && encodeFn(cli.rpcHandler),
         propertyDescriptor: encodeObj(cli.propertyDescriptor)
       });
       
-      const srv = d.server(handlerId);
+      const srv = d.server(handlerId, makeInstance);
       serverEntries.push({
         path: fullpath, handlerId, isEncoded: false,
         rpcHandler: srv.rpcHandler,
@@ -155,6 +162,7 @@ export const SdkServer = (sdkDefinition) => {
   for (const d of serverEntries) console.log('+++', d);
   
   SdkInstance({ methods: serverMethods }, serverEntries);
+  
   console.log(clientCode('localhost'));
   return { serverMethods, clientCode };
 }

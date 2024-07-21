@@ -91,7 +91,7 @@ const Server = () => {
     }),
     
     sdk: (path, methods) => {
-      const { handlers, clientCode } = SdkServer(methods);
+      const { serverMethods, clientCode } = SdkServer(methods);
       instance.httpHandler.get(path, (req, res) => {
         const url = Object.assign(new URL('http://localhost'), {
           host: req.headers.host,
@@ -101,7 +101,7 @@ const Server = () => {
         res.contentType('text/javascript');
         res.send(clientCode(url));
       });
-      instance.wsApi(path, { ctx: () => {}, methods: handlers });
+      instance.wsApi(path, { ctx: () => {}, methods: serverMethods });
       return instance;
     },
     
