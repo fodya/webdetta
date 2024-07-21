@@ -112,9 +112,7 @@ export const ServerHandler = NestedSdkEntry((val) => {
     client: (handlerId) => remoteFunction(new Function(...args,
       `return this.call(${JSON.stringify(handlerId)}, ...arguments);`
     )),
-    server: (handlerId, makeInstance) => localFunction(
-      val.bind(this.instance ??= makeInstance())
-    )
+    server: (handlerId) => localFunction(val)
   };
 });
 
@@ -129,7 +127,6 @@ export const SdkServer = (sdkDefinition) => {
   
   const serverMethods = {};
   const serverEntries = [];
-  const makeInstance = () => SdkInstance(null, serverEntries);
   
   for (const [key, entry] of Object.entries(sdkDefinition)) {
     if (!(SDK_ENTRY in entry)) {
@@ -150,10 +147,13 @@ export const SdkServer = (sdkDefinition) => {
         propertyDescriptor: encodeObj(cli.propertyDescriptor)
       });
       
-      const srv = d.server(handlerId, makeInstance);
+      const srv = d.server(handlerId);
       serverEntries.push({
         path: fullpath, handlerId, isEncoded: false,
-        rpcHandler: srv.rpcHandler,
+        rpcHandler: function() {
+          this.instance ??= SdkInstance(null, serverEntries);
+          return srv.rpcHandler.apply(this.instance, arguments);
+        },
         propertyDescriptor: srv.propertyDescriptor
       });
     }
