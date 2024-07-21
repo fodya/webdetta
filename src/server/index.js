@@ -90,7 +90,7 @@ const Server = () => {
       return instance;
     }),
     
-    sdk: (path, { methods }) => {
+    sdk: (path, methods) => {
       const { handlers, clientCode } = SdkServer(methods);
       instance.httpHandler.get(path, (req, res) => {
         const url = Object.assign(new URL('http://localhost'), {
