@@ -18,7 +18,7 @@ const encodeObj = (obj) =>
     : { value: v }
   ])));
   
-const decodeObj = (rpc, str) =>
+const decodeObj = (rpc, instance, str) =>
   Object.fromEntries(Object.entries(JSON.parse(str)).map(([k, v]) => [
     k,
     v.type == 'function'
