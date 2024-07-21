@@ -54,6 +54,7 @@ const defineProperty = (instance, path, descriptor) => {
   Object.defineProperty(obj, path.at(-1), descr);
 }
 
+const $internals = Symbol('$internals');
 export const SdkInstance = (rpcInstance, methods, entries) => {
   const instance = {};
   
@@ -63,7 +64,7 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
     e.instanceProperty = decodeObj(e.instanceProperty);
   }
   
-  if (rpcInstance) defineProperty(instance, ['$internals'], {
+  if (rpcInstance) defineProperty(instance, [$internals], {
     value: rpcInstance,
     writable: false
   });
