@@ -5,6 +5,7 @@
 export default function() {
   // arguments : [rpc, thisArg, args, body];
   const rpc = arguments[0];
+  console.log(...arguments);
   return new Function(
     ...Array.prototype.slice.call(arguments, 2)
   ).bind(arguments[1]);
