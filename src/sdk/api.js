@@ -12,7 +12,7 @@ const onsocket = async (methods, ctx, req, ws) => {
 }
 
 const HTTP = (methods) => {
-  const processRequest = (req, res) => {
+  const processRequest = async (req, res) => {
     try {
       const name = req.params.name;
       const args = req.body;
@@ -32,10 +32,10 @@ const HTTP = (methods) => {
   return { processRequest }
 }
 
-const WS (methods) => {
+const WS = (methods) => {
   const upgrade_ = RpcServer();
   upgrade_.methods = methods;
-  const upgrade = (req, ws) => {
+  const upgrade = async (req, ws) => {
     const ctx = upgrade_(ws);
     await onsocket(methods, ctx, req, ws);
     return ctx;

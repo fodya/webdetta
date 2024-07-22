@@ -1,6 +1,6 @@
 import { safe } from '../common/func.js';
 import { Api } from '../sdk/api.js';
-import { SdkServer } from '../sdk/sdk.js';
+import { SdkServer } from '../sdk/index.js';
 import bytes from 'bytes';
 import express from 'express';
 import cors from 'cors';
