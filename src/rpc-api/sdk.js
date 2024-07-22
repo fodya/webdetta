@@ -9,17 +9,19 @@ const parseFn = val => {
   return { args: args_, body };
 }
 
-const obj2code = (obj) => {
+const obj2code = (obj, vars, pad='  ') => {
   if (typeof obj == 'function') {
     const { args, body } = parseFn(obj);
-    return `function (${args}) {${body}}`;
+    return `function (${args}) {var ${vars.join(',')};${body.trim()}}`;
   }
   if (Array.isArray(obj))
-    return `[${obj.map(obj2code).join(',')}]`;
+    return `[${obj.map(d => obj2code(d, vars, pad)).join(',')}]`;
   if (typeof obj == 'object' && obj !== null)
-    return `{${Object.entries(obj).map(([k, v]) =>
-      [JSON.stringify(k), obj2code(v)].join(':')
-    ).join(',')}}`
+    return '{\n' +
+      Object.entries(obj).map(([k, v]) =>
+        pad + JSON.stringify(k) + ':' + obj2code(v, vars, pad + '  ')
+      ).join(',\n')
+    + `\n${pad.slice(0, -2)}}`;
   return JSON.stringify(obj);
 }
   
@@ -71,11 +73,12 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
 export const SdkServer = (sdkDefinition) => {
   const clientEntries = [];
   const clientCode = rpcURL => [
-    `import { RpcClient } from 'webdetta/rpc/client';`,
-    `import { SdkInstance } from 'webdetta/rpc-api/sdk';`,
-    `const rpc = RpcClient("${rpcURL}");`,
-    `const clientEntries = ${obj2code(clientEntries)};`,
-    `export default SdkInstance(rpc, rpc.methods, clientEntries);`
+    `import { RpcClient as RPC } from 'webdetta/rpc/client';`,
+    `import { SdkInstance as SDK } from 'webdetta/rpc-api/sdk';`,
+    `const rpc = RPC("${rpcURL}");`,
+    `export default SDK(rpc, rpc.methods, ${
+      obj2code(clientEntries, ['RPC', 'SDK', 'rpc'])
+    });`
   ].join('\n');
   
   const serverMethods = {};
@@ -91,18 +94,18 @@ export const SdkServer = (sdkDefinition) => {
     
     for (const d of entry.list) {
       const fullpath = [key, ...d.path];
-      const handlerId = fullpath.join(',');
+      const handlerId = fullpath.join('.');
       
       const cli = d.client(handlerId);
       clientEntries.push({
-        path: fullpath, handlerId, isEncoded: true,
+        path: fullpath, handlerId,
         rpcHandler: cli.rpcHandler,
         instanceProperty: cli.instanceProperty
       });
       
       const srv = d.server(handlerId);
       serverEntries.push({
-        path: fullpath, handlerId, isEncoded: false,
+        path: fullpath, handlerId,
         rpcHandler: function() {
           this.instance ??= SdkInstance(this, null, serverEntries);
           return srv.rpcHandler.apply(this.instance, arguments);
@@ -111,12 +114,8 @@ export const SdkServer = (sdkDefinition) => {
       });
     }
   }
-  for (const d of clientEntries) console.log('---', d);
-  for (const d of serverEntries) console.log('+++', d);
-  
   SdkInstance(null, serverMethods, serverEntries);
   
-  console.log(clientCode('localhost'));
   return { serverMethods, clientCode };
 }
 
