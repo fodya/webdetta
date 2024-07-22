@@ -1,4 +1,4 @@
-import { RpcClient } from 'webdetta/rpc/client';
+import { RpcClient } from '../rpc/client.js';
 import { SdkInstance } from './server.js';
 
 const WS = (url, clientEntries) => {
