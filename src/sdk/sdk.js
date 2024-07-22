@@ -119,6 +119,16 @@ export const SdkServer = (sdkDefinition) => {
   return { serverMethods, clientCode };
 }
 
+SdkServer.httpHandler = clientCode => (req, res) => {
+  const url = Object.assign(new URL('http://localhost'), {
+    host: req.headers.host,
+    protocol: isSecure ? 'wss:' : 'ws:',
+    pathname: path
+  });
+  res.contentType('text/javascript');
+  res.send(clientCode(url));
+}
+
 //
 
 const traverseSdkObject = (val, path=[], res=[]) => {

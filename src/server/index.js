@@ -1,6 +1,5 @@
 import { safe } from '../common/func.js';
-import rpcApiWs from '../rpc-api/ws.js';
-import rpcApiHttp from '../rpc-api/http.js';
+import { Api } from '../rpc-api/api.js';
 import { SdkServer } from '../rpc-api/sdk.js';
 import bytes from 'bytes';
 import express from 'express';
@@ -39,27 +38,16 @@ const Server = () => {
       return instance;
     },
     
-    wsApi: (path, { pool, onOpen, onClose, ctx, methods }) => {
-      const api = rpcApiWs({ pool, onOpen, onClose, methods });
-      wss.route(path, (req, ws) => ctx.call(api.upgrade(ws), req));
+    wsApi: (path, methods) => {
+      const api = Api.WS(methods);
+      wss.route(path, (req, ws) => api.upgrade(req, ws));
       return instance;
     },
     
-    httpApi: (path, { bodyLimit='50mb', ctx, methods }) => {
+    httpApi: (path, methods) => {
       path = path.replace(/\/$/, '') + '/:name';
-      const api = rpcApiHttp(methods);
-      app.post(path, ...[
-        ...(!bodyLimit ? [] : [
-          bodyParser.json({limit: bodyLimit}),
-          bodyParser.urlencoded({limit: bodyLimit, extended: true})
-        ]),
-        async (req, res) => {
-          await ctx.call(req.ctx = {}, req, res);
-          if (res.headersSent) return;
-          const r = await api.processCall(req.ctx, req.params.name, req.body);
-          res.status(r.status).send(r.result);
-        }
-      ]);
+      const api = Api.HTTP(methods);
+      app.post(path, bodyParser.json({limit: '50mb'}), api.processRequest);
       return instance;
     },
     
@@ -92,16 +80,8 @@ const Server = () => {
     
     sdk: (path, methods) => {
       const { serverMethods, clientCode } = SdkServer(methods);
-      instance.httpHandler.get(path, (req, res) => {
-        const url = Object.assign(new URL('http://localhost'), {
-          host: req.headers.host,
-          protocol: isSecure ? 'wss:' : 'ws:',
-          pathname: path
-        });
-        res.contentType('text/javascript');
-        res.send(clientCode(url));
-      });
-      instance.wsApi(path, { ctx: () => {}, methods: serverMethods });
+      instance.httpHandler.get(path, SdkServer.httpHandler(clientCode));
+      instance.wsApi(path, { methods: serverMethods });
       return instance;
     },
     
