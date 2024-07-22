@@ -64,7 +64,7 @@ export const SdkServer = (methods) => {
   return { serverMethods, clientCode };
 }
 
-SdkServer.clientCodeGetHandler = ({
+SdkServer.clientCodeHttpHandler = ({
   isSecure,
   clientCode,
   transport='ws'

@@ -82,7 +82,7 @@ const Server = (options={}) => {
     
     sdk: (path, methods) => {
       const { serverMethods, clientCode } = SdkServer(methods);
-      const handler = SdkServer.clientCodeGetHandler({ isSecure, clientCode });
+      const handler = SdkServer.clientCodeHttpHandler({ isSecure, clientCode });
       instance.httpHandler.get(path, handler);
       instance.wsApi(path, serverMethods);
       return instance;
