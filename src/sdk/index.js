@@ -61,8 +61,8 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
     writable: false
   });
 
-  for (const { path, handlerId, rpcHandler, instanceProperty } of entries) {
-    if (methods && rpcHandler) methods[handlerId] = rpcHandler;
+  for (const { path, rpcHandler, instanceProperty } of entries) {
+    if (rpcHandler && methods) methods[rpcHandler.id] = rpcHandler.value;
     defineProperty(instance, path, instanceProperty);
   }
   
@@ -99,18 +99,24 @@ export const SdkServer = (sdkDefinition) => {
       const cli = d.client(handlerId);
       clientEntries.push({
         path: fullpath, handlerId,
-        rpcHandler: cli.rpcHandler,
-        instanceProperty: cli.instanceProperty
+        instanceProperty: cli.instanceProperty,
+        rpcHandler: cli.rpcHandler && {
+          id: handlerId,
+          value: cli.rpcHandler
+        },
       });
       
       const srv = d.server(handlerId);
       serverEntries.push({
-        path: fullpath, handlerId,
-        rpcHandler: function() {
-          this.instance ??= SdkInstance(this, null, serverEntries);
-          return srv.rpcHandler.apply(this.instance, arguments);
+        path: fullpath,
+        instanceProperty: srv.instanceProperty,
+        rpcHandler: srv.rpcHandler && {
+          id: handlerId,
+          value: function() {
+            this.instance ??= SdkInstance(this, null, serverEntries);
+            return srv.rpcHandler.apply(this.instance, arguments);
+          }
         },
-        instanceProperty: srv.instanceProperty
       });
     }
   }
