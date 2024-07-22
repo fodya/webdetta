@@ -1,8 +1,7 @@
 import FunctionParser from 'parse-function';
-import decodeFn from 'webdetta/common/decode-function';
 
 const parser = FunctionParser();
-const encodeFn = val => {
+const parseFn = val => {
   const { args, defaults, body } = parser.parse(val);
   const args_ = args
     .map(d => defaults[d] ? d + '=' + defaults[d] : d)
@@ -12,7 +11,7 @@ const encodeFn = val => {
 
 const obj2code = (obj) => {
   if (typeof obj == 'function') {
-    const { args, body } = encodeFn(obj);
+    const { args, body } = parseFn(obj);
     return `function (${args}) {${body}}`;
   }
   if (Array.isArray(obj))
@@ -54,12 +53,6 @@ const defineProperty = (instance, path, descriptor) => {
 
 export const SdkInstance = (rpcInstance, methods, entries) => {
   const instance = {};
-  
-  for (const e of entries) {
-    if (!e.isEncoded) continue;
-    e.rpcHandler = e.rpcHandler && decodeFn(e.rpcHandler.args, e.rpcHandler.body);
-    e.instanceProperty = e.instanceProperty;
-  }
   
   if (rpcInstance) defineProperty(instance, ['#internals'], {
     value: rpcInstance,
@@ -103,7 +96,7 @@ export const SdkServer = (sdkDefinition) => {
       const cli = d.client(handlerId);
       clientEntries.push({
         path: fullpath, handlerId, isEncoded: true,
-        rpcHandler: cli.rpcHandler && encodeFn(cli.rpcHandler),
+        rpcHandler: cli.rpcHandler,
         instanceProperty: cli.instanceProperty
       });
       
@@ -174,14 +167,14 @@ const localFunction = (func) => ({
 
 const Function_ = awaitResult => ({
   Client: NestedSdkEntry((func) => {
-    const { args, body } = encodeFn(func);
+    const { args, body } = parseFn(func);
     return {
       client: (handlerId) => localFunction(new Function(...args, body)),
       server: (handlerId) => remoteFunction(handlerId, args, awaitResult),
     };
   }),
   Server: NestedSdkEntry((func) => {
-    const { args, body } = encodeFn(func);
+    const { args, body } = parseFn(func);
     return {
       client: (handlerId) => remoteFunction(handlerId, args, awaitResult),
       server: (handlerId) => localFunction(func)
