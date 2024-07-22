@@ -1,11 +1,12 @@
 import { safe } from '../common/func.js';
-import { Api } from '../sdk/api.js';
-import { SdkServer } from '../sdk/index.js';
+import { Api } from '../sdk/common.js';
+import { SdkServer } from '../sdk/server.js';
 import bytes from 'bytes';
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import http from 'http';
+import https from 'https';
 import httpProxy from 'http-proxy';
 import WSS from './wss.js';
 
@@ -23,10 +24,11 @@ const resolveProxyOptions = safe(async (rslv, req, ...args) => {
   return result;
 });
 
-const Server = () => {
-  let isSecure = false;
+const Server = (options={}) => {
+  const isSecure = ['key', 'cert', 'pfx'].some(k => k in options);
+  
   const app = express();
-  const server = http.createServer(app);
+  const server = (isSecure ? https : http).createServer(options, app);
   const proxy = httpProxy.createProxyServer({ ws: true });
   const wss = WSS({ server });
   
@@ -44,7 +46,7 @@ const Server = () => {
       return instance;
     },
     
-    httpApi: (path, methods) => {
+    httpPostApi: (path, methods) => {
       path = path.replace(/\/$/, '') + '/:name';
       const api = Api.HTTP(methods);
       app.post(path, bodyParser.json({limit: '50mb'}), api.processRequest);
@@ -80,7 +82,7 @@ const Server = () => {
     
     sdk: (path, methods) => {
       const { serverMethods, clientCode } = SdkServer(methods);
-      const handler = SdkServer.httpHandler({ isSecure, clientCode })
+      const handler = SdkServer.clientCodeGetHandler({ isSecure, clientCode });
       instance.httpHandler.get(path, handler);
       instance.wsApi(path, serverMethods);
       return instance;

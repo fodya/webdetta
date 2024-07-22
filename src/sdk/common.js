@@ -1,5 +1,15 @@
 import { processCall } from '../rpc/proto.js';
 import { RpcServer } from '../rpc/server.js';
+import FunctionParser from 'parse-function';
+
+const parser = FunctionParser();
+export const parseFn = val => {
+  const { args, defaults, body } = parser.parse(val);
+  const args_ = args
+    .map(d => defaults[d] ? d + '=' + defaults[d] : d)
+    .join(', ');
+  return { args: args_, body };
+}
 
 const onrequest = async (methods, ctx, req, res) => {
   if (!methods.$onrequest) return;
