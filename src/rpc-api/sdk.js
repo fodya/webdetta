@@ -10,22 +10,20 @@ const encodeFn = val => {
   return { args: args_, body };
 }
 
-const encodeObj = (obj) =>
-  JSON.stringify(Object.fromEntries(Object.entries(obj).map(([k, v]) => [
-    k,
-    typeof v == 'function'
-    ? { type: 'function', value: encodeFn(v) }
-    : { value: v }
-  ])));
+const obj2code = (obj) => {
+  if (typeof obj == 'function') {
+    const { args, body } = encodeFn(obj);
+    return `function (${args}) {${body}}`;
+  }
+  if (Array.isArray(obj))
+    return `[${obj.map(obj2code).join(',')}]`;
+  if (typeof obj == 'object' && obj !== null)
+    return `{${Object.entries(obj).map(([k, v]) =>
+      [JSON.stringify(k), obj2code(v)].join(':')
+    ).join(',')}}`
+  return JSON.stringify(obj);
+}
   
-const decodeObj = (str) =>
-  Object.fromEntries(Object.entries(JSON.parse(str)).map(([k, v]) => [
-    k,
-    v.type == 'function'
-    ? decodeFn(v.value.args, v.value.body)
-    : v.value
-  ]));
-
 const defineProperty = (instance, path, descriptor) => {
   const bind = d => typeof d == 'function' ? d.bind(instance) : d;
 
@@ -60,7 +58,7 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
   for (const e of entries) {
     if (!e.isEncoded) continue;
     e.rpcHandler = e.rpcHandler && decodeFn(e.rpcHandler.args, e.rpcHandler.body);
-    e.instanceProperty = decodeObj(e.instanceProperty);
+    e.instanceProperty = e.instanceProperty;
   }
   
   if (rpcInstance) defineProperty(instance, ['#internals'], {
@@ -83,8 +81,8 @@ export const SdkServer = (sdkDefinition) => {
     `import { RpcClient } from 'webdetta/rpc/client';`,
     `import { SdkInstance } from 'webdetta/rpc-api/sdk';`,
     `const rpc = RpcClient("${rpcURL}");`,
-    `const entries = ${JSON.stringify(clientEntries, null, 2)};`,
-    `export default SdkInstance(rpc, rpc.methods, entries);`
+    `const clientEntries = ${obj2code(clientEntries)};`,
+    `export default SdkInstance(rpc, rpc.methods, clientEntries);`
   ].join('\n');
   
   const serverMethods = {};
@@ -94,7 +92,7 @@ export const SdkServer = (sdkDefinition) => {
     if (!(SDK_ENTRY in entry)) {
       throw new Error([
         'SDK entries must be decorated with one of the following functions: ',
-        'ClientState, ClientHandler, SharedState, ServerState, ServerHandler.'
+        'Func, Proc, State.'
       ].join(''));
     }
     
@@ -106,7 +104,7 @@ export const SdkServer = (sdkDefinition) => {
       clientEntries.push({
         path: fullpath, handlerId, isEncoded: true,
         rpcHandler: cli.rpcHandler && encodeFn(cli.rpcHandler),
-        instanceProperty: encodeObj(cli.instanceProperty)
+        instanceProperty: cli.instanceProperty
       });
       
       const srv = d.server(handlerId);
@@ -159,13 +157,14 @@ const NestedSdkEntry = (func) => val => ({
   ))
 });
 
-const remoteFunction = (handlerId, signature) => ({
+const remoteFunction = (handlerId, signature, awaitResult) => ({
   rpcHandler: null,
   instanceProperty: {
     writable: false,
-    value: new Function(...signature,
-      `return this["#internals"].call(${JSON.stringify(handlerId)}, ...arguments);`
-    )
+    value: new Function(...signature, [
+      `return this["#internals"].${awaitResult ? 'call' : 'cast'}`,
+      `(${JSON.stringify(handlerId)}, ...arguments);`
+    ].join(''))
   }
 });
 const localFunction = (func) => ({
@@ -173,17 +172,22 @@ const localFunction = (func) => ({
   instanceProperty: { writable: false, value: func }
 });
 
-export const ClientHandler = NestedSdkEntry((val) => {
-  const { args, body } = encodeFn(val);
-  return {
-    client: (handlerId) => localFunction(new Function(...args, body)),
-    server: (handlerId) => remoteFunction(handlerId, args),
-  };
+const Function_ = awaitResult => ({
+  Client: NestedSdkEntry((func) => {
+    const { args, body } = encodeFn(func);
+    return {
+      client: (handlerId) => localFunction(new Function(...args, body)),
+      server: (handlerId) => remoteFunction(handlerId, args, awaitResult),
+    };
+  }),
+  Server: NestedSdkEntry((func) => {
+    const { args, body } = encodeFn(func);
+    return {
+      client: (handlerId) => remoteFunction(handlerId, args, awaitResult),
+      server: (handlerId) => localFunction(func)
+    };
+  })
 });
-export const ServerHandler = NestedSdkEntry((val) => {
-  const { args, body } = encodeFn(val);
-  return {
-    client: (handlerId) => remoteFunction(handlerId, args),
-    server: (handlerId) => localFunction(val)
-  };
-});
+
+export const Func = Function_(true);
+export const Proc = Function_(false);
