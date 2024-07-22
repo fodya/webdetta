@@ -1,5 +1,5 @@
 import { RpcClient } from '../rpc/client.js';
-import { SdkInstance } from './server.js';
+import { SdkInstance } from './instance.js';
 
 const WS = (url, clientEntries) => {
   const rpc = RpcClient(url);
