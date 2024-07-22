@@ -74,7 +74,7 @@ export const SdkServer = (sdkDefinition) => {
   const clientEntries = [];
   const clientCode = rpcURL => [
     `import { RpcClient as RPC } from 'webdetta/rpc/client';`,
-    `import { SdkInstance as SDK } from 'webdetta/rpc-api/sdk';`,
+    `import { SdkInstance as SDK } from 'webdetta/sdk';`,
     `const rpc = RPC("${rpcURL}");`,
     `export default SDK(rpc, rpc.methods, ${
       obj2code(clientEntries, ['RPC', 'SDK', 'rpc'])
@@ -98,7 +98,7 @@ export const SdkServer = (sdkDefinition) => {
       
       const cli = d.client(handlerId);
       clientEntries.push({
-        path: fullpath, handlerId,
+        path: fullpath,
         instanceProperty: cli.instanceProperty,
         rpcHandler: cli.rpcHandler && {
           id: handlerId,
