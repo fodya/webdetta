@@ -119,11 +119,11 @@ export const SdkServer = (sdkDefinition) => {
   return { serverMethods, clientCode };
 }
 
-SdkServer.httpHandler = clientCode => (req, res) => {
+SdkServer.httpHandler = ({ isSecure, clientCode }) => (req, res) => {
   const url = Object.assign(new URL('http://localhost'), {
     host: req.headers.host,
     protocol: isSecure ? 'wss:' : 'ws:',
-    pathname: path
+    pathname: req.baseUrl + req.path
   });
   res.contentType('text/javascript');
   res.send(clientCode(url));
