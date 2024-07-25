@@ -43,11 +43,14 @@ const localFunction = (func) => ({
   instanceProperty: { writable: false, value: func }
 });
 
+const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const Function_ = awaitResult => ({
   Client: NestedSdkEntry((func) => {
-    const { args, body } = parseFn(func);
+    const { args, body, isAsync } = parseFn(func);
     return {
-      client: (handlerId) => localFunction(new Function(...args, body)),
+      client: (handlerId) => localFunction(
+        new (isAsync ? AsyncFunction : Function)(...args, body)
+      ),
       server: (handlerId) => remoteFunction(handlerId, args, awaitResult),
     };
   }),
