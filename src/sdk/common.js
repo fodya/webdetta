@@ -4,12 +4,12 @@ import FunctionParser from 'parse-function';
 
 const parser = FunctionParser();
 export const parseFn = val => {
-  const { args, defaults, body, isArrow } = parser.parse(val);
+  const { args, defaults, body, isArrow, isAsync } = parser.parse(val);
   if (isArrow) throw new Error('Arrow functions are not allowed.');
   const args_ = args
     .map(d => defaults[d] ? d + '=' + defaults[d] : d)
     .join(', ');
-  return { args: args_, body };
+  return { args: args_, body, isAsync };
 }
 
 const onrequest = async (methods, ctx, req, res) => {
