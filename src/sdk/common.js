@@ -12,9 +12,9 @@ parser.use((self) => (node, result) => {
   }
 });
 export const parseFn = val => {
-  const { rawArgs, body, isArrow } = parser.parse(val);
+  const { rawArgs, body, isArrow, isAsync } = parser.parse(val);
   if (isArrow) throw new Error('Arrow functions are not allowed.');
-  return { args: rawArgs, body };
+  return { args: rawArgs, body, isAsync };
 }
 
 const onrequest = async (methods, ctx, req, res) => {
