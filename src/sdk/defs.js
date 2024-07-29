@@ -64,13 +64,13 @@ const Function_ = awaitResult => ({
 });
 
 export const Func = Function_(true);
-export const Proc = Function_(false);
+export const Event = Function_(false);
 
 export const validateSdkEntry = (entry) => {
   if (!(SDK_ENTRY in entry)) {
     throw new Error([
       'SDK entries must be decorated with one of the following functions: ',
-      'Func, Proc, State.'
+      'Func, Event, State.'
     ].join(''));
   }
 }
