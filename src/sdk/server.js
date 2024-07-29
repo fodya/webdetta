@@ -4,11 +4,9 @@ import { parseFn } from './common.js';
 
 const obj2code = (obj, vars, pad='  ') => {
   if (typeof obj == 'function') {
-    const { args, body, isAsync } = parseFn(obj);
-    return (
-      `${isAsync ? 'async' : ''} function (${args})` + 
-      `{var ${vars.join(',')};${body.trim()}}`
-    );
+    const { args, body } = parseFn(obj);
+    return
+      `function (${args.join(',')}) {var ${vars.join(',')};${body.trim()}}`;
   }
   if (Array.isArray(obj))
     return `[${obj.map(d => obj2code(d, vars, pad)).join(',')}]`;
@@ -25,7 +23,7 @@ export const SdkServer = (methods) => {
   const clientEntries = [];
   const clientCodeCache = {};
   const clientCode = rpcURL => clientCodeCache[rpcURL] ??= [
-    `import SDK from 'webdetta/sdk/client';`,
+    `import SDK from "webdetta/sdk/client";`,
     `export default SDK.WS("${rpcURL}", ${obj2code(clientEntries, ['SDK'])});`
   ].join('\n');
   
@@ -78,5 +76,5 @@ SdkServer.clientCodeHttpHandler = ({
     pathname: req.baseUrl + req.path
   });
   res.contentType('text/javascript');
-  res.send(clientCode(url));
+  res.send(clientCode(url, transport));
 }

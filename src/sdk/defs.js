@@ -43,14 +43,11 @@ const localFunction = (func) => ({
   instanceProperty: { writable: false, value: func }
 });
 
-const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const Function_ = awaitResult => ({
   Client: NestedSdkEntry((func) => {
-    const { args, body, isAsync } = parseFn(func);
+    const { args, body } = parseFn(func);
     return {
-      client: (handlerId) => localFunction(
-        new (isAsync ? AsyncFunction : Function)(...args, body)
-      ),
+      client: (handlerId) => localFunction(new Function(...args, body)),
       server: (handlerId) => remoteFunction(handlerId, args, awaitResult),
     };
   }),
@@ -64,13 +61,13 @@ const Function_ = awaitResult => ({
 });
 
 export const Func = Function_(true);
-export const Event = Function_(false);
+export const Proc = Function_(false);
 
 export const validateSdkEntry = (entry) => {
   if (!(SDK_ENTRY in entry)) {
     throw new Error([
       'SDK entries must be decorated with one of the following functions: ',
-      'Func, Event, State.'
+      'Func, Proc, State.'
     ].join(''));
   }
 }

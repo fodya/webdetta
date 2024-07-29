@@ -3,13 +3,18 @@ import { RpcServer } from '../rpc/server.js';
 import FunctionParser from 'parse-function';
 
 const parser = FunctionParser();
+parser.use((self) => (node, result) => {
+  if (!Array.isArray(node.params)) return;
+  result.rawArgs = [];
+  for (const [param, i] of node.params.map((d, i) => [d, i])) {
+    const { start, end } = param.loc;
+    result.rawArgs[i] = result.value.slice(start.index, end.index);
+  }
+});
 export const parseFn = val => {
-  const { args, defaults, body, isArrow, isAsync } = parser.parse(val);
+  const { rawArgs, body, isArrow } = parser.parse(val);
   if (isArrow) throw new Error('Arrow functions are not allowed.');
-  const args_ = args
-    .map(d => defaults[d] ? d + '=' + defaults[d] : d)
-    .join(', ');
-  return { args: args_, body, isAsync };
+  return { args: rawArgs, body };
 }
 
 const onrequest = async (methods, ctx, req, res) => {
