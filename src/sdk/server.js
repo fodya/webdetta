@@ -5,8 +5,7 @@ import { parseFn } from './common.js';
 const obj2code = (obj, vars, pad='  ') => {
   if (typeof obj == 'function') {
     const { args, body } = parseFn(obj);
-    return
-      `function (${args.join(',')}) {var ${vars.join(',')};${body.trim()}}`;
+    return `function (${args.join(',')}) {var ${vars.join(',')};${body.trim()}}`;
   }
   if (Array.isArray(obj))
     return `[${obj.map(d => obj2code(d, vars, pad)).join(',')}]`;
