@@ -1,4 +1,4 @@
-import { el } from '../frameorc/index.js';
+import { el } from '../vdom/index.js';
 
 import { Adapter } from './index.js';
 export default Adapter({
