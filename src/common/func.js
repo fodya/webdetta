@@ -32,3 +32,16 @@ throttle.T = (delay, f) => {
     });
   }
 }
+
+export const isTemplateCall = args =>
+  Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
+
+export const templateCallToArray = args => {
+  if (!isTemplateCall(args)) return args;
+  let i = 0, result = [];
+  for (let part of args[0]) {
+    result.push(part);
+    if (++i < args.length) result.push(args[i]);
+  }
+  return result;
+}
