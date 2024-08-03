@@ -12,7 +12,9 @@
     "./sdk/*": "./src/sdk/*.js",
     "./common/*": "./src/common/*.js",
     "./client/*": "./src/client/*.js",
-    "./server/*": "./src/server/*.js"
+    "./server/*": "./src/server/*.js",
+    "./vdom/*": "./src/vdom/*.js",
+    "./vcss/*": "./src/vcss/*.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
