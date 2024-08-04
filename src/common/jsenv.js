@@ -3,7 +3,7 @@ try { globals = globalThis; }
 catch (e) { globals = {}; }
 
 const get = (...path) => {
-  const obj = globals;
+  let obj = globals;
   for (const k of path) {
     if (typeof obj != 'object' || obj == null) return null;
     obj = obj[k];
