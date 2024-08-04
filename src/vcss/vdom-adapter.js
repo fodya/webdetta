@@ -1,4 +1,4 @@
-import { el } from '../vdom/index.js';
+import { el } from 'webdetta/vdom';
 
 import { Adapter } from './index.js';
 export default Adapter({
