@@ -26,43 +26,43 @@ const resolveProxyOptions = safe(async (rslv, req, ...args) => {
 
 const Server = (options={}) => {
   const isSecure = ['key', 'cert', 'pfx'].some(k => k in options);
-  
+
   const app = express();
   const server = (isSecure ? https : http).createServer(options, app);
   const proxy = httpProxy.createProxyServer({ ws: true });
   const wss = WSS({ server });
-  
+
   const instance = {
     server,
-    
+
     launch: (...args) => {
       server.listen(...args);
       return instance;
     },
-    
+
     wsApi: (path, methods) => {
       const api = Api.WS(methods);
       wss.route(path, (req, ws) => api.upgrade(req, ws));
       return instance;
     },
-    
+
     httpPostApi: (path, methods) => {
       path = path.replace(/\/$/, '') + '/:name';
       const api = Api.HTTP(methods);
       app.post(path, bodyParser.json({limit: '50mb'}), api.processRequest);
       return instance;
     },
-    
+
     wsHandler: (path, handler) => {
       wss.route(path, handler);
       return instance;
     },
-    
+
     httpHandler: collectMethods((methods=['all'], path, ...args) => {
       for (const method of methods) app[method.toLowerCase()](path, ...args);
       return instance;
     }),
-    
+
     wsProxy: (path, resolve) => {
       wss.routeRaw(path, async (req, socket, head) => {
         const opts = await resolveProxyOptions(resolve, req, socket, head) ?? {};
@@ -70,7 +70,7 @@ const Server = (options={}) => {
       });
       return instance;
     },
-    
+
     httpProxy: collectMethods((methods=['all'], path, resolve) => {
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
@@ -79,25 +79,25 @@ const Server = (options={}) => {
         });
       return instance;
     }),
-    
+
     sdk: (path, methods) => {
       const { serverMethods, clientCode } = SdkServer(methods);
       const handler = SdkServer.clientCodeHttpHandler({ isSecure, clientCode });
-      instance.httpHandler.get(path, handler);
+      instance.httpHandler.get(path, cors(), handler);
       instance.wsApi(path, serverMethods);
       return instance;
     },
-    
+
     static: (path, ...dirs) => {
       for (const dir of dirs) app.use(path, express.static(dir));
       return instance;
     },
-    
+
     cors: (path, options) => {
       app.options(path, cors(options));
       return instance;
     },
-    
+
     shutdown: async () => {
       await new Promise(r => server.close(r));
     },
