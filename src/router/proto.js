@@ -8,7 +8,7 @@ export const parsePath = (routepath, pathname) => {
   if (pathname == undefined) return null;
   pathname = splitPath(pathname).map(decodeURIComponent);
   routepath = splitPath(routepath).map((v, i) => [v, i]);
-  if (pathname.length != route.length) return null;
+  if (pathname.length != routepath.length) return null;
   const params = {};
   for (const [part, i] of routepath) {
     const pathPart = pathname[i];
