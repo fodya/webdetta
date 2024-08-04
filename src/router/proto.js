@@ -60,7 +60,7 @@ const currentRoute = (routes, loc) => {
   return res;
 }
 
-const RouterInstance = (driver, routes) => {
+const Router = (routes, driver) => {
   const handlers = [];
   const listen = (h) => handlers.push(h);
 
@@ -86,7 +86,5 @@ const RouterInstance = (driver, routes) => {
     go, navigate, replace
   };
 }
-
-const Router = driver => routes => RouterInstance(driver, routes);
 
 export default Router;

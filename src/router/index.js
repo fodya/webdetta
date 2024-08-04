@@ -13,9 +13,9 @@ const locationAttachment = {
   },
 }
 
-export const HistoryRouter = ({ prefix }) => {
+export const HistoryRouter = (routes, { prefix }={}) => {
   prefix = prefix.replace(/\/$/, '');
-  return Router({
+  return Router(routes, {
     ...locationAttachment,
     go: v => window.history.go(v),
     get: () => {
@@ -31,7 +31,7 @@ export const HistoryRouter = ({ prefix }) => {
   });
 }
 
-export const HashRouter = () => Router({
+export const HashRouter = routes => Router(routes, {
   ...locationAttachment,
   go: v => window.history.go(v),
   get: () => {
