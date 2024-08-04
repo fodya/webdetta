@@ -19,6 +19,9 @@
     "./vdom/*": "./src/vdom/*.js"
   },
   "dependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-virtual": "^3.0.2",
     "body-parser": "^1.20.2",
     "bytes": "^3.1.2",
     "cors": "^2.8.5",
@@ -27,6 +30,7 @@
     "msgpackr": "^1.10.2",
     "parse-function": "^5.6.10",
     "path-to-regexp": "^6.2.2",
+    "rollup": "^4.20.0",
     "ws": "^8.17.0"
   }
 }

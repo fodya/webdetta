@@ -21,7 +21,7 @@ const obj2code = (obj, vars, pad='  ') => {
     + `\n${pad.slice(0, -2)}}`;
   return JSON.stringify(obj);
 }
-  
+
 export const SdkServer = (methods) => {
   const clientEntries = [];
   const clientCodeCache = {};
@@ -29,16 +29,16 @@ export const SdkServer = (methods) => {
     `import SDK from "webdetta/sdk/client";`,
     `export default SDK.WS("${rpcURL}", ${obj2code(clientEntries, ['SDK'])});`
   ].join('\n');
-  
+
   const serverMethods = {};
   const serverEntries = [];
-  
+
   for (const [key, entry] of Object.entries(methods)) {
     validateSdkEntry(entry);
     for (const d of entry.list) {
       const fullpath = [key, ...d.path];
       const handlerId = fullpath.join('.');
-      
+
       const cli = d.client(handlerId);
       clientEntries.push({
         path: fullpath,
@@ -48,7 +48,7 @@ export const SdkServer = (methods) => {
           value: cli.rpcHandler
         },
       });
-      
+
       const srv = d.server(handlerId);
       serverEntries.push({
         path: fullpath,
@@ -64,20 +64,35 @@ export const SdkServer = (methods) => {
     }
   }
   SdkInstance(null, serverMethods, serverEntries);
-  
+
   return { serverMethods, clientCode };
 }
 
+import {rollup} from 'rollup';
+import PluginVirtual from '@rollup/plugin-virtual';
+import NodeResolve from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+const bundleCode = async code => {
+  const bundle = await rollup({
+    input: 'code',
+    plugins: [PluginVirtual({ code }), NodeResolve(), terser()],
+  });
+  const result = await bundle.generate({ format: 'es' });
+  return result.output[0].code;
+}
+
+const bundledCode = {};
 SdkServer.clientCodeHttpHandler = ({
   isSecure,
   clientCode,
   transport='ws'
-}) => (req, res) => {
+}) => async (req, res) => {
   const url = Object.assign(new URL('http://localhost'), {
     host: req.headers.host,
     protocol: isSecure ? 'wss:' : 'ws:',
     pathname: req.baseUrl + req.path
   });
+  const code = clientCode(url, transport);
   res.contentType('text/javascript');
-  res.send(clientCode(url, transport));
+  res.send(bundledCode[[url, transport]] ??= await bundleCode(code));
 }
