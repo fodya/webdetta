@@ -14,7 +14,7 @@ const RouterVdom = Component((router) => {
   const saved = h.ref({})();
   saved[r.route.path] = r.route.value(r.params);
 
-  return Fragment(Object.entries(saved).map((routepath, page) => {
+  return Fragment(Object.entries(saved).map(([routepath, page]) => {
     const visible = r.route.path == routepath;
     return page(
       el.key(routepath),
