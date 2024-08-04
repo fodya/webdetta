@@ -1,7 +1,7 @@
 import { operator, hook } from './operators.js';
 import { Fragment, Element, append, attach } from './vdom.js';
-import { throttle } from 'webdetta/common/func';
-import { Builder } from 'webdetta/common/builder';
+import { throttle } from '../common/func.js';
+import { Builder } from '../common/builder.js';
 
 const CompData = (ctx) => ({
   stateI: 0,

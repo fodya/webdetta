@@ -1,5 +1,5 @@
-import { Builder } from 'webdetta/common/builder';
-import { isTemplateCall, templateCallToArray } from 'webdetta/common/func';
+import { Builder } from '../common/builder.js';
+import { isTemplateCall, templateCallToArray } from '../common/func.js';
 
 const unwrap = (x) => (typeof x === 'function') ? unwrap(x()) : x;
 
