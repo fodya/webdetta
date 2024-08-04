@@ -72,11 +72,11 @@ const RouterInstance = (driver, routes) => {
   const detach = () => driver.detach(update);
 
   const go = v => driver.go(v);
-  const navigate = (route, params) =>
-    driver.set({ url: href(route, params), replace: false });
+  const navigate = (key, params) =>
+    driver.set({ url: href(routes[key].route, params), replace: false });
 
-  const replace = (route, params) =>
-    driver.set({ url: href(route, params), replace: true });
+  const replace = (key, params) =>
+    driver.set({ url: href(routes[key].route, params), replace: true });
 
   const route = () => currentRoute(routes, driver.get());
 
