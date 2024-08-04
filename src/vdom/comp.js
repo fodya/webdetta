@@ -106,7 +106,7 @@ const Component = Object.assign((render) => (...args) =>
   componentInstance(null, render, args, [])
 , {
   ctx: Ctx,
-  toggleLifecycle: (isAlive) => ({
+  toggleEffectsLifecycle: (isAlive) => ({
     [componentOperator]: true,
     prepatch: vnode => vnode.data.comp.isAlive = isAlive,
     postpatch: vnode => traverseVnodeEffects(vnode, (eff) => {

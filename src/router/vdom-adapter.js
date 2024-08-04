@@ -18,7 +18,7 @@ const RouterVdom = Component((router) => {
     const visible = r.route.path == routepath;
     return page(
       el.key(routepath),
-      Component.toggleLifecycle(visible),
+      Component.toggleEffectsLifecycle(visible),
       !visible && el.style.display('none')
     );
   }));
