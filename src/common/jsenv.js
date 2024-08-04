@@ -1,21 +1,37 @@
+let globals;
+try { globals = globalThis; }
+catch (e) { globals = {}; }
+
+const get = (...path) => {
+  const obj = globals;
+  for (const k of path) {
+    if (typeof obj != 'object' || obj == null) return null;
+    obj = obj[k];
+  }
+  return obj;
+}
+
 export default (
-  typeof window?.document != null
+  get('window', 'document') != null
   ? 'browser' :
 
-  process?.versions?.node != null
+  get('process', 'versions', 'node') != null
   ? 'node' :
 
-  // https://github.com/jsdom/jsdom/issues/1537#issuecomment-229405327
-  window?.name === 'nodejs' ||
-  (navigator?.userAgent ?? '').includes('Node.js') ||
-  (navigator?.userAgent ?? '').includes('jsdom')
-  ? 'jsdom' :
+  get('self', 'constructor', 'name') === 'DedicatedWorkerGlobalScope'
+  ? 'webworker' :
 
-  Deno?.version?.deno != null
+  // https://github.com/jsdom/jsdom/issues/1537#issuecomment-229405327
+  get('window', 'name') === 'nodejs' ||
+  ['Node.js', 'jsdom'].some(d =>
+    String(get('navigator', 'userAgent') ?? '').includes(d)
+  ) ? 'jsdom' :
+
+  get('Deno', 'version', 'deno') != null
   ? 'deno' :
 
   // https://bun.sh/guides/util/detect-bun
-  process?.versions?.bun != null
+  get('process', 'versions', 'bun') != null
   ? 'bun' :
 
   undefined
