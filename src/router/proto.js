@@ -4,13 +4,13 @@ const splitPath = path =>
 const parsePathParam = part =>
   part.startsWith(':') ? part.slice(1) : null;
 
-export const parsePath = (route, pathname) => {
+export const parsePath = (routepath, pathname) => {
   if (pathname == undefined) return null;
   pathname = splitPath(pathname).map(decodeURIComponent);
-  route = splitPath(route).map((v, i) => [v, i]);
+  routepath = splitPath(routepath).map((v, i) => [v, i]);
   if (pathname.length != route.length) return null;
   const params = {};
-  for (const [part, i] of route) {
+  for (const [part, i] of routepath) {
     const pathPart = pathname[i];
     const key = parsePathParam(part);
     if (key) params[key] = pathPart;
@@ -19,9 +19,9 @@ export const parsePath = (route, pathname) => {
   return params;
 };
 
-export const makePath = (route, params) => {
+export const makePath = (routepath, params) => {
   const path = [];
-  for (const part of splitPath(route)) {
+  for (const part of splitPath(routepath)) {
     const key = parsePathParam(part);
     if (key) {
       path.push(params[key]);
@@ -32,8 +32,9 @@ export const makePath = (route, params) => {
   return path.join('/');
 };
 
-export const href = (route, params={}) => (
-  '/' + makePath(route, params) + '?' + new URLSearchParams(Object.fromEntries(
+export const href = (routepath, params={}) => (
+  '/' + makePath(routepath, params) +
+  '?' + new URLSearchParams(Object.fromEntries(
     Object.entries(params).filter(([k, v]) => v !== undefined && v !== null)
   ))
 ).replace(/\?$/, '');
@@ -43,16 +44,14 @@ const currentRoute = (routes, loc) => {
     new URLSearchParams(loc.search).entries()
   );
   const res = {
-    key: null,
     route: null,
-    value: null,
     params: search,
     location: loc
   };
-  for (const [key, [route, value]] of Object.entries(routes)) {
-    const params = parsePath(route, loc.pathname);
+  for (const route of Object.entries(routes)) {
+    const params = parsePath(route.path, loc.pathname);
     if (params) {
-      Object.assign(res, { key, route, value });
+      res.route = route;
       Object.assign(res.params, params);
       break;
     }
@@ -61,6 +60,13 @@ const currentRoute = (routes, loc) => {
 }
 
 const Router = (routes, driver) => {
+  routes = {...routes};
+  for (const [key, arr] of Object.entries(routes)) {
+    if (!Array.isArray(arr) || arr.length != 2 || typeof arr[0] != 'string')
+      throw new Error('Invalid route');
+    routes[key] = { key, path: arr[0], value: arr[1] }
+  }
+
   const handlers = [];
   const listen = (h) => handlers.push(h);
 
@@ -73,16 +79,15 @@ const Router = (routes, driver) => {
 
   const go = v => driver.go(v);
   const navigate = (key, params) =>
-    driver.set({ url: href(routes[key].route, params), replace: false });
-
+    driver.set({ url: href(routes[key].path, params), replace: false });
   const replace = (key, params) =>
-    driver.set({ url: href(routes[key].route, params), replace: true });
+    driver.set({ url: href(routes[key].path, params), replace: true });
 
-  const route = () => currentRoute(routes, driver.get());
+  const current = () => currentRoute(routes, driver.get());
 
   return {
     attach, detach, listen,
-    routes, currentRoute: route,
+    routes, current,
     go, navigate, replace
   };
 }

@@ -1,7 +1,7 @@
 import { h, el, Fragment, Component } from '../vdom/index.js';
 
 const RouterVdom = Component((router) => {
-  const r = router.currentRoute();
+  const r = router.current();
   RouterVdom.ctx(router);
 
   const redraw = h.redraw();
@@ -9,15 +9,15 @@ const RouterVdom = Component((router) => {
     router.listen(redraw);
     router.attach();
   });
-  if (!r.route || !r.value) return el.Div();
+  if (!r.route) return el.Div();
 
   const saved = h.ref({})();
-  saved[r.route] = r.value(r.params);
+  saved[r.route.path] = r.route.value(r.params);
 
-  return Fragment(Object.entries(saved).map((route, page) => {
-    const visible = r.route == route;
+  return Fragment(Object.entries(saved).map((routepath, page) => {
+    const visible = r.route.path == routepath;
     return page(
-      el.key(route),
+      el.key(routepath),
       Component.toggleLifecycle(visible),
       !visible && el.style.display('none')
     );
