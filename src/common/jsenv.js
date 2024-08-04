@@ -1,6 +1,6 @@
 let globals;
 try { globals = globalThis; }
-catch (e) { globals = {}; }
+catch (e) { globals = this; }
 
 const get = (...path) => {
   let obj = globals;
@@ -23,9 +23,9 @@ export default (
 
   // https://github.com/jsdom/jsdom/issues/1537#issuecomment-229405327
   get('window', 'name') === 'nodejs' ||
-  ['Node.js', 'jsdom'].some(d =>
-    String(get('navigator', 'userAgent') ?? '').includes(d)
-  ) ? 'jsdom' :
+  ['Node.js', 'jsdom']
+    .some(d => String(get('navigator', 'userAgent') ?? '').includes(d))
+  ? 'jsdom' :
 
   get('Deno', 'version', 'deno') != null
   ? 'deno' :
