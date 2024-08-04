@@ -39,16 +39,12 @@ export const href = (routepath, params={}) => (
   ))
 ).replace(/\?$/, '');
 
-const currentRoute = (routes, loc) => {
+const currentRoute = (routesList, loc) => {
   const search = Object.fromEntries(
     new URLSearchParams(loc.search).entries()
   );
-  const res = {
-    route: null,
-    params: search,
-    location: loc
-  };
-  for (const route of Object.entries(routes)) {
+  const res = { route: null, params: search, location: loc };
+  for (const route of routesList) {
     const params = parsePath(route.path, loc.pathname);
     if (params) {
       res.route = route;
@@ -83,7 +79,7 @@ const Router = (routes, driver) => {
   const replace = (key, params) =>
     driver.set({ url: href(routes[key].path, params), replace: true });
 
-  const current = () => currentRoute(routes, driver.get());
+  const current = () => currentRoute(Object.values(routes), driver.get());
 
   return {
     attach, detach, listen,
