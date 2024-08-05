@@ -31,5 +31,5 @@ export const importAsset = (tagName, attrs) => new Promise((resolve) => {
 const canvasCtx = document.createElement('canvas').getContext('2d');
 export const colorToHex = (colorStr) => {
   canvasCtx.fillStyle = colorStr;
-  return ctx.fillStyle;
+  return canvasCtx.fillStyle;
 }
