@@ -22,9 +22,9 @@ export const effect = (args, func) => {
 }
 
 export const redraw = () => {
-  const st = ref({ redraw: null });
-  appendToComponent(operator((_, ctx) => { st.redraw = ctx.refresh; }));
-  return () => st.redraw();
+  let refresh;
+  appendToComponent(operator((_, ctx) => (refresh = ctx.refresh)));
+  return () => refresh?.();
 }
 
 export const memo = (args, func) => {
@@ -62,7 +62,8 @@ export const loader = (initial, args, func) => {
   return [value, load, status_];
 }
 
-export const event = (target, events, handler) => effect([], () => {
-  events.forEach(ev => target.addEventListener(ev, handler));
-  return () => events.forEach(ev => target.removeEventListener(ev, handler));
-});
+export const event = (target, events, handler) =>
+  effect([target, events, handler], () => {
+    events.forEach(ev => target.addEventListener(ev, handler));
+    return () => events.forEach(ev => target.removeEventListener(ev, handler));
+  });
