@@ -117,7 +117,7 @@ const Component = Object.assign((render) => (...args) =>
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(
-      hook.postpatch(() => resolve(body)),
+      hook.insert.postpatch(() => resolve(body)),
       render
     ));
   }
