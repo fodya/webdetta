@@ -9,6 +9,7 @@
   "exports": {
     "./*": "./src/*/index.js",
     "./common/*": "./src/common/*.js",
+    "./i18n/*": "./src/i18n/*.js",
     "./router/*": "./src/router/*.js",
     "./rpc/*": "./src/rpc/*.js",
     "./sdk/*": "./src/sdk/*.js",
