@@ -27,3 +27,9 @@ export const importAsset = (tagName, attrs) => new Promise((resolve) => {
   el.onload = () => (resolve(el), el.remove());
   el.onerror = () => (resolve(null), el.remove());
 });
+
+const canvasCtx = document.createElement('canvas').getContext('2d');
+export const colorToHex = (colorStr) => {
+  canvasCtx.fillStyle = colorStr;
+  return ctx.fillStyle;
+}
