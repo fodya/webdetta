@@ -26,7 +26,7 @@ const Val = (arg) => {
 const ctxGet = (comp, k) => comp &&
   (comp.ctx.get(k) ?? ctxGet(comp.parent?.data?.comp, k));
 const ctxSet = (comp, k, v) => (comp.ctx.set(k, v), v);
-const Ctx = () => {
+const Context = () => {
   if (comp) throw new Error('Cannot create context while in component function');
   const k = Math.random().toString(16).slice(2, 12);
   return (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
@@ -105,7 +105,7 @@ const componentOperator = Symbol('Component.operator');
 const Component = Object.assign((render) => (...args) =>
   componentInstance(null, render, args, [])
 , {
-  ctx: Ctx,
+  Context: Context,
   toggleEffectsLifecycle: (isAlive) => ({
     [componentOperator]: true,
     prepatch: vnode => vnode.data.comp.isAlive = isAlive,

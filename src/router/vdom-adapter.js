@@ -23,6 +23,6 @@ const RouterVdom = Component((router) => {
     );
   }));
 });
-RouterVdom.ctx = Component.ctx();
+RouterVdom.ctx = Component.Context();
 
 export default RouterVdom;
