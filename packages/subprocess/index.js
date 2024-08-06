@@ -17,8 +17,8 @@ const subprocess = (...argv) => {
     options = argv.at(-1);
     argv = argv.slice(0, -1);
   }
-  const proc = child_process.spawn(argv[0], argv.slice(1), options);
 
+  const proc = child_process.spawn(argv[0], argv.slice(1), options);
   const instance = {
     proc,
     stdout: handler => {
@@ -33,14 +33,14 @@ const subprocess = (...argv) => {
 
   const promise = new Promise((resolve, reject) => {
     proc.on('error', reject)
-    proc.on('close', code => {
-      if (code === 0) resolve(proc);
-      else {
-        const err = new Error(`child exited with code ${code}`)
-        err.code = code;
-        reject(err);
-      }
-    })
+    proc.on('close', code =>
+      code === 0
+      ? resolve(proc)
+      : reject(Object.assign(
+        new Error(`child exited with code ${code}`),
+        { code }
+      ))
+    )
   });
   return new Proxy(promise, {
     get: (target, key) => {
