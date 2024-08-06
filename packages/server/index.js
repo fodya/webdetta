@@ -88,8 +88,12 @@ const Server = (options={}) => {
       return instance;
     },
 
-    static: (path, ...dirs) => {
-      for (const dir of dirs) app.use(path, express.static(dir));
+    static: (path, ...args) => {
+      const dirs = [], middleware = [];
+      for (const arg of args)
+        (typeof arg == 'string' ? dirs : middleware).push(arg);
+      for (const dir of dirs)
+        app.use(path, ...middleware, express.static(dir));
       return instance;
     },
 
