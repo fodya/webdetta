@@ -21,17 +21,11 @@ const subprocess = (...argv) => {
   const proc = child_process.spawn(argv[0], argv.slice(1), options);
   const instance = {
     proc,
-    stdout: handler => {
-      pipe(proc.stdout, handler);
-      return instance;
-    },
-    stderr: handler => {
-      pipe(proc.stderr, handler);
-      return instance;
-    }
+    stdout: handler => (pipe(proc.stdout, handler), proxy),
+    stderr: handler => (pipe(proc.stderr, handler), proxy)
   }
 
-  const promise = new Promise((resolve, reject) => {
+  const proxy = new Proxy(new Promise((resolve, reject) => {
     proc.on('error', reject)
     proc.on('close', code =>
       code === 0
@@ -41,14 +35,15 @@ const subprocess = (...argv) => {
         { code }
       ))
     )
-  });
-  return new Proxy(promise, {
+  }), {
     get: (target, key) => {
       if (key in instance) return instance[key];
       const val = target[key];
       return typeof val == 'function' ? val.bind(target) : val;
     }
   });
+
+  return proxy;
 }
 
 export default subprocess;
