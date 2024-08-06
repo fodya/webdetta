@@ -1,9 +1,6 @@
 */**/.git
-tmp
-log
-node_modules
-scripts/output
 dist/*
-build/*
+node_modules
 package-lock.json
 .env
+_
