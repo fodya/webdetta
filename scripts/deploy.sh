@@ -11,5 +11,5 @@ ssh $SSH bash <<eof
 eof
 
 export DOCKER_HOST="ssh://$SSH"
-docker compose --file $COMPOSE_FILE -p $COMPOSE_PROJECT_NAME up --build -d
+docker compose --file $DOCKER_COMPOSE_FILE -p $COMPOSE_PROJECT_NAME up --build -d
 docker ps
