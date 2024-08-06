@@ -1,9 +1,9 @@
 import child_process from 'child_process';
 import EventEmitter from 'events';
 
-const isReadableStream = function(obj) {
-  return obj instanceof EventEmitter && typeof obj.read === 'function';
-}
+const isReadableStream = (obj) =>
+  obj instanceof EventEmitter &&
+  typeof obj.read === 'function';
 
 const pipe = (stream, handler) => {
   if (!stream) return;
