@@ -110,6 +110,7 @@ export function RpcClient(url, pulse=60_000) {
   }
 
   return Object.assign(self, {
+    get ws() { return ws; },
     isOpen: rVal(false),
     onClose: Chain(),
     connect,

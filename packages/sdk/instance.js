@@ -30,7 +30,7 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
   const instance = {};
 
   if (rpcInstance) defineProperty(instance, ['#internals'], {
-    value: rpcInstance,
+    value: { state: {}, rpc: rpcInstance },
     writable: false
   });
 

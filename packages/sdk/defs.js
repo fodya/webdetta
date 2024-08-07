@@ -33,7 +33,7 @@ const remoteFunction = (handlerId, signature, awaitResult) => ({
   instanceProperty: {
     writable: false,
     value: new Function(...signature, [
-      `return this["#internals"].${awaitResult ? 'call' : 'cast'}`,
+      `return this["#internals"].rpc.${awaitResult ? 'call' : 'cast'}`,
       `(${JSON.stringify(handlerId)}, ...arguments);`
     ].join(''))
   }
@@ -44,7 +44,7 @@ const localFunction = (func) => ({
 });
 const stateValue = (handlerId, initial, sync) => {
   const init = [
-    `const V = this["#internals"]["#vals"] ??= {};`,
+    `const V = this["#internals"].state ??= {};`,
     `const H = ${JSON.stringify(handlerId)};`,
     `if (!(H in V)) V[H] = ${JSON.stringify(initial)};`,
   ].join('');
@@ -56,7 +56,7 @@ const stateValue = (handlerId, initial, sync) => {
       get: new Function(init + `return V[H];`),
       set: new Function('value', (
         (init + `V[H] = value;`) +
-        (!sync ? '' : `this["#internals"].cast(H, value);`)
+        (!sync ? '' : `this["#internals"].rpc.cast(H, value);`)
       )),
     }
   };
