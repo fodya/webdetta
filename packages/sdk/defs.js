@@ -92,12 +92,12 @@ export const Func = Function_(true);
 export const Event = Function_(false);
 export const State = {
   Client: SdkEntry((initial) => ({
-    client: stateValue(handlerId, initial, false),
+    client: (handlerId) => stateValue(handlerId, initial, false),
     server: null
   })),
   Server: SdkEntry((initial) => ({
     client: null,
-    server: stateValue(handlerId, initial, false)
+    server: (handlerId) => stateValue(handlerId, initial, false)
   })),
   Sync: SdkEntry((initial) => ({
     client: (handlerId) => stateValue(handlerId, initial, true),
