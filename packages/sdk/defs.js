@@ -46,7 +46,7 @@ const stateValue = (handlerId, initial, sync) => {
   const initval = [
     `const V = this["#internals"]["#vals"] ??= {};`,
     `const H = ${JSON.stringify(handlerId)};`,
-    `if (!(H in V)) V[H] = JSON.parse(${JSON.stringify(initial)});`,
+    `if (!(H in V)) V[H] = ${JSON.stringify(initial)};`,
   ];
   return {
     rpcHandler: !sync ? null : new Function('...a', [
