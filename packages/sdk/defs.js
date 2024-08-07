@@ -43,27 +43,21 @@ const localFunction = (func) => ({
   instanceProperty: { writable: false, value: func }
 });
 const stateValue = (handlerId, initial, sync) => {
-  const initval = [
+  const init = [
     `const V = this["#internals"]["#vals"] ??= {};`,
     `const H = ${JSON.stringify(handlerId)};`,
     `if (!(H in V)) V[H] = ${JSON.stringify(initial)};`,
-  ];
+  ].join('');
   return {
-    rpcHandler: !sync ? null : new Function('...a', [
-      ...initval,
-      `return a.length > 0 ? (V[H] = a[0]) : V[H];`
-    ].join('')),
+    rpcHandler: !sync ? null : new Function('...a',
+      init + `return a.length > 0 ? (V[H] = a[0]) : V[H];`
+    ),
     instanceProperty: {
-      get: new Function([
-        ...initval,
-        `return V[H];`
-      ].join('')),
-      set: new Function('value', [
-        ...initval,
-        `V[H] = value;`,
-        !sync ? '' :
-        `this["#internals"].cast(${JSON.stringify(handlerId)}, value);`
-      ].join('')),
+      get: new Function(init + `return V[H];`),
+      set: new Function('value', (
+        (init + `V[H] = value;`) +
+        (!sync ? '' : `this["#internals"].cast(H, value);`)
+      )),
     }
   };
 }
