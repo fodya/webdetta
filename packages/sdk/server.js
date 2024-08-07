@@ -1,4 +1,4 @@
-import { validateSdkEntry } from './defs.js';
+import { parseSdkDefinition } from './defs.js';
 import { SdkInstance } from './instance.js';
 import { parseFn } from './common.js';
 
@@ -33,10 +33,9 @@ export const SdkServer = (methods) => {
   const serverMethods = {};
   const serverEntries = [];
 
-  for (const [key, entry] of Object.entries(methods)) {
-    validateSdkEntry(entry);
+  for (const [keypath, entry] of parseSdkDefinition(methods)) {
     for (const d of entry.list) {
-      const fullpath = [key, ...d.path];
+      const fullpath = [...keypath, ...d.path];
       const handlerId = fullpath.join('.');
 
       const cli = d?.client?.(handlerId);
