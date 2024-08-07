@@ -21,7 +21,7 @@ const defineProperty = (instance, path, descriptor) => {
   }
   if ('set' in descriptor) {
     const set_ = bind(set);
-    descr.set = () => bind(set_());
+    descr.set = (v) => bind(set_(v));
   }
   Object.defineProperty(obj, path.at(-1), descr);
 }

@@ -51,7 +51,6 @@ const stateValue = (handlerId, initial, sync) => {
   return {
     rpcHandler: !sync ? null : new Function('...a', [
       ...initval,
-      `console.log(this);console.log(a);`,
       `return a.length > 0 ? (V[H] = a[0]) : V[H];`
     ].join('')),
     instanceProperty: {
