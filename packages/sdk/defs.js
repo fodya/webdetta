@@ -94,7 +94,7 @@ export const State = {
       instanceProperty: { writable: false, value: initial }
     }),
     server: null
-  }),
+  })),
   Server: SdkEntry((initial) => ({
     client: null,
     server: (handlerId) => ({
@@ -104,7 +104,7 @@ export const State = {
         value: tructuredClone(initial)
       }
     })
-  }),
+  })),
   Sync: SdkEntry((initial) => ({
     client: (handlerId) => sharedValue(handlerId, initial),
     server: (handlerId) => sharedValue(handlerId, initial)
