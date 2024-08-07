@@ -64,8 +64,7 @@ export function RpcClient(url, pulse=60_000) {
     ws.onclose = null;
     connPromise = undefined;
     clearTimeout(to);
-    instance.isOpen?.(false);
-    instance.onClose?.();
+    isOpen(false);
     closePromiseResolve?.();
     abort(e);
   }
@@ -74,7 +73,7 @@ export function RpcClient(url, pulse=60_000) {
 
   function connect() {
     return connPromise ??= new Promise((resolve, reject) => {
-      instance.isOpen?.(undefined); // connecting...
+      isOpen(undefined); // connecting...
       ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
       ws.onopen = async (e) => {
@@ -83,7 +82,7 @@ export function RpcClient(url, pulse=60_000) {
         // standard calls
         connPromise = Promise.resolve(ws);
         closePromise = new Promise(ok => closePromiseResolve = ok);
-        instance.isOpen?.(true);
+        isOpen(true);
         resolve(ws);
         kick();
       };
@@ -92,19 +91,27 @@ export function RpcClient(url, pulse=60_000) {
         handleClosing(ws, e);
       };
       ws.onmessage = (e) => {
+        lastMessage(e);
         kick();
         if (e.data?.byteLength > 0) process(instance, e.data);
       };
       ws.onerror = (e) => {
+        lastError(e);
         reject(e.error);
       };
     });
   }
 
+  const isOpen = rVal(false);
+  const lastMessage = rVal();
+  const lastError = rVal();
+
   const instance = {
     methods: {},
     get ws() { return ws; },
-    isOpen: rVal(false),
+    onOpen: isOpen.on,
+    onMessage: lastMessage.on,
+    onError: lastError.on,
     connect,
     close: () => (ws?.close(), closePromise),
     cast: (target, ...args) => connect().then((ws) => cast(target, ...args)),
