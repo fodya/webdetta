@@ -15,11 +15,11 @@ const defineProperty = (instance, path, descriptor) => {
   if ('writable' in descriptor) {
     descr.writable = writable;
   }
-  if ('get' in descriptor) {
+  if (descriptor.get) {
     const get_ = bind(get);
     descr.get = () => bind(get_());
   }
-  if ('set' in descriptor) {
+  if (descriptor.set) {
     const set_ = bind(set);
     descr.set = (v) => bind(set_(v));
   }
