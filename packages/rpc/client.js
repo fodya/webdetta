@@ -55,6 +55,7 @@ export function RpcClient(url, pulse=60_000) {
     if (ws.readyState === WebSocket.OPEN) {
       kick();
       ws.send(data);
+      lastSent(data);
     }
   }
   const { process, cast, call, abort } = Proto(send, () => instance.methods);
@@ -105,12 +106,14 @@ export function RpcClient(url, pulse=60_000) {
   const isOpen = rVal(false);
   const lastMessage = rVal();
   const lastError = rVal();
+  const lastSent = rVal();
 
   const instance = {
     methods: {},
     get ws() { return ws; },
     onOpen: isOpen.on,
     onMessage: lastMessage.on,
+    onSend: lastSent.on,
     onError: lastError.on,
     connect,
     close: () => (ws?.close(), closePromise),
