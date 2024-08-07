@@ -3,7 +3,7 @@
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/client.js
 
 import { Proto } from "./proto.js";
-import { Chain, rVal } from "../common/chain.js";
+import { rVal } from "../common/chain.js";
 
 const normUrl = (s) => {
   let u = new URL(s, globalThis.document?.location ?? s);
@@ -21,13 +21,6 @@ export function genKey(len=32) {
 }
 
 globalThis.localStorage ??= {};
-
-export function assignUid(client, key, remoteMethod, len=32) {
-  client.isOpen.on(async (state) => {
-    if (state)
-      await client.call(remoteMethod, localStorage[key] ??= genKey(len));
-  });
-}
 
 export function RpcClient(url, pulse=60_000) {
   // `pulse` is the minimum throughput. The default is one frame per minute.
@@ -112,7 +105,6 @@ export function RpcClient(url, pulse=60_000) {
   return Object.assign(self, {
     get ws() { return ws; },
     isOpen: rVal(false),
-    onClose: Chain(),
     connect,
     close() {
       ws?.close();
