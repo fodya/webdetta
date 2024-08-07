@@ -57,16 +57,15 @@ export function RpcClient(url, pulse=60_000) {
       ws.send(data);
     }
   }
-  const self = { methods: {} };
-  const { process, cast, call, abort } = Proto(send, () => self.methods);
+  const { process, cast, call, abort } = Proto(send, () => instance.methods);
 
   function handleClosing(ws, e) {
     // take care to avoid race conditions with stale websockets
     ws.onclose = null;
     connPromise = undefined;
     clearTimeout(to);
-    self.isOpen?.(false);
-    self.onClose?.();
+    instance.isOpen?.(false);
+    instance.onClose?.();
     closePromiseResolve?.();
     abort(e);
   }
@@ -75,7 +74,7 @@ export function RpcClient(url, pulse=60_000) {
 
   function connect() {
     return connPromise ??= new Promise((resolve, reject) => {
-      self.isOpen?.(undefined); // connecting...
+      instance.isOpen?.(undefined); // connecting...
       ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
       ws.onopen = async (e) => {
@@ -84,7 +83,7 @@ export function RpcClient(url, pulse=60_000) {
         // standard calls
         connPromise = Promise.resolve(ws);
         closePromise = new Promise(ok => closePromiseResolve = ok);
-        self.isOpen?.(true);
+        instance.isOpen?.(true);
         resolve(ws);
         kick();
       };
@@ -94,7 +93,7 @@ export function RpcClient(url, pulse=60_000) {
       };
       ws.onmessage = (e) => {
         kick();
-        if (e.data?.byteLength > 0) process(self, e.data);
+        if (e.data?.byteLength > 0) process(instance, e.data);
       };
       ws.onerror = (e) => {
         reject(e.error);
@@ -102,16 +101,16 @@ export function RpcClient(url, pulse=60_000) {
     });
   }
 
-  return Object.assign(self, {
+  const instance = {
+    methods: {},
     get ws() { return ws; },
     isOpen: rVal(false),
     connect,
-    close() {
-      ws?.close();
-      return closePromise;
-    },
+    close: () => (ws?.close(), closePromise),
     cast: (target, ...args) => connect().then((ws) => cast(target, ...args)),
     call: (target, ...args) => connect().then((ws) => call(target, ...args)),
-  });
+  };
+
+  return instance;
 }
 
