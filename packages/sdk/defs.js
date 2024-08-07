@@ -2,12 +2,12 @@ import { parseFn } from './common.js';
 
 const traverseSdkObject = (val, path=[], res=[]) => {
   if (typeof val == 'object')
-    for (const [k, v] of Object.entries(val)) 
+    for (const [k, v] of Object.entries(val))
       traverseSdkObject(v, [...path, k], res);
   else if (typeof val == 'function')
     res.push({ path: path, val });
   else
-    throw new Error([ 
+    throw new Error([
       'The value must be a function ',
       'or a nested object containing a collection of functions.'
     ].join(''));
@@ -42,6 +42,28 @@ const localFunction = (func) => ({
   rpcHandler: func,
   instanceProperty: { writable: false, value: func }
 });
+const sharedValue = (handlerId, initial) => {
+  const initval = [
+    `const V = this["#internals"]['#vals'] ??= {};`,
+    `const H = ${JSON.stringify(handlerId)};`,
+    `if (!(H in V)) V[H] = JSON.parse(${JSON.stringify(initial)});`,
+  ];
+  return {
+    rpcHandler: new Function('...a', [
+      ...initval,
+      `return a.length > 0 ? (V[H] = a[0]) : V[H];`
+    ].join('')),
+    instanceProperty: {
+      get: new Function([
+        ...initval,
+        `return V[H];`
+      ].join('')),
+      set: new Function('value', [
+        `this["#internals"].cast(${JSON.stringify(handlerId)}, value);`
+      ].join('')),
+    }
+  };
+}
 
 const AsyncFunction = (async () => {}).constructor;
 const Function_ = awaitResult => ({
@@ -65,6 +87,29 @@ const Function_ = awaitResult => ({
 
 export const Func = Function_(true);
 export const Event = Function_(false);
+export const State = {
+  Client: SdkEntry((initial) => ({
+    client: (handlerId) => ({
+      rpcHandler: null,
+      instanceProperty: { writable: false, value: initial }
+    }),
+    server: null
+  }),
+  Server: SdkEntry((initial) => ({
+    client: null,
+    server: (handlerId) => ({
+      rpcHandler: null,
+      instanceProperty: {
+        writable: false,
+        value: tructuredClone(initial)
+      }
+    })
+  }),
+  Sync: SdkEntry((initial) => ({
+    client: (handlerId) => sharedValue(handlerId, initial),
+    server: (handlerId) => sharedValue(handlerId, initial)
+  })
+};
 
 export const validateSdkEntry = (entry) => {
   if (!(SDK_ENTRY in entry)) {

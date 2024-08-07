@@ -39,8 +39,8 @@ export const SdkServer = (methods) => {
       const fullpath = [key, ...d.path];
       const handlerId = fullpath.join('.');
 
-      const cli = d.client(handlerId);
-      clientEntries.push({
+      const cli = d?.client?.(handlerId);
+      if (cli) clientEntries.push({
         path: fullpath,
         instanceProperty: cli.instanceProperty,
         rpcHandler: cli.rpcHandler && {
@@ -49,8 +49,8 @@ export const SdkServer = (methods) => {
         },
       });
 
-      const srv = d.server(handlerId);
-      serverEntries.push({
+      const srv = d?.server?.(handlerId);
+      if (srv) serverEntries.push({
         path: fullpath,
         instanceProperty: srv.instanceProperty,
         rpcHandler: srv.rpcHandler && {

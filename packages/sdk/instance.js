@@ -3,7 +3,7 @@ const defineProperty = (instance, path, descriptor) => {
 
   let obj = instance;
   for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
-  
+
   let { value, get, set, writable } = descriptor;
   const descr = {
     configurable: false,
@@ -28,7 +28,7 @@ const defineProperty = (instance, path, descriptor) => {
 
 export const SdkInstance = (rpcInstance, methods, entries) => {
   const instance = {};
-  
+
   if (rpcInstance) defineProperty(instance, ['#internals'], {
     value: rpcInstance,
     writable: false
@@ -36,9 +36,9 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
 
   for (const { path, rpcHandler, instanceProperty } of entries) {
     if (rpcHandler && methods) methods[rpcHandler.id] = rpcHandler.value;
-    defineProperty(instance, path, instanceProperty);
+    if (instanceProperty) defineProperty(instance, path, instanceProperty);
   }
-  
+
   Object.preventExtensions(instance);
   return instance;
 }
