@@ -57,7 +57,8 @@ const syncValue = (handlerId, initial, allowRead, allowWrite) => {
       get: new Function(vars + init + `return V[H];`),
       set: !allowWrite ? null : new Function('value', (
         vars + `this["#internals"].rpc.cast(H, V[H] = value);`
-      ))
+      )),
+      writable: allowWrite,
     }
   };
 }
