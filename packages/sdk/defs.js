@@ -108,7 +108,7 @@ export const State = {
   Sync: SdkEntry((initial) => ({
     client: (handlerId) => sharedValue(handlerId, initial),
     server: (handlerId) => sharedValue(handlerId, initial)
-  })
+  }))
 };
 
 export const validateSdkEntry = (entry) => {
