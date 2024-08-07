@@ -42,21 +42,22 @@ const localFunction = (func) => ({
   rpcHandler: func,
   instanceProperty: { writable: false, value: func }
 });
-const stateValue = (handlerId, initial, sync) => {
-  const init = [
+const syncValue = (handlerId, initial, allowRead, allowWrite) => {
+  const vars = [
     `const V = this["#internals"].state ??= {};`,
-    `const H = ${JSON.stringify(handlerId)};`,
-    `if (!(H in V)) V[H] = ${JSON.stringify(initial)};`,
+    `const H = ${JSON.stringify(handlerId)};`
   ].join('');
+  const init =
+    `if (!(H in V)) V[H] = ${JSON.stringify(initial)};`;
   return {
-    rpcHandler: !sync ? null : new Function('...a',
-      init + `return a.length > 0 ? (V[H] = a[0]) : V[H];`
+    rpcHandler: !allowRead ? null : new Function('...a',
+      vars + init + `return a.length > 0 ? (V[H] = a[0]) : V[H];`
     ),
     instanceProperty: {
-      get: new Function(init + `return V[H];`),
+      get: new Function(vars + init + `return V[H];`),
       set: new Function('value', (
-        (init + `V[H] = value;`) +
-        (!sync ? '' : `this["#internals"].rpc.cast(H, value);`)
+        (vars + `V[H] = value;`) +
+        (!allowWrite ? '' : `this["#internals"].rpc.cast(H, value);`)
       )),
     }
   };
@@ -86,16 +87,16 @@ export const Func = Function_(true);
 export const Event = Function_(false);
 export const State = {
   Client: SdkEntry((initial) => ({
-    client: (handlerId) => stateValue(handlerId, initial, false),
-    server: null
+    client: (handlerId) => syncValue(handlerId, initial, false, true),
+    server: (handlerId) => syncValue(handlerId, initial, true, false),
   })),
   Server: SdkEntry((initial) => ({
-    client: null,
-    server: (handlerId) => stateValue(handlerId, initial, false)
+    client: (handlerId) => syncValue(handlerId, initial, true, false),
+    server: (handlerId) => syncValue(handlerId, initial, false, true)
   })),
   Sync: SdkEntry((initial) => ({
-    client: (handlerId) => stateValue(handlerId, initial, true),
-    server: (handlerId) => stateValue(handlerId, initial, true)
+    client: (handlerId) => syncValue(handlerId, initial, true, true),
+    server: (handlerId) => syncValue(handlerId, initial, true, true)
   }))
 };
 
