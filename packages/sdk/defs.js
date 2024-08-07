@@ -57,8 +57,8 @@ const syncValue = (handlerId, initial, allowRead, allowWrite) => {
       get: new Function(vars + init + `return V[h];`),
       set: new Function('value',
         allowWrite
-        ? vars + `this["#internals"].rpc.cast(h, V[h] = value);`
-        : 'throw new Error(`SDK value ${h} is readonly`);'
+        ? vars + 'this["#internals"].rpc.cast(h, V[h] = value);'
+        : vars + 'throw new Error(`SDK value ${h} is readonly`);'
       )
     }
   };
