@@ -45,20 +45,21 @@ const localFunction = (func) => ({
 const syncValue = (handlerId, initial, allowRead, allowWrite) => {
   const vars = [
     `const V = this["#internals"].state ??= {};`,
-    `const H = ${JSON.stringify(handlerId)};`
+    `const h = ${JSON.stringify(handlerId)};`
   ].join('');
   const init =
-    `if (!(H in V)) V[H] = ${JSON.stringify(initial)};`;
+    `if (!(h in V)) V[h] = ${JSON.stringify(initial)};`;
   return {
     rpcHandler: !allowRead ? null : new Function('...a',
-      vars + init + `return a.length > 0 ? (V[H] = a[0]) : V[H];`
+      vars + init + `return a.length > 0 ? (V[h] = a[0]) : V[h];`
     ),
     instanceProperty: {
-      get: new Function(vars + init + `return V[H];`),
-      set: !allowWrite ? null : new Function('value', (
-        vars + `this["#internals"].rpc.cast(H, V[H] = value);`
-      )),
-      writable: allowWrite
+      get: new Function(vars + init + `return V[h];`),
+      set: new Function('value',
+        allowWrite
+        ? vars + `this["#internals"].rpc.cast(h, V[h] = value);`
+        : 'throw new Error(`SDK value ${h} is readonly`);'
+      )
     }
   };
 }
