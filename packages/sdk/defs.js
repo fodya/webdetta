@@ -100,16 +100,17 @@ export const State = {
 };
 
 export const parseSdkDefinition = (obj, path=[], res=[]) => {
-  for (const [k, v] of Object.entries(obj)) {
-    if (typeof v == 'object') {
-      if (SDK_ENTRY in v) res.push([path, v]);
-      else parseSdkDefinition(v, [...path, k], res);
-    } else {
-      throw new Error([
-        'SDK entries must be decorated with one of the following functions: ',
-        'Func, Event, State.'
-      ].join(''));
+  if (typeof obj == 'object') {
+    for (const [k, v] of Object.entries(obj)) {
+      const path1 = [...path, k];
+      if (SDK_ENTRY in v) res.push([path1, v]);
+      else parseSdkDefinition(v, path1, res);
     }
+  } else {
+    throw new Error([
+      'SDK entries must be decorated with one of the following functions: ',
+      'Func, Event, State.'
+    ].join(''));
   }
   return res;
 }

@@ -32,7 +32,6 @@ export const SdkServer = (methods) => {
 
   const serverMethods = {};
   const serverEntries = [];
-  console.log(methods, parseSdkDefinition(methods));
   for (const [keypath, entry] of parseSdkDefinition(methods)) {
     for (const d of entry.list) {
       const fullpath = [...keypath, ...d.path];
