@@ -90,9 +90,12 @@ SdkServer.clientCodeHttpHandler = ({
   const url = Object.assign(new URL('http://localhost'), {
     host: req.headers.host,
     protocol: isSecure ? 'wss:' : 'ws:',
-    pathname: req.baseUrl + req.path
+    pathname: req.baseUrl + req.path,
+    search: ''
   });
-  const code = clientCode(url, transport);
+  let code = clientCode(url, transport);
+  if (!('raw' in req.query))
+    code = bundledCode[[url, transport]] ??= await bundleCode(code);
   res.contentType('text/javascript');
-  res.send(bundledCode[[url, transport]] ??= await bundleCode(code));
+  res.send(code);
 }
