@@ -42,14 +42,14 @@ const localFunction = (func) => ({
   rpcHandler: func,
   instanceProperty: { writable: false, value: func }
 });
-const sharedValue = (handlerId, initial) => {
+const stateValue = (handlerId, initial, sync) => {
   const initval = [
-    `const V = this["#internals"]['#vals'] ??= {};`,
+    `const V = this["#internals"]["#vals"] ??= {};`,
     `const H = ${JSON.stringify(handlerId)};`,
     `if (!(H in V)) V[H] = JSON.parse(${JSON.stringify(initial)});`,
   ];
   return {
-    rpcHandler: new Function('...a', [
+    rpcHandler: !sync ? null : new Function('...a', [
       ...initval,
       `return a.length > 0 ? (V[H] = a[0]) : V[H];`
     ].join('')),
@@ -59,6 +59,9 @@ const sharedValue = (handlerId, initial) => {
         `return V[H];`
       ].join('')),
       set: new Function('value', [
+        ...initval,
+        `V[H] = value;`,
+        !sync ? '' :
         `this["#internals"].cast(${JSON.stringify(handlerId)}, value);`
       ].join('')),
     }
@@ -89,25 +92,16 @@ export const Func = Function_(true);
 export const Event = Function_(false);
 export const State = {
   Client: SdkEntry((initial) => ({
-    client: (handlerId) => ({
-      rpcHandler: null,
-      instanceProperty: { writable: false, value: initial }
-    }),
+    client: stateValue(handlerId, initial, false),
     server: null
   })),
   Server: SdkEntry((initial) => ({
     client: null,
-    server: (handlerId) => ({
-      rpcHandler: null,
-      instanceProperty: {
-        writable: false,
-        value: tructuredClone(initial)
-      }
-    })
+    server: stateValue(handlerId, initial, false)
   })),
   Sync: SdkEntry((initial) => ({
-    client: (handlerId) => sharedValue(handlerId, initial),
-    server: (handlerId) => sharedValue(handlerId, initial)
+    client: (handlerId) => stateValue(handlerId, initial, true),
+    server: (handlerId) => stateValue(handlerId, initial, true)
   }))
 };
 
