@@ -64,10 +64,9 @@ SdkServer.clientCodeHttpHandler = ({
   clientCode,
   transport='ws'
 }) => async (req, res) => {
-  const isSecure = req.headers.origin.includes('https://');
   const url = Object.assign(new URL('http://localhost'), {
     host: req.headers.host,
-    protocol: isSecure ? 'wss:' : 'ws:',
+    protocol: req.secure ? 'wss:' : 'ws:',
     pathname: req.baseUrl + req.path,
     search: ''
   });
