@@ -1,5 +1,10 @@
 const defineProperty = (instance, path, descriptor) => {
-  const bind = d => typeof d == 'function' ? d.bind(instance) : d;
+  const bind = d =>
+    typeof d == 'function' ? d.bind(instance)
+    : typeof d == 'object' ? Object.fromEntries(
+      Object.entries(d).map(kv => [kv[0], bind(kv[1])])
+    )
+    : d;
 
   let obj = instance;
   for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
