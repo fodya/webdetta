@@ -7,7 +7,7 @@ import { rVal } from "../common/chain.js";
 
 const normUrl = (s) => {
   let u = new URL(s, globalThis.document?.location ?? s);
-  if (u.procotol.startsWith("https")) u.protocol = "wss";
+  if (u.protocol.startsWith("https")) u.protocol = "wss";
   if (u.protocol.startsWith("wss")) u.protocol = "ws";
   return u.toString();
 };
