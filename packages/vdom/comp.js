@@ -39,7 +39,7 @@ const Context = () => {
 }
 
 const Effect = (args, func) => {
-  const st = Val({ args: null });
+  const [st] = Val({ args: null });
   const alive = Component.Lifecycle() ?? true;
 
   let cancellation;
