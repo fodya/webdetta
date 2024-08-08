@@ -1,26 +1,6 @@
 import { parseSdkDefinition } from './defs.js';
 import { SdkInstance } from './instance.js';
-import { parseFn } from './common.js';
-
-const obj2code = (obj, vars, pad='  ') => {
-  if (typeof obj == 'function') {
-    const { args, body, isAsync } = parseFn(obj);
-    return [
-      isAsync ? 'async' : '',
-      `function (${args.join(',')})`,
-      `{var ${vars.join(',')};${body.trim()}}`
-    ].join(' ');
-  }
-  if (Array.isArray(obj))
-    return `[${obj.map(d => obj2code(d, vars, pad)).join(',')}]`;
-  if (typeof obj == 'object' && obj !== null)
-    return '{\n' +
-      Object.entries(obj).map(([k, v]) =>
-        pad + JSON.stringify(k) + ':' + obj2code(v, vars, pad + '  ')
-      ).join(',\n')
-    + `\n${pad.slice(0, -2)}}`;
-  return JSON.stringify(obj);
-}
+import { parseFn, obj2code } from './common.js';
 
 export const SdkServer = (methods) => {
   const clientEntries = [];

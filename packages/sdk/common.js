@@ -17,6 +17,27 @@ export const parseFn = val => {
   return { args: rawArgs, body, isAsync };
 }
 
+export const obj2code = (obj, vars, pad='  ') => {
+  if (typeof obj == 'function') {
+    const { args, body, isAsync } = parseFn(obj);
+    return [isAsync ? 'async ' : '',
+      `function (${args.join(',')}) {`,
+        vars.length == 0 ? '' : `var ${vars.join(',')};`,
+        body.trim(),
+      '}'
+    ].join('');
+  }
+  if (Array.isArray(obj))
+    return `[${obj.map(d => obj2code(d, vars, pad)).join(',')}]`;
+  if (typeof obj == 'object' && obj !== null)
+    return '{\n' +
+      Object.entries(obj).map(([k, v]) =>
+        pad + JSON.stringify(k) + ':' + obj2code(v, vars, pad + '  ')
+      ).join(',\n')
+    + `\n${pad.slice(0, -2)}}`;
+  return JSON.stringify(obj);
+}
+
 const onrequest = async (methods, ctx, req, res) => {
   if (!methods.$onrequest) return;
   await methods.$onrequest.call(ctx, req, res);
@@ -33,10 +54,10 @@ export const Api = {
       try {
         const name = req.params.name;
         const args = req.body;
-        
+
         const ctx = {};
         await onrequest(methods, ctx, req, res);
-        
+
         const [result, err] = await processCall(methods, ctx, name, args);
 
         if (err) throw err;

@@ -1,4 +1,4 @@
-import { parseFn } from './common.js';
+import { parseFn, obj2code } from './common.js';
 
 const traverseSdkObject = (val, path=[], res=[]) => {
   if (typeof val == 'object')
@@ -48,7 +48,7 @@ const syncValue = (handlerId, initial, allowRead, allowWrite) => {
     `const h = ${JSON.stringify(handlerId)};`
   ].join('');
   const init =
-    `if (!(h in V)) V[h] = ${JSON.stringify(initial)};`;
+    `if (!(h in V)) V[h] = ${obj2code(initial)};`;
   return {
     rpcHandler: !allowRead ? null : new Function('...a',
       vars + init + `return a.length > 0 ? (V[h] = a[0]) : V[h];`
@@ -86,7 +86,7 @@ const Function_ = awaitResult => ({
 
 export const Func = Function_(true);
 export const Event = Function_(false);
-export const State = {
+export const Value = {
   Client: SdkEntry((initial) => ({
     client: (handlerId) => syncValue(handlerId, initial, false, true),
     server: (handlerId) => syncValue(handlerId, initial, true, false),
@@ -111,7 +111,7 @@ export const parseSdkDefinition = (obj, path=[], res=[]) => {
   } else {
     throw new Error([
       'SDK entries must be decorated with one of the following functions: ',
-      'Func, Event, State.'
+      'Func, Event, Value.'
     ].join(''));
   }
   return res;
