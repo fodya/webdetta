@@ -4,9 +4,11 @@ import FunctionParser from 'parse-function';
 
 const parser = FunctionParser();
 parser.use((self) => (node, result) => {
-  if (!Array.isArray(node.params)) return;
+  let params = node.params;
+  if (node.type == 'ObjectExpression') params = node.properties[0].params;
+  if (!Array.isArray(params)) return;
   result.rawArgs = [];
-  for (const [param, i] of node.params.map((d, i) => [d, i])) {
+  for (const [param, i] of params.map((d, i) => [d, i])) {
     const { start, end } = param.loc;
     result.rawArgs[i] = result.value.slice(start.index, end.index);
   }
