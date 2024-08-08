@@ -57,7 +57,7 @@ const Effect = (args, func) => {
     try { cancellation?.(); }
     catch (e) { console.error(e); }
     cancellation = null;
-  });
+  }
 
   if (!alive) cancel();
   return { args: st.args, perform, cancel };
