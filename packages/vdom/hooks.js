@@ -66,7 +66,7 @@ export const loader = (initial, args, func) => {
     () => Promise.resolve(func()).then(res => setValue(res))
   );
   effect(args, () => { load(); });
-  return [value, load, status_];
+  return [value, load, status_, setValue];
 }
 
 export const event = (target, events, handler) =>

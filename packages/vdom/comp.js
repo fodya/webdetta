@@ -40,26 +40,26 @@ const Context = () => {
 
 const Effect = (args, func) => {
   const [st] = Val({ args: null, cancellation: null });
-  st.alive = Component.Lifecycle() ?? true;
-  st.perform = () => {
-    st.args = args;
-    if (!st.alive) return;
+  const alive = Component.Lifecycle() ?? true;
+  const perform = () => {
+    if (!alive) return;
     try { st.cancellation?.(); }
     catch (e) { console.error(e); }
     st.cancellation = func(...args);
+    st.args = args;
     if (st.cancellation != null && typeof st.cancellation != 'function')
       throw new Error('effect must return a function or undefined');
   }
 
-  st.cancel = () => {
+  const cancel = () => {
     st.args = null;
     try { st.cancellation?.(); }
     catch (e) { console.error(e); }
     st.cancellation = null;
   }
-  if (!st.alive) st.cancel();
+  if (!alive) cancel();
 
-  return { args: st.args, perform: st.perform, cancel: st.cancel };
+  return { args: st.args, perform, cancel };
 }
 
 const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {

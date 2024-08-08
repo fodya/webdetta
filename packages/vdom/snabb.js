@@ -958,9 +958,9 @@ function updateClasses(oldVnode, vnode) {
   let oldClass = oldVnode.data.classes;
   let klass = vnode.data.classes;
   if (oldClass === klass) return;
-  if (oldClass) for (name of oldClass) if (!klass?.has(name))
+  if (oldClass) for (const name of oldClass) if (!klass?.has(name))
     elm.classList.remove(name);
-  if (klass) for (name of klass) if (name !== '' && !oldClass?.has(name))
+  if (klass) for (const name of klass) if (name !== '' && !oldClass?.has(name))
     elm.classList.add(name);
 }
 const classesModule = { create: updateClasses, update: updateClasses };
