@@ -60,8 +60,8 @@ export const status = (func) => {
   return [load, status];
 }
 
-export const loader = (initial, args, func) => {
-  const [value, setValue] = val(initial);
+export const loader = (args, func) => {
+  const [value, setValue] = val();
   const [load, status_] = status(
     () => Promise.resolve(func()).then(res => setValue(res))
   );
