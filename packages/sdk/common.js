@@ -12,18 +12,20 @@ parser.use((self) => (node, result) => {
   }
 });
 export const parseFn = val => {
-  const { rawArgs, body, isArrow, isAsync } = parser.parse(val);
-  //if (isArrow) throw new Error('Arrow functions are not allowed.');
-  return { args: rawArgs, body, isAsync };
+  const res = parser.parse(val);
+  res.args = res.rawArgs;
+  //if (res.isArrow) throw new Error('Arrow functions are not allowed.');
+  return res;
 }
 
 export const obj2code = (obj, vars=[], pad='  ') => {
   if (typeof obj == 'function') {
-    const { args, body, isAsync } = parseFn(obj);
+    const { args, body, isAsync, value, params } = parseFn(obj);
+    const hasCurly = value.replace(params, '').replace(body, '').includes('{');
     return [isAsync ? 'async ' : '',
       `function (${args.join(',')}) {`,
         vars.length == 0 ? '' : `var ${vars.join(',')};`,
-        body.trim(),
+        hasCurly ? '' : 'return ', body.trim(),
       '}'
     ].join('');
   }
