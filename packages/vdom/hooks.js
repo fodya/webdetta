@@ -29,7 +29,7 @@ export const effect = (args, func) => {
     ef.perform();
   }
   appendToComponent(hook.destroy(() => {
-    ef.prevArgs ??= null;
+    ef.prevArgs = null;
     ef.cancel?.()
   }));
 }
