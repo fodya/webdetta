@@ -1,11 +1,8 @@
 import {hook, operator} from './operators.js';
 import {Val, Effect, appendToComponent} from './comp.js';
 
-export const val = Val;
-export const ref = (initial) => {
-  const [st] = val({ ref: initial });
-  return (...a) => a.length ? (st.ref = a[0]) : st.ref;
-}
+export const val = v => Val(v, true);
+export const ref = v => Val(v, false);
 export const prop = (obj, ...keys) => {
   const refresh = redraw();
   const val = keys.reduce((acc, k) => acc[k], obj);
@@ -24,14 +21,8 @@ const compareArgs = (prev, curr) =>
 
 export const effect = (args, func) => {
   const ef = Effect(args, func);
-  if (compareArgs(ef.prevArgs, ef.args)) {
-    ef.prevArgs = ef.args;
-    ef.perform();
-  }
-  appendToComponent(hook.destroy(() => {
-    ef.prevArgs = null;
-    ef.cancel?.()
-  }));
+  if (compareArgs(ef.args, args)) ef.perform();
+  appendToComponent(hook.destroy(ef.cancel));
 }
 
 export const redraw = () => {

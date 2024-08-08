@@ -16,10 +16,10 @@ const CompData = (ctx) => ({
 let comp;
 const appendToComponent = (...a) => comp.appendix.push(...a);
 
-const Val = (arg) => {
+const Val = (arg, reactive) => {
   const j = comp.stateI++;
   const { refresh, state } = comp;
-  return [state[j] ??= arg, v => (state[j] = v, refresh())];
+  return [state[j] ??= arg, v => (state[j] = v, reactive && refresh())];
 }
 
 const ctxGet = (comp, k) => comp &&
@@ -39,21 +39,29 @@ const Context = () => {
 }
 
 const Effect = (args, func) => {
-  const ef = Val({})[0].effect ??= {
-    alive: null, func: null, args: null,
-    perform: () => {
-      if (!ef.alive) return;
-      ef.cancel?.();
-      const cancel = ef.func(...ef.args);
-      if (cancel != null && typeof cancel != 'function')
-        throw new Error('effect must return a function or undefined');
-      ef.cancel = () => (ef.cancel = null, cancel?.());
-    },
-    cancel: null,
-  };
-  ef.alive = Component.Lifecycle() ?? true;
-  if (!ef.alive) ef.cancel?.();
-  return Object.assign(ef, { args, func });
+  const st = Val({ args: null });
+  const alive = Component.Lifecycle() ?? true;
+
+  let cancellation;
+  const perform = () => {
+    if (!alive) return;
+    st.args = args;
+    try { cancellation?.(); }
+    catch (e) { console.error(e); }
+    cancellation = ef.func(...ef.args);
+    if (cancellation != null && typeof cancel != 'function')
+      throw new Error('effect must return a function or undefined');
+  }
+
+  const cancel = () => {
+    st.args = null;
+    try { cancellation?.(); }
+    catch (e) { console.error(e); }
+    cancellation = null;
+  });
+
+  if (!alive) ef.cancel?.();
+  return { args: st.args, perform, cancel };
 }
 
 const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
