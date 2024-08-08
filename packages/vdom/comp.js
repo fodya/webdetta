@@ -45,10 +45,9 @@ const Effect = (args, func) => {
   let cancellation;
   const perform = () => {
     if (!alive) return;
-    st.args = args;
     try { cancellation?.(); }
     catch (e) { console.error(e); }
-    cancellation = ef.func(...ef.args);
+    cancellation = func(...(st.args = args));
     if (cancellation != null && typeof cancel != 'function')
       throw new Error('effect must return a function or undefined');
   }
@@ -60,7 +59,7 @@ const Effect = (args, func) => {
     cancellation = null;
   });
 
-  if (!alive) ef.cancel?.();
+  if (!alive) cancel();
   return { args: st.args, perform, cancel };
 }
 
