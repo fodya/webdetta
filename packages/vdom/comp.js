@@ -41,12 +41,13 @@ const Context = () => {
 const Effect = (args, func) => {
   const [st] = Val({ args: null, cancellation: null });
   st.alive = Component.Lifecycle() ?? true;
+  st.func = func;
   st.perform = () => {
     if (!st.alive) return;
     try { st.cancellation?.(); }
     catch (e) { console.error(e); }
-    st.cancellation = func(...(st.args = args));
-    if (st.cancellation != null && typeof cancel != 'function')
+    st.cancellation = st.func(...(st.args = args));
+    if (st.cancellation != null && typeof st.cancellation != 'function')
       throw new Error('effect must return a function or undefined');
   }
 
