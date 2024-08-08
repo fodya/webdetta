@@ -61,10 +61,10 @@ const bundleCode = async code => {
 
 const bundledCode = {};
 SdkServer.clientCodeHttpHandler = ({
-  isSecure,
   clientCode,
   transport='ws'
 }) => async (req, res) => {
+  const isSecure = req.headers.origin.includes('https://');
   const url = Object.assign(new URL('http://localhost'), {
     host: req.headers.host,
     protocol: isSecure ? 'wss:' : 'ws:',
