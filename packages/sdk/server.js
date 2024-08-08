@@ -4,12 +4,6 @@ import { parseFn, obj2code } from './common.js';
 
 export const SdkServer = (methods) => {
   const clientEntries = [];
-  const clientCodeCache = {};
-  const clientCode = rpcURL => clientCodeCache[rpcURL] ??= [
-    `import SDK from "webdetta/sdk/client";`,
-    `export default SDK.WS("${rpcURL}", ${obj2code(clientEntries, ['SDK'])});`
-  ].join('\n');
-
   const serverMethods = {};
   const serverEntries = [];
   for (const [keypath, entry] of parseSdkDefinition(methods)) {
@@ -43,6 +37,11 @@ export const SdkServer = (methods) => {
   }
   SdkInstance(null, serverMethods, serverEntries);
 
+  const clientCode = [
+    `import SDK from "webdetta/sdk/client";`,
+    `export default SDK.WS(import.meta.url, ${obj2code(clientEntries, ['SDK'])});`
+  ].join('\n');
+
   return { serverMethods, clientCode };
 }
 
@@ -60,22 +59,12 @@ const bundleCode = async code => {
 }
 
 const bundledCode = {};
-SdkServer.clientCodeHttpHandler = ({
-  clientCode,
-  transport='ws'
-}) => async (req, res) => {
-  const isSecure =
-    req.headers['x-forwarded-proto'] == 'https' ||
-    (req.headers.host ?? '').includes('https://');
-  const url = Object.assign(new URL('http://localhost'), {
-    host: req.headers.host,
-    protocol: isSecure ? 'wss:' : 'ws:',
-    pathname: req.baseUrl + req.path,
-    search: ''
-  });
-  let code = clientCode(url, transport);
-  if (!('raw' in req.query))
-    code = bundledCode[[url, transport]] ??= await bundleCode(code);
+SdkServer.clientCodeHttpHandler = (code) => async (req, res) => {
+  const pathname = req.baseUrl + req.path;
   res.contentType('text/javascript');
-  res.send(code);
+  res.send(
+    'raw' in req.query
+    ? code
+    : bundledCode[pathname] ??= await bundleCode(code);
+  );
 }
