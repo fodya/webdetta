@@ -1,31 +1,33 @@
 import { parseFn, obj2code } from './common.js';
 
-const traverseSdkObject = (val, path=[], res=[]) => {
-  if (typeof val == 'object')
+const traverseSdkObject = (val, func, path=[], res=[]) => {
+  if (typeof val == 'object' && SDK_ENTRY in val) {
+    res.push(...val.list.map(entry => ({
+      ...entry,
+      path: path.concat(entry.path)
+    })));
+  } else if (typeof val == 'object') {
     for (const [k, v] of Object.entries(val))
-      traverseSdkObject(v, [...path, k], res);
-  else if (typeof val == 'function')
-    res.push({ path: path, val });
-  else
+      traverseSdkObject(v, func, [...path, k], res);
+  } else if (typeof val == 'function') {
+    res.push({ ...func(val), path });
+  } else {
     throw new Error([
       'The value must be a function ',
       'or a nested object containing a collection of functions.'
     ].join(''));
+  }
   return res;
 }
 
 const SDK_ENTRY = Symbol('SDK_ENTRY');
 const SdkEntry = (func) => val => ({
   [SDK_ENTRY]: true,
-  list: [
-    { path: [], ...func(val) }
-  ]
+  list: [{ ...func(val), path: [] }]
 });
 const NestedSdkEntry = (func) => val => ({
   [SDK_ENTRY]: true,
-  list: traverseSdkObject(val).map(d => (
-    { path: d.path, ...func(d.val) }
-  ))
+  list: traverseSdkObject(val, func)
 });
 
 const remoteFunction = (handlerId, signature, awaitResult) => ({
