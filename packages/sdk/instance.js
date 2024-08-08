@@ -4,12 +4,11 @@ const defineProperty = (instance, path, descriptor) => {
     typeof d == 'function' ? d.bind(instance)
     : Array.isArray(d) ? d.map(bind)
     : typeof d == 'object' ? (
-      !d[VIS] && (d[VIS] = true,
-        Object.entries(d).forEach(([k, v]) => d[k] = bind(v))
-      ),
+      !d[VIS] && (
+        d[VIS] = true,
+        Object.entries(d).forEach(([k, v]) => d[k] = bind(v))),
       delete d[VIS],
-      d
-    )
+      d)
     : d;
 
   let obj = instance;
