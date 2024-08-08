@@ -43,7 +43,7 @@ const defineProperty = (instance, path, descriptor) => {
 export const SdkInstance = (rpcInstance, methods, entries) => {
   const instance = {};
 
-  if (rpcInstance) defineProperty(instance, ['#internals'], {
+  if (rpcInstance) Object.defineProperty(instance, '#internals', {
     value: { state: {}, rpc: rpcInstance },
     writable: false
   });
