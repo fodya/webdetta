@@ -24,14 +24,14 @@ const compareArgs = (prev, curr) =>
 
 export const effect = (args, func) => {
   const ef = Effect(args, func);
-  ef.prevArgs ??= null;
   if (compareArgs(ef.prevArgs, ef.args)) {
     ef.prevArgs = ef.args;
     ef.perform();
   }
-  appendToComponent(hook.destroy(() =>
+  appendToComponent(hook.destroy(() => {
+    ef.prevArgs ??= null;
     ef.cancel?.()
-  ));
+  }));
 }
 
 export const redraw = () => {
