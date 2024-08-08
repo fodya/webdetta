@@ -16,10 +16,10 @@ const RouterVdom = Component((router) => {
 
   return Fragment(Object.entries(saved).map(([routepath, page]) => {
     const visible = r.route?.path == routepath;
-    return Component.Lifecycle.Provider(visible)(page)(
+    return Component.Lifecycle.Provide(visible, page(
       el.key(routepath),
       !visible && el.style.display('none')
-    );
+    ));
   }));
 });
 RouterVdom.ctx = Component.Context();

@@ -30,11 +30,11 @@ const Context = () => {
   if (comp) throw new Error('Context must be created outside of component.');
   const k = Math.random().toString(16).slice(2, 12);
   const ctx = (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
-  const provider = Component((val, child) => (ctx(val), child));
-  ctx.Provider = (val) => (...a) => {
-    if (a.length != 1) throw new Error('Exactly one argument expected.');
-    return provider(val, a[0]);
-  }
+  ctx.Provide = Component((...a) => {
+    if (a.length != 2) throw new Error('Exactly two arguments expected.');
+    ctx(a[0]);
+    return a[1];
+  });
   return ctx;
 }
 
