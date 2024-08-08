@@ -10,7 +10,8 @@ const defineProperty = (instance, path, descriptor) => {
           Object.entries(d).forEach(([k, v]) => d[k] = bind(v)),
           d)
       : d;
-    bound.add(res);
+    if (['function', 'object'].includes(typeof res))
+      bound.add(res);
     return res;
   }
 
