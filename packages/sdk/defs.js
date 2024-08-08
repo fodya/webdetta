@@ -87,6 +87,10 @@ const Function_ = awaitResult => ({
 export const Func = Function_(true);
 export const Event = Function_(false);
 export const Value = {
+  Static: SdkEntry((initial) => ({
+    client: (handlerId) => syncValue(handlerId, initial, false, false),
+    server: (handlerId) => syncValue(handlerId, initial, false, false),
+  })),
   Client: SdkEntry((initial) => ({
     client: (handlerId) => syncValue(handlerId, initial, false, true),
     server: (handlerId) => syncValue(handlerId, initial, true, false),
