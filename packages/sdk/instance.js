@@ -1,15 +1,18 @@
 const defineProperty = (instance, path, descriptor) => {
-  const VIS = Symbol();
-  const bind = d =>
-    typeof d == 'function' ? d.bind(instance)
-    : Array.isArray(d) ? d.map(bind)
-    : typeof d == 'object' ? (
-      !d[VIS] && (
-        d[VIS] = true,
-        Object.entries(d).forEach(([k, v]) => d[k] = bind(v))),
-      delete d[VIS],
-      d)
-    : d;
+  const bound = new WeakSet();
+  const bind = d => {
+    if (bound.has(d)) return d;
+    const res =
+      typeof d == 'function' ? d.bind(instance)
+      : Array.isArray(d) ? d.map(bind)
+      : typeof d == 'object' ? (
+          bound.add(d),
+          Object.entries(d).forEach(([k, v]) => d[k] = bind(v)),
+          d)
+      : d;
+    bound.add(res);
+    return res;
+  }
 
   let obj = instance;
   for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
