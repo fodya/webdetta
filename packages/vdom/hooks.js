@@ -1,8 +1,11 @@
 import {hook, operator} from './operators.js';
 import {Val, Effect, appendToComponent} from './comp.js';
 
-export const val = v => Val(v, true);
-export const ref = v => Val(v, false);
+export const val = Val;
+export const ref = (initial) => {
+  const [st] = val({ ref: initial });
+  return (...a) => a.length ? (st.ref = a[0]) : st.ref;
+}
 export const prop = (obj, ...keys) => {
   const refresh = redraw();
   const val = keys.reduce((acc, k) => acc[k], obj);

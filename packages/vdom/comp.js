@@ -16,10 +16,10 @@ const CompData = (ctx) => ({
 let comp;
 const appendToComponent = (...a) => comp.appendix.push(...a);
 
-const Val = (arg, reactive) => {
+const Val = (arg) => {
   const j = comp.stateI++;
   const { refresh, state } = comp;
-  return [state[j] ??= arg, v => (state[j] = v, reactive && refresh())];
+  return [state[j] ??= arg, v => (state[j] = v, refresh())];
 }
 
 const ctxGet = (comp, k) => comp &&
