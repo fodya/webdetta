@@ -64,7 +64,6 @@ SdkServer.clientCodeHttpHandler = ({
   clientCode,
   transport='ws'
 }) => async (req, res) => {
-  console.log(req);
   const isSecure =
     req.headers['x-forwarded-proto'] == 'https' ||
     req.headers.host.includes('https://');
