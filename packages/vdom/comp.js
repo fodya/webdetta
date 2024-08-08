@@ -41,7 +41,6 @@ const Context = () => {
 const Effect = (args, func) => {
   const [st] = Val({ args: null, cancellation: null });
   st.alive = Component.Lifecycle() ?? true;
-  st.func = func;
   st.perform = () => {
     if (!st.alive) return;
     try { st.cancellation?.(); }
