@@ -65,6 +65,6 @@ SdkServer.clientCodeHttpHandler = (code) => async (req, res) => {
   res.send(
     'raw' in req.query
     ? code
-    : bundledCode[pathname] ??= await bundleCode(code);
+    : bundledCode[pathname] ??= await bundleCode(code)
   );
 }
