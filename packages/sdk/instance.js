@@ -1,9 +1,14 @@
 const defineProperty = (instance, path, descriptor) => {
+  const VIS = Symbol();
   const bind = d =>
     typeof d == 'function' ? d.bind(instance)
     : Array.isArray(d) ? d.map(bind)
-    : typeof d == 'object' ? Object.fromEntries(
-      Object.entries(d).map(kv => [kv[0], bind(kv[1])])
+    : typeof d == 'object' ? (
+      !d[VIS] && (d[VIS] = true,
+        Object.entries(d).forEach(([k, v]) => d[k] = bind(v))
+      ),
+      delete d[VIS],
+      d
     )
     : d;
 
