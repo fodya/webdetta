@@ -17,7 +17,7 @@ export const parseFn = val => {
   return { args: rawArgs, body, isAsync };
 }
 
-export const obj2code = (obj, vars, pad='  ') => {
+export const obj2code = (obj, vars=[], pad='  ') => {
   if (typeof obj == 'function') {
     const { args, body, isAsync } = parseFn(obj);
     return [isAsync ? 'async ' : '',
