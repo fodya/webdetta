@@ -1,6 +1,5 @@
 import { operator, hook } from './operators.js';
 import { Fragment, Element, append, attach } from './vdom.js';
-import { throttle } from '../common/func.js';
 import { Builder } from '../common/builder.js';
 
 const CompData = (ctx) => ({
@@ -26,16 +25,24 @@ const Val = (arg) => {
 const ctxGet = (comp, k) => comp &&
   (comp.ctx.get(k) ?? ctxGet(comp.parent?.data?.comp, k));
 const ctxSet = (comp, k, v) => (comp.ctx.set(k, v), v);
+
 const Context = () => {
-  if (comp) throw new Error('Cannot create context while in component function');
+  if (comp) throw new Error('Context must be created outside of component.');
   const k = Math.random().toString(16).slice(2, 12);
-  return (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
+  const ctx = (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
+  const provider = Component((val, child) => (ctx(val), child));
+  ctx.Provider = (val) => (...a) => {
+    if (a.length != 1) throw new Error('Exactly one argument expected.');
+    return provider(val, a[0]);
+  }
+  return ctx;
 }
 
 const Effect = (args, func) => {
-  const ef = Val({})[0][Effect.symbol] ??= {
-    func: null, args: null,
+  const ef = Val({})[0].effect ??= {
+    alive: null, func: null, args: null,
     perform: () => {
+      if (!ef.alive) return;
       ef.cancel?.();
       const cancel = ef.func(...ef.args);
       if (cancel != null && typeof cancel != 'function')
@@ -44,17 +51,9 @@ const Effect = (args, func) => {
     },
     cancel: null,
   };
-  appendToComponent(hook.destroy(throttle(() => ef.cancel?.())));
+  ef.alive = Component.Lifecycle() ?? true;
+  if (!ef.alive) ef.cancel?.();
   return Object.assign(ef, { args, func });
-}
-Effect.symbol = Symbol('Effect.symbol');
-const traverseVnodeEffects = (vnode, cb) => {
-  const { data, children } = vnode;
-  if (Array.isArray(children)) for (const child of children)
-    traverseVnodeEffects(child, cb);
-  if (data?.comp) for (const item of data.comp.state)
-    if (typeof item == 'object' && item != null && Effect.symbol in item)
-      cb(item[Effect.symbol]);
 }
 
 const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
@@ -62,24 +61,15 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
   try {
     comp = vnode.data.comp = oldVnode?.data?.comp ?? CompData(ctx);
     comp.stateI = 0;
-    comp.appendix = [];
-    comp.isAlive = true;
+    comp.appendix = appendix;
 
-    const componentOperators = [];
-    for (const op of appendix) {
-      const isComp = op && typeof op == 'object' && componentOperator in op;
-      (isComp ? componentOperators : comp.appendix).push(op);
-    }
-
-    for (const op of componentOperators) op.prepatch?.(vnode);
-    try { if (comp.isAlive) comp.construct = render(...args); }
+    try { comp.construct = render(...args); }
     catch (e) { console.error(e); }
     comp.construct ??= Element('div');
 
     vnode.children = [];
     const childCtx = { ...ctx, parent: vnode };
     append(comp.construct(comp.appendix), vnode, childCtx);
-    for (const op of componentOperators) op.postpatch?.(vnode);
   } catch (e) {
     console.error(e);
   }
@@ -101,26 +91,19 @@ const componentInstance = (ctx, render, args, appendix) => new Proxy(
       : componentInstance(ctx, render, args, appendix.concat(ops))
   });
 
-const componentOperator = Symbol('Component.operator');
-const Component = Object.assign((render) => (...args) =>
-  componentInstance(null, render, args, [])
-, {
+const Component = (render) => (...args) =>
+  componentInstance(null, render, args, []);
+
+Object.assign(Component, {
   Context: Context,
-  toggleEffectsLifecycle: (isAlive) => ({
-    [componentOperator]: true,
-    prepatch: vnode => vnode.data.comp.isAlive = isAlive,
-    postpatch: vnode => traverseVnodeEffects(vnode, (eff) => {
-      if (isAlive && eff.cancel == null) eff.perform();
-      if (!isAlive && eff.cancel != null) eff.cancel();
-    })
-  }),
+  Lifecycle: Context(),
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(
       hook.insert.postpatch(() => resolve(body)),
       render
     ));
-  }
+  },
 });
 
 export { Component, Val, Effect, appendToComponent };

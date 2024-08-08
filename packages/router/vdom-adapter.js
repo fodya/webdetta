@@ -16,9 +16,8 @@ const RouterVdom = Component((router) => {
 
   return Fragment(Object.entries(saved).map(([routepath, page]) => {
     const visible = r.route?.path == routepath;
-    return page(
+    return Component.Lifecycle.Provider(visible)(page)(
       el.key(routepath),
-      Component.toggleEffectsLifecycle(visible),
       !visible && el.style.display('none')
     );
   }));

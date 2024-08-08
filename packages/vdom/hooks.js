@@ -29,6 +29,9 @@ export const effect = (args, func) => {
     ef.prevArgs = ef.args;
     ef.perform();
   }
+  appendToComponent(hook.destroy(() =>
+    ef.cancel?.()
+  ));
 }
 
 export const redraw = () => {
