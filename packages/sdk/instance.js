@@ -1,6 +1,7 @@
 const defineProperty = (instance, path, descriptor) => {
   const bind = d =>
     typeof d == 'function' ? d.bind(instance)
+    : Array.isArray(d) ? d.map(bind)
     : typeof d == 'object' ? Object.fromEntries(
       Object.entries(d).map(kv => [kv[0], bind(kv[1])])
     )
