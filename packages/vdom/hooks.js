@@ -6,6 +6,16 @@ export const ref = (initial) => {
   const [st] = val({ ref: initial });
   return (...a) => a.length ? (st.ref = a[0]) : st.ref;
 }
+export const prop = (obj, ...keys) => {
+  const refresh = redraw();
+  const val = keys.reduce((acc, k) => acc[k], obj);
+  const setVal = val => {
+    const target = keys.slice(0, -1).reduce((acc, k) => acc[k], obj);
+    target[keys.at(-1)] = val;
+    refresh();
+  }
+  return [val, setVal];
+}
 
 const compareArgs = (prev, curr) =>
   !prev
