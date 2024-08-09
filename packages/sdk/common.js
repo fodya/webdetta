@@ -14,10 +14,15 @@ parser.use((self) => (node, result) => {
   }
 });
 export const parseFn = val => {
-  const res = parser.parse(val);
-  res.args = res.rawArgs;
-  //if (res.isArrow) throw new Error('Arrow functions are not allowed.');
-  return res;
+  try {
+    const res = parser.parse(val);
+    res.args = res.rawArgs;
+    // if (res.isArrow) throw new Error('Arrow functions are not allowed.');
+    return res;
+  } catch (e) {
+    console.error(val, e);
+    throw new Error('Failed to parse function.');
+  }
 }
 
 export const obj2code = (obj, vars=[], pad='  ') => {
