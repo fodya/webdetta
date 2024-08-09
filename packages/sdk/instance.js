@@ -49,7 +49,9 @@ export const SdkInstance = (rpcInstance, methods, entries) => {
   });
 
   for (const { path, rpcHandler, instanceProperty } of entries) {
-    if (rpcHandler && methods) methods[rpcHandler.id] = rpcHandler.value;
+    if (rpcHandler && methods) {
+      methods[rpcHandler.id] = (...a) => rpcHandler.value(...a);
+    }
     if (instanceProperty) defineProperty(instance, path, instanceProperty);
   }
 
