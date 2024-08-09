@@ -13,7 +13,18 @@ export const safe = f => function() {
 }
 safe.errorHandler = e => console.error(e);
 
-export function throttle(f) {
+export const lock = (promise, f) => {
+  let locked = true;
+  promise.then(() => { locked = false; });
+  return function() {
+    if (locked) return;
+    return f.apply(this, arguments);
+  }
+}
+
+export const sleep = t => new Promise(r => setTimeout(r, t));
+
+export const throttle = (f) => {
   let p;
   return function () {
     p ??= Promise.resolve()
