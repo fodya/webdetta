@@ -65,8 +65,6 @@ export const base64ToText = base64 => {
 
 export const textToBase64 = text => {
   const bytes = new TextEncoder().encode(text);
-  const str = Array.from(bytes, (byte) =>
-    String.fromCodePoint(byte),
-  ).join("");
+  const str = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
   return btoa(str);
 }
