@@ -59,7 +59,7 @@ export const templateCallToArray = args => {
 
 export const base64ToText = base64 => {
   const str = atob(base64);
-  const bytes = Uint8Array.from(str, (m) => m.codePointAt(0));
+  const bytes = Uint8Array.from(str, m => m.codePointAt(0));
   return new TextDecoder().decode(bytes);
 }
 
