@@ -1,4 +1,4 @@
-import Router from './proto.js';
+import Router from './base.js';
 
 const locationAttachment = {
   attach: (handler) => {
