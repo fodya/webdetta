@@ -71,7 +71,7 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
 
     try { comp.construct = render(...args); }
     catch (e) { console.error(e); }
-    comp.construct ??= Element('div');
+    comp.construct ??= Fragment();
 
     vnode.children = [];
     const childCtx = { ...ctx, parent: vnode };
