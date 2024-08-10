@@ -49,22 +49,25 @@ import {rollup} from 'rollup';
 import PluginVirtual from '@rollup/plugin-virtual';
 import NodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-const bundleCode = async code => {
+const bundleCode = async ({ sourcemap, code }) => {
   const bundle = await rollup({
     input: 'code',
     plugins: [PluginVirtual({ code }), NodeResolve(), terser()],
   });
-  const result = await bundle.generate({ format: 'es' });
+  const result = await bundle.generate({
+    format: 'es',
+    sourcemap: sourcemap ? 'inline' : false
+  });
   return result.output[0].code;
 }
 
 const bundledCode = {};
-SdkServer.clientCodeHttpHandler = (code) => async (req, res) => {
+SdkServer.clientCodeHttpHandler = ({ sourcemap, code }) => async (req, res) => {
   const pathname = req.baseUrl + req.path;
   res.contentType('text/javascript');
   res.send(
     'raw' in req.query
     ? code
-    : bundledCode[pathname] ??= await bundleCode(code)
+    : bundledCode[pathname] ??= await bundleCode({ sourcemap, code })
   );
 }

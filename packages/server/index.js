@@ -80,9 +80,12 @@ const Server = (options={}) => {
       return instance;
     }),
 
-    sdk: (path, methods) => {
+    sdk: (path, { sourcemap, methods }) => {
       const { serverMethods, clientCode } = SdkServer(methods);
-      const handler = SdkServer.clientCodeHttpHandler(clientCode);
+      const handler = SdkServer.clientCodeHttpHandler({
+        code: clientCode,
+        sourcemap
+      });
       instance.httpHandler.get(path, cors(), handler);
       instance.wsApi(path, serverMethods);
       return instance;

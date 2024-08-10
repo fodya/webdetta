@@ -111,7 +111,7 @@ export const parseSdkDefinition = (obj, path=[], res=[]) => {
   if (typeof obj == 'object') {
     for (const [k, v] of Object.entries(obj)) {
       const path1 = [...path, k];
-      if (SDK_ENTRY in v) res.push([path1, v]);
+      if (typeof v == 'object' && v && SDK_ENTRY in v) res.push([path1, v]);
       else parseSdkDefinition(v, path1, res);
     }
   } else {

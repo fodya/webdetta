@@ -2,15 +2,15 @@ const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
 export const isPromise = d => d == Promise.resolve(d);
 
-export const safe = f => function() {
+export const safe = (f, errorHandler=safe.errorHandler) => function() {
   try {
     return isAsync(f)
       ? Promise.resolve()
           .then(() => f.apply(this, arguments))
-          .catch(e => safe.errorHandler(e))
+          .catch(errorHandler)
       : f.apply(this, arguments);
   }
-  catch (e) { safe.errorHandler(e) }
+  catch (e) { errorHandler(e) }
 }
 safe.errorHandler = e => console.error(e);
 
