@@ -2,21 +2,19 @@ const defineProperty = (instance, path, descriptor) => {
   const bound = new WeakSet();
   const bind = d => {
     if (bound.has(d)) return d;
+    let res = d;
     if (typeof d == 'function') {
-      const res = d.bind(instance);
-      bound.add(res);
-      return res;
-    }
-    if (Array.isArray(d)) {
+      res = d.bind(instance);
+    } else if (Array.isArray(d)) {
       bound.add(d);
-      return d.map(bind);
-    }
-    if (typeof d == 'object') {
+      res = d.map(bind);
+    } else if (typeof d == 'object') {
       bound.add(d);
       for (const [k, v] of Object.entries(obj)) d[k] = bind(v);
-      return d;
+      res = d;
     }
-    return d;
+    bound.add(res);
+    return res;
   }
 
   let { value, get, set, writable } = descriptor;
