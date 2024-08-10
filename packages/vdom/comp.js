@@ -47,7 +47,7 @@ const Effect = (args, func) => {
     try { st.cancellation?.(); }
     catch (e) { console.error(e); }
 
-    st.cancellation = func(...(st.args = args);
+    st.cancellation = func(...(st.args = args));
     if (st.cancellation != null && typeof st.cancellation != 'function')
       throw new Error('Effect handler must return a function or undefined.');
   }
