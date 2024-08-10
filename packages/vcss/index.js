@@ -29,7 +29,7 @@ const processMethodArgs = args => {
 
 const NODES = Symbol('VENDETTA_NODES');
 export const inspect = obj => {
-  const wrapped = NODES in obj;
+  const wrapped = typeof obj == 'object' && obj && NODES in obj;
   return wrapped ? inspect(obj[NODES]) : obj;
 }
 
