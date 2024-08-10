@@ -29,7 +29,8 @@ const processMethodArgs = args => {
 
 const NODES = Symbol('VENDETTA_NODES');
 export const inspect = obj => {
-  const wrapped = typeof obj == 'object' && obj && NODES in obj;
+  if (typeof obj != 'function' && typeof obj != 'object') return null;
+  const wrapped = obj && NODES in obj;
   return wrapped ? inspect(obj[NODES]) : obj;
 }
 
@@ -89,8 +90,8 @@ const MethodNode = (methods, name, args) => {
 }
 
 const unwrap = obj => (
-  obj = inspect(obj),
-  Array.isArray(obj) ? obj.flatMap(unwrap)
+  (obj = inspect(obj)) &&
+  Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
   : obj instanceof Node ? obj
   : typeof obj == 'function' ? unwrap(obj())
   : StyleNode(obj)
