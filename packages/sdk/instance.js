@@ -2,22 +2,22 @@ const defineProperty = (instance, path, descriptor) => {
   const bound = new WeakSet();
   const bind = d => {
     if (bound.has(d)) return d;
-    const res =
-      typeof d == 'function' ? d.bind(instance)
-      : Array.isArray(d) ? d.map(bind)
-      : typeof d == 'object' ? (
-          bound.add(d),
-          Object.entries(d).forEach(([k, v]) => d[k] = bind(v)),
-          d
-        )
-      : d;
-    if (['function', 'object'].includes(typeof res))
+    if (typeof d == 'function') {
+      const res = d.bind(instance);
       bound.add(res);
-    return res;
+      return res;
+    }
+    if (Array.isArray(d)) {
+      bound.add(d);
+      return d.map(bind);
+    }
+    if (typeof d == 'object') {
+      bound.add(d);
+      for (const [k, v] of Object.entries(obj)) d[k] = bind(v);
+      return d;
+    }
+    return d;
   }
-
-  let obj = instance;
-  for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
 
   let { value, get, set, writable } = descriptor;
   const descr = {
@@ -38,6 +38,9 @@ const defineProperty = (instance, path, descriptor) => {
     const set_ = bind(set);
     descr.set = (v) => bind(set_(v));
   }
+
+  let obj = instance;
+  for (const k of path.slice(0, -1)) obj = (obj[k] ??= {});
   Object.defineProperty(obj, path.at(-1), descr);
 }
 
