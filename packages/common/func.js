@@ -28,7 +28,7 @@ export const lock = (lockFn, f) => {
 
 export const once = (f) => {
   let called = 0;
-  return lock(() => (called++ < 1), f);
+  return lock(() => (called++ > 0), f);
 }
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
