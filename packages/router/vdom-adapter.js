@@ -1,6 +1,9 @@
 import { h, el, Fragment, Component } from '../vdom/index.js';
 
-const RouterVdom = Component((router) => {
+const RouterVdom = Component(({
+  router,
+  pageProps
+}) => {
   RouterVdom.ctx(router);
 
   const r = router.current();
@@ -18,7 +21,7 @@ const RouterVdom = Component((router) => {
     const visible = r.route?.path == routepath;
     return Component.Lifecycle.Provide(visible, page(
       el.key(routepath),
-      !visible && el.style.display('none')
+      pageProps(visible)
     ));
   }));
 });
