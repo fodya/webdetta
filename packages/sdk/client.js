@@ -13,4 +13,29 @@ const WS = (metaurl, clientEntries) => {
   return instance;
 }
 
+export const sdkUtils = {
+  logger: (instance, log) => {
+    instance['#internals'].rpc.onMessage((d) => {
+      const data = decode(d.data);
+      log('[rpc]', ...(
+        'to' in data
+        ? [`#${data.to}`, '<=', data.res]
+        : [data.call, '<=', data.args, `@${data.from}`]
+      ))
+    });
+    instance['#internals'].rpc.onSend((d) => {
+      const data = decode(d);
+      log('[rpc]', ...(
+        'to' in data
+        ? [data.res, '=>', `#${data.to}`]
+        : [`@${data.from}`, data.call, '=>', data.args]
+      ))
+    });
+  },
+  onUpdate: (instance, cb) => {
+    instance['#internals'].rpc.onSend(cb);
+    instance['#internals'].rpc.onMessage(cb);
+  }
+}
+
 export default { WS };
