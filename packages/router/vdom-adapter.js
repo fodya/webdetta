@@ -18,10 +18,10 @@ const RouterVdom = Component(({
   if (r.route) saved[r.route.path] = r.route.value(r.params);
 
   return Fragment(Object.entries(saved).map(([routepath, page]) => {
-    const visible = r.route?.path == routepath;
-    return Component.Lifecycle.Provide(visible, page(
+    const isCurrent = r.route?.path == routepath;
+    return Component.Lifecycle.Provide(isCurrent, page(
       el.key(routepath),
-      pageProps(visible)
+      pageProps(isCurrent, r)
     ));
   }));
 });
