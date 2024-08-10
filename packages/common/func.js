@@ -1,5 +1,6 @@
 const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
+export const isPromise = d => d == Promise.resolve(d);
 
 export const safe = f => function() {
   try {
@@ -13,22 +14,21 @@ export const safe = f => function() {
 }
 safe.errorHandler = e => console.error(e);
 
-export const lock = (isLocked, f) => {
-  if (typeof isLocked != 'function') {
-    if (!isLocked?.then) throw new Error('Invalid argument.');
+export const lock = (lockFn, f) => {
+  if (isPromise(lockFn)) {
     let locked = true;
-    isLocked.then(() => { locked = false; });
-    isLocked = () => locked;
+    lockFn.then(() => { locked = false; });
+    lockFn = () => locked;
   }
   return function() {
-    if (isLocked()) return;
+    if (lockFn()) return;
     return f.apply(this, arguments);
   }
 }
 
 export const once = (f) => {
-  let called;
-  return lock(() => (called ??= true), f);
+  let called = 0;
+  return lock(() => (called++ < 1), f);
 }
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
