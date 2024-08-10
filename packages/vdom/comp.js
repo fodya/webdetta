@@ -9,7 +9,6 @@ const CompData = (ctx) => ({
   ctx: new Map(),
   parent: ctx.parent,
   isAlive: true,
-  construct: undefined,
   appendix: [],
 });
 
@@ -71,13 +70,10 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
     comp.stateI = 0;
     comp.appendix = appendix;
 
-    try { comp.construct = render(...args); }
-    catch (e) { console.error(e); }
-    comp.construct ??= Fragment();
-
     vnode.children = [];
+    const child = render(...args) ?? Fragment();
     const childCtx = { ...ctx, parent: vnode };
-    append(comp.construct(comp.appendix), vnode, childCtx);
+    append(child(comp.appendix), vnode, childCtx);
   } catch (e) {
     console.error(e);
   }
