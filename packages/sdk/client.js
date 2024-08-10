@@ -17,6 +17,7 @@ const WS = (metaurl, clientEntries) => {
 export const sdkUtils = {
   logger: (instance, log) => {
     instance['#internals'].rpc.onMessage((d) => {
+      if (!d.data) return;
       const data = decode(d.data);
       log('[rpc]', ...(
         'to' in data
