@@ -33,7 +33,6 @@ export const throttle = (f) => {
     return p;
   }
 }
-
 throttle.T = (delay, f) => {
   let t;
   return function () {
