@@ -83,3 +83,7 @@ export const textToBase64 = text => {
   const str = Array.from(bytes, b => String.fromCodePoint(b)).join("");
   return btoa(str);
 }
+
+export const objectMap = (func, obj) => Object.fromEntries(
+  Object.entries(obj).map(([k, v]) => [k, func(v, k, obj)])
+);
