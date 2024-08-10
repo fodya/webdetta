@@ -25,11 +25,11 @@ export const Fragment = Element(undefined);
 
 export function append(child, el, ctx) {
   if (child === undefined || child === null || child === false) {}
-  else if (isBuilder(child)) { launch(child, el, ctx); }
-  else if (Array.isArray(child)) { child.forEach(c => append(c, el, ctx)); }
-  else if (typeof child === 'function') { append(child(), el, ctx); }
-  else if (child instanceof VNode) { el.children.push(child); }
-  else { el.children.push({ text: String(child) }); }
+  else if (isBuilder(child)) launch(child, el, ctx);
+  else if (Array.isArray(child)) child.forEach(c => append(c, el, ctx));
+  else if (typeof child === 'function') append(child(), el, ctx);
+  else if (child instanceof VNode) el.children.push(child);
+  else el.children.push({ text: String(child) });
 }
 
 export function attach(domEl) {

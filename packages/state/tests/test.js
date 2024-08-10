@@ -4,8 +4,8 @@
 
 import { expect, test, beforeAll, afterAll } from "bun:test";
 import { readFile } from "node:fs/promises";
-import { tmpFile, cleanup } from './temp.js';
-import { State } from "./fs.js";
+import { tmpFile, cleanup } from '../temp.js';
+import { State } from "../fs.js";
 
 afterAll(cleanup);
 

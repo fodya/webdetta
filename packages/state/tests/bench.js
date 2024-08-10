@@ -3,8 +3,8 @@
 // Source: https://github.com/frameorc/frameorc/blob/github/src/state/state.bench.js
 
 import { run, bench, group, baseline } from 'mitata';
-import { State } from './fs.js';
-import { tmpFile, cleanup } from './temp.js';
+import { State } from '../fs.js';
+import { tmpFile, cleanup } from '../temp.js';
 
 let s = await State(await tmpFile('data'));
 

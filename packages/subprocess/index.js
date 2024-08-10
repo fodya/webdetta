@@ -19,12 +19,6 @@ const subprocess = (...argv) => {
   }
 
   const proc = child_process.spawn(argv[0], argv.slice(1), options);
-  const instance = {
-    proc,
-    stdout: handler => (pipe(proc.stdout, handler), proxy),
-    stderr: handler => (pipe(proc.stderr, handler), proxy)
-  }
-
   const proxy = new Proxy(new Promise((resolve, reject) => {
     proc.on('error', reject)
     proc.on('close', code =>
@@ -37,7 +31,7 @@ const subprocess = (...argv) => {
     )
   }), {
     get: (target, key) => {
-      if (key in instance) return instance[key];
+      if (key in proc) return proc[key];
       const val = target[key];
       return typeof val == 'function' ? val.bind(target) : val;
     }
