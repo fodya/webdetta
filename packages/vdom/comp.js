@@ -43,9 +43,13 @@ const Effect = (args, func) => {
   const alive = Component.Lifecycle() ?? true;
   const perform = () => {
     if (!alive) return;
+
     try { st.cancellation?.(); }
     catch (e) { console.error(e); }
-    st.cancellation = func(...args);
+
+    try { st.cancellation = func(...args); }
+    catch (e) { console.error(e); }
+
     st.args = args;
     if (st.cancellation != null && typeof st.cancellation != 'function')
       throw new Error('Effect handler must return a function or undefined.');
