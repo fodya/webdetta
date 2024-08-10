@@ -39,15 +39,16 @@ const Context = () => {
 }
 
 const Effect = (args, func) => {
-  const [st] = Val({ args: null, cancellation: null });
+  const [st] = Val({ args: null, cancellation: null, error: null });
   const alive = Component.Lifecycle() ?? true;
   const perform = () => {
-    if (!alive) return;
+    if (!alive || st.error) return;
 
     try { st.cancellation?.(); }
     catch (e) { console.error(e); }
 
-    st.cancellation = func(...(st.args = args));
+    try { st.cancellation = func(...(st.args = args)); }
+    catch (e) { console.error(st.error = e); }
     if (st.cancellation != null && typeof st.cancellation != 'function')
       throw new Error('Effect handler must return a function or undefined.');
   }
