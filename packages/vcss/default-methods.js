@@ -3,8 +3,10 @@
 // (c) 2023 Fedot Kryutchenko
 
 const display = {
+  true: '',
+  false: 'none',
   b: 'block',
-  i: 'inline', 
+  i: 'inline',
   ib: 'inline-block',
   f: 'flex',
   if: 'inline-flex',
@@ -48,6 +50,8 @@ const gridFlow = {
   'row*': 'row dense'
 }
 const overflow = {
+  true: 'auto',
+  false: 'hidden',
   h: "hidden",
   a: "auto",
   s: "scroll"
@@ -71,6 +75,8 @@ const textAlign = {
   mp: 'match-parent'
 }
 const borderStyle = {
+  true: 'solid',
+  false: 'none',
   n: 'none',
   '-': 'solid',
   '.': 'dotted',
@@ -84,6 +90,8 @@ const textTransform = {
   c: 'capitalize'
 }
 const userSelect = {
+  true: 'auto',
+  false: 'none',
   '~': 'auto',
   n: 'none',
   t: 'text',
@@ -91,6 +99,8 @@ const userSelect = {
   c: 'contain'
 }
 const visibility = {
+  true: 'visible',
+  false: 'hidden',
   h: 'hidden',
   v: 'visible',
   c: 'collapse',
@@ -158,7 +168,7 @@ const gridTrack = (size, str) => {
   if (!repeat.length) return [...head,
     `repeat(${count - head.length},1fr)`
   ].join(' ');
-  
+
   const tail = repeat.slice(0, (count - head.length) % repeat.length);
   const repeatCount = (count - head.length - tail.length) / repeat.length;
   return [...head,
@@ -185,7 +195,7 @@ export const Methods = cfg => {
     shadow=v=>v,
     fontWeight=v=>v
   } = resolve;
-  
+
   const methods = {
     // align
     alC: (v) => ({ alignContent: flexAlign[v] ?? v }),
@@ -194,7 +204,7 @@ export const Methods = cfg => {
     alT: (v) => ({ alignTracks: flexAlign[v] ?? v }),
     fll: () => ({ float: 'left' }),
     flr: () => ({ float: 'right' }),
-    
+
     // composition
     grid: (columns, rows, flow) => {
       const res = { display: 'grid' };
@@ -230,7 +240,7 @@ export const Methods = cfg => {
     wrap: (v=true) => ({
       flexWrap: typeof v != 'boolean' ? v : v ? 'wrap' : 'nowrap'
     }),
-    
+
     // size
     w: (v) => ({ width: length[v] ?? size(v) }),
     mnw: (v) => ({ minWidth: length[v] ?? size(v) }),
@@ -238,7 +248,7 @@ export const Methods = cfg => {
     h: (v) => ({ height: length[v] ?? size(v) }),
     mnh: (v) => ({ minHeight: length[v] ?? size(v) }),
     mxh: (v) => ({ maxHeight: length[v] ?? size(v) }),
-    
+
     // text
     td: (v) => {
       const st = borderStyle[v] ?? v;
@@ -260,7 +270,7 @@ export const Methods = cfg => {
     tsh: (...a) => ({
       textShadow: a.map(v => color(v) ?? size(v) ?? v).join(' ')
     }),
-    
+
     // padding, margin, border, border-radius
     ...def(sides,   _=>'p'+_,  _=>(v) => ({
       [`padding${_}`]: length[v] ?? size(v)
@@ -276,7 +286,7 @@ export const Methods = cfg => {
       [`border${_}Width`]: some(a, size) ?? '1px',
       [`border${_}Style`]: some(a, borderStyle) ?? 'solid'
     })),
-    
+
     // outline
     ol: (...a) => ({
       outlineColor: some(a, color) ?? 'currentColor',
@@ -284,7 +294,7 @@ export const Methods = cfg => {
       outlineOffset: some(a, size) ?? '1px',
       outlineStyle: some(a, borderStyle) ?? 'solid'
     }),
-    
+
     // ring
     ring: (cl="currentColor", w='1px',of='0px', ofcl='transparent') => ({
       boxShadow: [
@@ -325,7 +335,7 @@ export const Methods = cfg => {
       if (v) return { cursor: 'pointer' };
       else return { pointerEvents: 'none' };
     },
-    
+
     // transform
     tr3: () => ({ transformStyle: 'preserve-3d' }),
     rot3: (x, y, z, r) => ({
@@ -345,7 +355,7 @@ export const Methods = cfg => {
     ].map(([name, prop]) => [name, (...v) => ({
       transform: prop + '(' + v.join(',') + ')'
     })])),
-    
+
     ...Object.fromEntries([
       ['rot', 'rotate'],
       ['rotX', 'rotateX'],
@@ -354,7 +364,7 @@ export const Methods = cfg => {
     ].map(([name, prop]) => [name, (...v) => ({
       transform: prop+'('+ v.map(v=>isNaN(+v)?v:v+'deg').join(',') +')'
     })])),
-    
+
     ...Object.fromEntries([
       ['prs', 'perspective'],
       ['tr', 'translate'],
@@ -366,6 +376,6 @@ export const Methods = cfg => {
       transform: prop + '(' + v.map(v => size(v)).join(',') + ')'
     })])),
   }
-  
+
   return { methods, resolve };
 }
