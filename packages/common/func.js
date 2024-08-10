@@ -36,17 +36,17 @@ export const sleep = t => new Promise(r => setTimeout(r, t));
 const throttle_ = (before, f, after) => {
   let p = null;
   return function () {
-    p ??= Promise.resolve(before)
+    p ??= Promise.resolve(before?.())
       .then(() => f.apply(this, arguments))
-      .then(res => Promise.resolve(after).then(() => res))
-      .then(res => (p = null, res));
+      .then(res => Promise.resolve(after?.()).then(() => res))
+      .finally(() => (p = null));
     return p;
   }
 }
 
 export const throttle = f => throttle_(null, f, null);
-throttle.T = (delay, f) => throttle_(sleep(delay), f, null);
-throttle.Ti = (delay, f) => throttle_(null, f, sleep(delay));
+throttle.T = (delay, f) => throttle_(() => sleep(delay), f, null);
+throttle.Ti = (delay, f) => throttle_(null, f, () => sleep(delay));
 
 export const isTemplateCall = args =>
   Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
