@@ -87,3 +87,5 @@ export const textToBase64 = text => {
 export const objectMap = (func, obj) => Object.fromEntries(
   Object.entries(obj).map(([k, v]) => [k, func(v, k, obj)])
 );
+export const objectForeach = (func, obj) =>
+  Object.entries(obj).map(([k, v]) => func(v, k, obj));

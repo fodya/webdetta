@@ -10,7 +10,7 @@ const defineProperty = (instance, path, descriptor) => {
       bound.add(res = d.map(bind));
     } else if (typeof d == 'object') {
       bound.add(d);
-      for (const [k, v] of Object.entries(obj)) d[k] = bind(v);
+      for (const [k, v] of Object.entries(d)) d[k] = bind(v);
     }
     return res;
   }
