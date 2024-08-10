@@ -318,7 +318,7 @@ export const Methods = cfg => {
     stc: () => ({ position: 'sticky' }),
     d: (v) => ({ display: display[v] ?? v }),
     z: (v) => ({ zIndex: v }),
-    bg: (c) => ({ background: color(c) }),
+    bg: (...c) => ({ background: c.map(color).join(', ') }),
     op: (v) => ({ opacity: v }),
     va: (v) => ({ verticalAlign: v }),
     sh: (v) => ({ boxShadow: shadow(v) }),
