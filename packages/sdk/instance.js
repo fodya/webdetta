@@ -8,12 +8,13 @@ const defineProperty = (instance, path, descriptor) => {
     } else if (Array.isArray(d)) {
       bound.add(d);
       res = d.map(bind);
+      bound.add(res);
     } else if (typeof d == 'object') {
       bound.add(d);
       for (const [k, v] of Object.entries(obj)) d[k] = bind(v);
       res = d;
+      bound.add(res);
     }
-    bound.add(res);
     return res;
   }
 
