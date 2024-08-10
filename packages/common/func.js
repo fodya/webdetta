@@ -33,31 +33,20 @@ export const once = (f) => {
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
 
-export const throttle = (f) => {
-  let p;
+const throttle_ = (before, f, after) => {
+  let p = null;
   return function () {
-    p ??= Promise.resolve()
-      .then(() => p = null)
-      .then(() => f.apply(this, arguments));
+    p ??= Promise.resolve(before)
+      .then(() => f.apply(this, arguments))
+      .then(res => Promise.resolve(after).then(() => res))
+      .then(res => (p = null, res));
     return p;
   }
 }
-const timeoutThrottle = (callImmediately, delay, f) => {
-  let t = null;
-  return function () {
-    clearTimeout(t);
-    return new Promise((resolve) => {
-      const after = once(() => {
-        t = null;
-        resolve(f.apply(this, arguments));
-      });
-      if (t == null && callImmediately) after();
-      t = setTimeout(after, delay);
-    });
-  }
-}
-throttle.T = (delay, f) => timeoutThrottle(false, delay, f);
-throttle.Ti = (delay, f) => timeoutThrottle(true, delay, f);
+
+export const throttle = f => throttle_(null, f, null);
+throttle.T = (delay, f) => throttle_(sleep(delay), f, null);
+throttle.Ti = (delay, f) => throttle_(null, f, sleep(delay));
 
 export const isTemplateCall = args =>
   Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
