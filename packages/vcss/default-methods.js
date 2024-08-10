@@ -319,6 +319,8 @@ export const Methods = cfg => {
     d: (v) => ({ display: display[v] ?? v }),
     z: (v) => ({ zIndex: v }),
     bg: (...c) => ({ background: c.map(color).join(', ') }),
+    bgc: (...c) => ({ backgroundColor: c.map(color).join(', ') }),
+    bgi: (...c) => ({ backgroundImage: c.map(color).join(', ') }),
     op: (v) => ({ opacity: v }),
     va: (v) => ({ verticalAlign: v }),
     sh: (v) => ({ boxShadow: shadow(v) }),
