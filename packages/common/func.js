@@ -13,13 +13,22 @@ export const safe = f => function() {
 }
 safe.errorHandler = e => console.error(e);
 
-export const lock = (promise, f) => {
-  let locked = true;
-  promise.then(() => { locked = false; });
+export const lock = (isLocked, f) => {
+  if (typeof isLocked != 'function') {
+    if (!isLocked?.then) throw new Error('Invalid argument.');
+    let locked = true;
+    isLocked.then(() => { locked = false; });
+    isLocked = () => locked;
+  }
   return function() {
-    if (locked) return;
+    if (isLocked()) return;
     return f.apply(this, arguments);
   }
+}
+
+export const once = (f) => {
+  let called;
+  return lock(() => (called ??= true), f);
 }
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
@@ -33,15 +42,22 @@ export const throttle = (f) => {
     return p;
   }
 }
-throttle.T = (delay, f) => {
-  let t;
+const timeoutThrottle = (callImmediately, delay, f) => {
+  let t = null;
   return function () {
     clearTimeout(t);
     return new Promise((resolve) => {
-      t = setTimeout(() => resolve(f.apply(this, arguments)), delay);
+      const after = once(() => {
+        t = null;
+        resolve(f.apply(this, arguments));
+      });
+      if (t == null && callImmediately) after();
+      t = setTimeout(after, delay);
     });
   }
 }
+throttle.T = (delay, f) => timeoutThrottle(false, delay, f);
+throttle.Ti = (delay, f) => timeoutThrottle(true, delay, f);
 
 export const isTemplateCall = args =>
   Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
