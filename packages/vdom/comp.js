@@ -8,7 +8,6 @@ const CompData = (ctx) => ({
   refresh: ctx.refresh,
   ctx: new Map(),
   parent: ctx.parent,
-  isAlive: true,
   appendix: [],
 });
 
@@ -39,7 +38,7 @@ const Context = () => {
 
 const Effect = (args, func) => {
   const [st] = Val({ args: null, cancellation: null, error: null });
-  const alive = Component.Lifecycle() ?? true;
+  const alive = Component.Lifecycle() !== false;
   const perform = () => {
     if (!alive || st.error) return;
 
@@ -58,7 +57,7 @@ const Effect = (args, func) => {
     catch (e) { console.error(e); }
     st.cancellation = null;
   }
-  if (!alive) cancel();
+  if (!alive && st.args?.length === 0) cancel();
 
   return { args: st.args, perform, cancel };
 }
@@ -97,10 +96,11 @@ const componentInstance = (ctx, render, args, appendix) => new Proxy(
 
 const Component = (render) => (...args) =>
   componentInstance(null, render, args, []);
+const lifecycle = Context();
 
 Object.assign(Component, {
   Context: Context,
-  Lifecycle: Context(),
+  Lifecycle: lifecycle,
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(
