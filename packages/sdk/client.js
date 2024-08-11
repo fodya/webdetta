@@ -22,7 +22,7 @@ export const sdkUtils = {
       log('[rpc]', ...(
         'to' in data
         ? [`#${data.to}`, '<=', data.res]
-        : [data.call, '<=', data.args, `@${data.from}`]
+        : [`${data.call}(${JSON.stringify(data.args)})`, `@${data.from}`]
       ))
     });
     instance['#internals'].rpc.onSend((d) => {
@@ -30,7 +30,7 @@ export const sdkUtils = {
       log('[rpc]', ...(
         'to' in data
         ? [data.res, '=>', `#${data.to}`]
-        : [`@${data.from}`, data.call, '=>', data.args]
+        : [`@${data.from}`, `${data.call}(${JSON.stringify(data.args)})`]
       ))
     });
   },
