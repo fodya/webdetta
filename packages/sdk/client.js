@@ -14,6 +14,8 @@ const WS = (metaurl, clientEntries) => {
   return instance;
 }
 
+const callToString = data =>
+  `${data.call}(${data.args.map(d => JSON.stringify(d)).join(', ')})`;
 export const sdkUtils = {
   logger: (instance, log) => {
     instance['#internals'].rpc.onMessage((d) => {
@@ -22,7 +24,7 @@ export const sdkUtils = {
       log('[rpc]', ...(
         'to' in data
         ? [`#${data.to}`, '<=', data.res]
-        : [`${data.call}(${JSON.stringify(data.args)})`, `@${data.from}`]
+        : [callToString(data), `@${data.from}`]
       ))
     });
     instance['#internals'].rpc.onSend((d) => {
@@ -30,7 +32,7 @@ export const sdkUtils = {
       log('[rpc]', ...(
         'to' in data
         ? [data.res, '=>', `#${data.to}`]
-        : [`@${data.from}`, `${data.call}(${JSON.stringify(data.args)})`]
+        : [`@${data.from}`, callToString(data)]
       ))
     });
   },
