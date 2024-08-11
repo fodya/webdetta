@@ -19,7 +19,7 @@ const callToString = data =>
 export const sdkUtils = {
   logger: (instance, log) => {
     instance['#internals'].rpc.onMessage((d) => {
-      if (!d.data.length) return;
+      if (!d.data?.length && !d.data.byteLength) return;
       const data = decode(d.data);
       log('[rpc]', ...(
         'to' in data
