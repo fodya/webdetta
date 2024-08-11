@@ -13,7 +13,7 @@ const locationAttachment = {
   },
 }
 
-export const HistoryRouter = (routes, { prefix }={}) => {
+export const PathnameRouter = (routes, { prefix }={}) => {
   prefix = prefix.replace(/\/$/, '');
   return Router(routes, {
     ...locationAttachment,
