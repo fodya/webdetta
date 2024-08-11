@@ -270,6 +270,11 @@ export const Methods = cfg => {
     tsh: (...a) => ({
       textShadow: a.map(v => color(v) ?? size(v) ?? v).join(' ')
     }),
+    tlc: (v, inline=true) => ({
+      WebkitLineClamp: v,
+      WebkitBoxOrient: 'vertical',
+      display: inline ? '-webkit-inline-box' : '-webkit-box'
+    }),
 
     // padding, margin, border, border-radius
     ...def(sides,   _=>'p'+_,  _=>(v) => ({
