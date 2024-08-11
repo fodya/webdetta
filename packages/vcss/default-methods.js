@@ -107,7 +107,7 @@ const visibility = {
 }
 const wordBreak = {
   k: 'keep-all',
-  b: 'break-word',
+  w: 'break-word',
   a: 'break-all',
 }
 const whiteSpace = {
