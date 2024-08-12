@@ -33,20 +33,35 @@ export const once = (f) => {
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
 
-const throttle_ = (before, f, after) => {
-  let p = null;
+const throttle = (f) => {
+  let promise = null;
   return function () {
-    p ??= Promise.resolve(before?.())
+    promise ??= Promise.resolve()
       .then(() => f.apply(this, arguments))
-      .then(res => Promise.resolve(after?.()).then(() => res))
-      .finally(() => (p = null));
-    return p;
+      .finally(() => (promise = null));
+    return promise;
   }
 }
-
-export const throttle = f => throttle_(null, f, null);
-throttle.T = (delay, f) => throttle_(() => sleep(delay), f, null);
-throttle.Ti = (delay, f) => throttle_(null, f, () => sleep(delay));
+throttle.T = (delay, f) => throttle(async function () {
+  await sleep(delay);
+  return await f.apply(this, arguments);
+});
+throttle.Ti = (delay, f) => throttle(async function () {
+  const res = await f.apply(this, arguments);
+  await sleep(delay);
+  return res;
+});
+throttle.Td = (delay, f) => {
+  let t, resolve, reject;
+  return function() {
+    return new Promise((rs, rj) => {
+      clearTimeout(t);
+      reject?.();
+      [resolve, reject] = [rs, rj];
+      t = setTimeout(() => resolve(f.apply(this, arguments)), delay);
+    }).catch(e => e);
+  }
+}
 
 export const isTemplateCall = args =>
   Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
