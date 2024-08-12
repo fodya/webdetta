@@ -15,8 +15,9 @@ const RouterVdom = Component(({
 
   h.effect([], () => {
     for (const routeKey of preloadPages) {
-      if (routeKey == r.route.key) continue;
-      saved[r.route.key] = r.route.value({});
+      const pr = router.routes[routeKey];
+      if (routeKey == pr.route.key) continue;
+      saved[pr.route.key] = pr.route.value({});
     }
     router.listen(redraw);
     router.attach();
