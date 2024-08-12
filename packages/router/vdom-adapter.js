@@ -2,6 +2,7 @@ import { h, el, Fragment, Component } from '../vdom/index.js';
 
 const RouterVdom = Component(({
   router,
+  preloadPages=[],
   pageProps
 }) => {
   RouterVdom.ctx(router);
@@ -9,6 +10,10 @@ const RouterVdom = Component(({
   const r = router.current();
   const redraw = h.redraw();
   h.effect([], () => {
+    for (const routeKey of preloadPages) {
+      if (routeKey == r.route.key) continue;
+      saved[r.route.key] = r.route.value({});
+    }
     router.listen(redraw);
     router.attach();
     return () => router.detach();

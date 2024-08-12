@@ -33,3 +33,5 @@ export const colorToHex = (colorStr) => {
   canvasCtx.fillStyle = colorStr;
   return canvasCtx.fillStyle;
 }
+
+export const forceReflow = elem => { elem.offsetHeight; }
