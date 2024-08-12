@@ -33,7 +33,7 @@ export const once = (f) => {
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
 
-const throttle = (f) => {
+export const throttle = (f) => {
   let promise = null;
   return function () {
     promise ??= Promise.resolve()
