@@ -9,6 +9,10 @@ const RouterVdom = Component(({
 
   const r = router.current();
   const redraw = h.redraw();
+
+  const saved = h.ref({})();
+  if (r.route) saved[r.route.path] = r.route.value(r.params);
+
   h.effect([], () => {
     for (const routeKey of preloadPages) {
       if (routeKey == r.route.key) continue;
@@ -18,9 +22,6 @@ const RouterVdom = Component(({
     router.attach();
     return () => router.detach();
   });
-
-  const saved = h.ref({})();
-  if (r.route) saved[r.route.path] = r.route.value(r.params);
 
   return Fragment(Object.entries(saved).map(([routepath, page]) => {
     const isCurrent = r.route?.path == routepath;
