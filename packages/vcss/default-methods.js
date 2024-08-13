@@ -2,9 +2,19 @@
 // MIT License
 // (c) 2023 Fedot Kryutchenko
 
+const falsy = d => ({
+  false: d,
+  null: d,
+  undefined: d,
+});
+
+const truthy = d => ({
+  true: d,
+});
+
 const display = {
-  true: '',
-  false: 'none',
+  ...truthy(''),
+  ...falsy('none'),
   b: 'block',
   i: 'inline',
   ib: 'inline-block',
@@ -50,8 +60,8 @@ const gridFlow = {
   'row*': 'row dense'
 }
 const overflow = {
-  true: 'auto',
-  false: 'hidden',
+  ...truthy('auto'),
+  ...falsy('hidden'),
   h: "hidden",
   a: "auto",
   s: "scroll"
@@ -75,8 +85,8 @@ const textAlign = {
   mp: 'match-parent'
 }
 const borderStyle = {
-  true: 'solid',
-  false: 'none',
+  ...truthy('solid'),
+  ...falsy('none'),
   n: 'none',
   '-': 'solid',
   '.': 'dotted',
@@ -90,8 +100,8 @@ const textTransform = {
   c: 'capitalize'
 }
 const userSelect = {
-  true: 'auto',
-  false: 'none',
+  ...truthy('auto'),
+  ...falsy('none'),
   '~': 'auto',
   n: 'none',
   t: 'text',
@@ -99,8 +109,8 @@ const userSelect = {
   c: 'contain'
 }
 const visibility = {
-  true: 'visible',
-  false: 'hidden',
+  ...truthy('visible'),
+  ...falsy('hidden'),
   h: 'hidden',
   v: 'visible',
   c: 'collapse',
