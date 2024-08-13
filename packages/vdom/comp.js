@@ -28,11 +28,10 @@ const Context = () => {
   if (comp) throw new Error('Context must be created outside of component.');
   const k = Math.random().toString(16).slice(2, 12);
   const ctx = (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
-  ctx.Provide = Component((...a) => {
+  ctx.Provide = (...a) => {
     if (a.length != 2) throw new Error('Exactly two arguments expected.');
-    ctx(a[0]);
-    return a[1];
-  });
+    return a[1](componentPreprocess, () => { ctx(a[0]); });
+  };
   return ctx;
 }
 
@@ -62,40 +61,50 @@ const Effect = (args, func) => {
   return { args: st.args, perform, cancel };
 }
 
-const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
+const updateVnode = (
+  oldVnode, vnode, ctx, render, args, preprocess, appendix
+) => {
   const pComp = comp;
   try {
     comp = vnode.data.comp = oldVnode?.data?.comp ?? CompData(ctx);
     comp.stateI = 0;
     comp.appendix = appendix;
+    for (const prep of preprocess) prep(vnode);
 
     vnode.children = [];
-    const child = render(...args) ?? Fragment();
+    vnode.construct = (
+      lifecycle() !== false
+      ? (render(...args) ?? Fragment())(comp.appendix)
+      : oldVnode?.construct
+    ) ?? Fragment();
     const childCtx = { ...ctx, parent: vnode };
-    append(child(comp.appendix), vnode, childCtx);
+    append(vnode.construct, vnode, childCtx);
   } catch (e) {
     console.error(e);
   }
   comp = pComp;
 }
 
-const componentInstance = (ctx, render, args, appendix) => new Proxy(
+const componentPreprocess = Symbol();
+const componentInstance = (ctx, render, args, preprocess, appendix) => new Proxy(
   Fragment(
     operator((vnode, ctx_) => (ctx = ctx_, vnode.data.is = render)),
     hook.init(vnode =>
-      updateVnode(null,     vnode, ctx, render, args, appendix)
+      updateVnode(null,     vnode, ctx, render, args, preprocess, appendix)
     ).prepatch((oldVnode, vnode) =>
-      updateVnode(oldVnode, vnode, ctx, render, args, appendix)
+      updateVnode(oldVnode, vnode, ctx, render, args, preprocess, appendix)
     )
   ), {
     apply: (target, _, ops) =>
-      typeof ops[0] == 'symbol' && ops[0] == Builder.symbol
+        typeof ops[0] == 'symbol' && ops[0] == Builder.symbol
       ? target(...ops)
-      : componentInstance(ctx, render, args, appendix.concat(ops))
+      : typeof ops[0] == 'symbol' && ops[0] == componentPreprocess
+      ? componentInstance(ctx, render, args, preprocess.concat(ops[1]), appendix)
+      : componentInstance(ctx, render, args, preprocess, appendix.concat(ops))
   });
 
 const Component = (render) => (...args) =>
-  componentInstance(null, render, args, []);
+  componentInstance(null, render, args, [], []);
 const lifecycle = Context();
 
 Object.assign(Component, {
