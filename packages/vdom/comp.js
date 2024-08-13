@@ -32,7 +32,7 @@ const Context = () => {
 
 const Effect = (args, func) => {
   const [st] = Val({ args: null, cancellation: null, error: null });
-  const alive = Component.Lifecycle() !== false;
+  const alive = lifecycle() !== false;
   const perform = () => {
     if (!alive || st.error) return;
 
