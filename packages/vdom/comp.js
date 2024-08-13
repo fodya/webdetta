@@ -77,10 +77,10 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
 
     vnode.children = [];
     vnode.construct = lifecycle() !== false
-      ? withOperator(render(...args), comp.appendix)
+      ? withOperator(render(...args), ...comp.appendix)
       : oldVnode?.construct;
     vnode.construct = post.length > 0
-      ? withOperator(vnode.construct, [postprocess, post])
+      ? withOperator(vnode.construct, postprocess, ...post)
       : vnode.construct;
 
     const childCtx = { ...ctx, parent: vnode };
