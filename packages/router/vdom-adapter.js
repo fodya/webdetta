@@ -28,7 +28,7 @@ const RouterVdom = Component(({
     const isCurrent = r.route?.path == routepath;
     return page(
       Component.Lifecycle.provide(isCurrent),
-      Component.preprocess(el.key(routepath), pageProps(isCurrent, r));
+      Component.preprocess(el.key(routepath), pageProps(isCurrent, r))
     );
   }));
 });
