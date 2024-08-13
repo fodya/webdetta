@@ -30,9 +30,7 @@ const Context = () => {
   const ctx = (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
   ctx.Provide = (...a) => {
     if (a.length != 2) throw new Error('Exactly two arguments expected.');
-    return a[1](
-      Component.preprocess(() => { ctx(a[0]); })
-    );
+    return a[1](Component.preprocess(() => ctx(a[0])));
   };
   return ctx;
 }
