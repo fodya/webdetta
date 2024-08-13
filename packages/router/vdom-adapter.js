@@ -24,11 +24,15 @@ const RouterVdom = Component(({
     return () => router.detach();
   });
 
-  return Fragment(Object.entries(saved).map(([routepath, page]) => {
-    let isEnabled = r.route?.path == routepath;
+  const preloaded = {};
+  const preloadPaths = preloadPages.map(k => router.routes[k].path);
+  return Fragment(Object.entries(saved).map(([routePath, page]) => {
+    let isEnabled = r.route?.path == routePath;
+    if (preloadPaths.includes(routePath))
+      preloaded[preloadPaths] ??= (isEnabled = true);
     return page(
       Component.preprocess(() => Component.lifecycle(isEnabled)),
-      Component.postprocess(el.key(routepath), pageProps(isEnabled, r))
+      Component.postprocess(el.key(routePath), pageProps(isEnabled, r))
     );
   }));
 });
