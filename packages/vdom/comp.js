@@ -56,6 +56,8 @@ const Effect = (args, func) => {
   return { args: st.args, perform, cancel };
 }
 
+const withOperator = (vnode, ...appendix) =>
+  typeof vnode == 'function' ? vnode(...appendix) : vnode;
 const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
   const pComp = comp;
   try {
@@ -63,35 +65,34 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
     comp.stateI = 0;
     comp.appendix = [];
 
-    const postprocess = [];
+    const post = [];
     for (const op of appendix) {
-      if (typeof op == 'object' && op && componentPreprocess in op) {
-        append(op[componentPreprocess], vnode, ctx);
-        continue;
-      }
-      if (typeof op == 'object' && op && componentPostprocess in op) {
-        postprocess.push(op[componentPostprocess]);
-        continue;
-      }
-      comp.appendix.push(op);
+      if (typeof op == 'object' && op && preprocess.symbol in op)
+        append(op[preprocess.symbol], vnode, ctx);
+      else if (typeof op == 'object' && op && postprocess.symbol in op)
+        post.push(op[postprocess.symbol]);
+      else
+        comp.appendix.push(op);
     }
 
     vnode.children = [];
-    vnode.construct = (
-      lifecycle() !== false
-      ? (render(...args) ?? Fragment())(comp.appendix)
-      : oldVnode?.construct
-    );
+    vnode.construct = lifecycle() !== false
+      ? withOperator(render(...args), comp.appendix)
+      : oldVnode?.construct;
+    vnode.construct = post.length > 0
+      ? withOperator(vnode.construct, [postprocess, post])
+      : vnode.construct;
+
     const childCtx = { ...ctx, parent: vnode };
-    if (vnode.construct) append(vnode.construct(postprocess), vnode, childCtx);
+    append(vnode.construct, vnode, childCtx);
   } catch (e) {
     console.error(e);
   }
   comp = pComp;
 }
 
-const componentPreprocess = Symbol();
-const componentPostprocess = Symbol();
+const preprocess = Object.assign(()=>{}, {symbol: Symbol()});
+const postprocess = Object.assign(()=>{}, {symbol: Symbol()});
 const componentInstance = (ctx, render, args, appendix) => new Proxy(
   Fragment(
     operator((vnode, ctx_) => (ctx = ctx_, vnode.data.is = render)),
@@ -101,10 +102,13 @@ const componentInstance = (ctx, render, args, appendix) => new Proxy(
       updateVnode(oldVnode, vnode, ctx, render, args, appendix)
     )
   ), {
-    apply: (target, _, ops) =>
-      typeof ops[0] == 'symbol' && ops[0] == Builder.symbol
-      ? target(...ops)
-      : componentInstance(ctx, render, args, appendix.concat(ops))
+    apply: (target, _, ops) => {
+      if (typeof ops[0] == 'symbol' && ops[0] == Builder.symbol)
+        return target(...ops);
+      if (ops[0] == preprocess || ops[0] == postprocess)
+        ops = [{ [ops[0].symbol]: ops.slice(1) }];
+      return componentInstance(ctx, render, args, appendix.concat(ops));
+    }
   });
 
 const Component = (render) => (...args) =>
@@ -114,8 +118,8 @@ const lifecycle = Context();
 Object.assign(Component, {
   Context: Context,
   lifecycle: lifecycle,
-  preprocess: (...op) => ({[componentPreprocess]: op}),
-  postprocess: (...op) => ({[componentPostprocess]: op}),
+  preprocess: (...op) => ({[preprocess.symbol]: op}),
+  postprocess: (...op) => ({[postprocess.symbol]: op}),
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(
