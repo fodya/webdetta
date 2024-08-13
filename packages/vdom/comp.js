@@ -81,9 +81,9 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
       lifecycle() !== false
       ? (render(...args) ?? Fragment())(comp.appendix)
       : oldVnode?.construct
-    ) ?? Fragment();
+    );
     const childCtx = { ...ctx, parent: vnode };
-    append(vnode.construct(postprocess), vnode, childCtx);
+    if (vnode.construct) append(vnode.construct(postprocess), vnode, childCtx);
   } catch (e) {
     console.error(e);
   }
