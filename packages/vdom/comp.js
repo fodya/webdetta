@@ -114,7 +114,7 @@ const lifecycle = Context();
 Object.assign(Component, {
   Context: Context,
   Lifecycle: lifecycle,
-  preprocess: (comp, ...prep) => prep.map(d => {[componentPreprocess]: d}),
+  preprocess: (comp, ...prep) => prep.map(d => ({[componentPreprocess]: d})),
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(
