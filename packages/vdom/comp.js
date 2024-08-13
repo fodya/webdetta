@@ -28,9 +28,7 @@ const Context = () => {
   if (comp) throw new Error('Context must be created outside of component.');
   const k = Math.random().toString(16).slice(2, 12);
   const ctx = (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
-  ctx.provide = (arg) => {
-    return Component.preprocess(() => ctx(arg));
-  };
+  ctx.provide = (arg) => Component.preprocess(() => ctx(arg));
   return ctx;
 }
 
