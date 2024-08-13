@@ -82,10 +82,8 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
       ? (render(...args) ?? Fragment())(comp.appendix)
       : oldVnode?.construct
     ) ?? Fragment();
-    for (const op of postprocess) append(op, vnode.construct, ctx);
-
     const childCtx = { ...ctx, parent: vnode };
-    append(vnode.construct, vnode, childCtx);
+    append(vnode.construct(postprocess), vnode, childCtx);
   } catch (e) {
     console.error(e);
   }
