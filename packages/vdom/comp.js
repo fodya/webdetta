@@ -1,6 +1,6 @@
 import { operator, hook } from './operators.js';
 import { Fragment, Element, append, attach } from './vdom.js';
-import { Builder, isBuilder, launch } from '../common/builder.js';
+import { Builder } from '../common/builder.js';
 
 const CompData = (ctx) => ({
   stateI: 0,
@@ -27,9 +27,7 @@ const ctxSet = (comp, k, v) => (comp.ctx.set(k, v), v);
 const Context = () => {
   if (comp) throw new Error('Context must be created outside of component.');
   const k = Math.random().toString(16).slice(2, 12);
-  const ctx = (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
-  ctx.provide = (arg) => Component.preprocess(() => ctx(arg));
-  return ctx;
+  return (...a) => a.length ? ctxSet(comp, k, a[0]) : ctxGet(comp, k);
 }
 
 const Effect = (args, func) => {
@@ -64,14 +62,18 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
     comp = vnode.data.comp = oldVnode?.data?.comp ?? CompData(ctx);
     comp.stateI = 0;
     comp.appendix = [];
+
+    const postprocess = [];
     for (const op of appendix) {
       if (typeof op == 'object' && op && componentPreprocess in op) {
-        const prep = op[componentPreprocess];
-        if (isBuilder(prep)) launch(prep, vnode, ctx);
-        else if (typeof prep == 'function') prep(vnode);
-      } else {
-        comp.appendix.push(op);
+        append(op[componentPreprocess], vnode, ctx);
+        continue;
       }
+      if (typeof op == 'object' && op && componentPostprocess in op) {
+        postprocess.push(op[componentPostprocess]);
+        continue;
+      }
+      comp.appendix.push(op);
     }
 
     vnode.children = [];
@@ -82,6 +84,8 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
     ) ?? Fragment();
     const childCtx = { ...ctx, parent: vnode };
     append(vnode.construct, vnode, childCtx);
+
+    for (const op of postprocess) append(op, vnode, ctx);
   } catch (e) {
     console.error(e);
   }
@@ -89,6 +93,7 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
 }
 
 const componentPreprocess = Symbol();
+const componentPostprocess = Symbol();
 const componentInstance = (ctx, render, args, appendix) => new Proxy(
   Fragment(
     operator((vnode, ctx_) => (ctx = ctx_, vnode.data.is = render)),
@@ -110,8 +115,9 @@ const lifecycle = Context();
 
 Object.assign(Component, {
   Context: Context,
-  Lifecycle: lifecycle,
-  preprocess: (comp, ...prep) => prep.map(d => ({[componentPreprocess]: d})),
+  lifecycle: lifecycle,
+  preprocess: (...op) => ({[componentPreprocess]: op}),
+  postprocess: (...op) => ({[componentPostprocess]: op}),
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(

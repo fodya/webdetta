@@ -27,8 +27,8 @@ const RouterVdom = Component(({
   return Fragment(Object.entries(saved).map(([routepath, page]) => {
     const isCurrent = r.route?.path == routepath;
     return page(
-      Component.Lifecycle.provide(isCurrent),
-      Component.preprocess(el.key(routepath), pageProps(isCurrent, r))
+      Component.preprocess(() => Component.lifecycle(isCurrent)),
+      Component.postprocess(el.key(routepath), pageProps(isCurrent, r))
     );
   }));
 });
