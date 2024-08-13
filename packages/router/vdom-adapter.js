@@ -16,8 +16,8 @@ const RouterVdom = Component(({
   h.effect([], () => {
     for (const routeKey of preloadPages) {
       const pr = router.routes[routeKey];
-      if (pr.key == r.route?.key) continue;
-      saved[pr.key] = pr.value({});
+      if (pr.path == r.route?.path) continue;
+      saved[pr.path] = pr.value({});
     }
     router.listen(redraw);
     router.attach();
@@ -25,10 +25,10 @@ const RouterVdom = Component(({
   });
 
   return Fragment(Object.entries(saved).map(([routepath, page]) => {
-    const isCurrent = r.route?.path == routepath;
+    let isEnabled = r.route?.path == routepath;
     return page(
-      Component.preprocess(() => Component.lifecycle(isCurrent)),
-      Component.postprocess(el.key(routepath), pageProps(isCurrent, r))
+      Component.preprocess(() => Component.lifecycle(isEnabled)),
+      Component.postprocess(el.key(routepath), pageProps(isEnabled, r))
     );
   }));
 });
