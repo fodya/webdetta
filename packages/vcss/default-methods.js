@@ -344,10 +344,7 @@ export const Methods = cfg => {
     },
 
     // transform
-    tr3: () => ({ transformStyle: 'preserve-3d' }),
-    rot3: (x, y, z, r) => ({
-      transform: `rotate3d(${x}, ${y}, ${z}, ${isNaN(+r) ? r : r + 'deg'})`
-    }),
+    //tr3: () => ({ transformStyle: 'preserve-3d' }),
     ...Object.fromEntries([
       ['mat', 'matrix'],
       ['mat3', 'matrix3d'],
@@ -371,6 +368,9 @@ export const Methods = cfg => {
     ].map(([name, prop]) => [name, (...v) => ({
       transform: prop+'('+ v.map(v=>isNaN(+v)?v:v+'deg').join(',') +')'
     })])),
+    rot3: (x, y, z, r) => ({
+      transform: `rotate3d(${x}, ${y}, ${z}, ${isNaN(+r) ? r : r + 'deg'})`
+    }),
 
     ...Object.fromEntries([
       ['prs', 'perspective'],
