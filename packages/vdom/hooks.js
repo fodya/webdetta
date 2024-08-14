@@ -63,7 +63,7 @@ export const status = (func) => {
 export const loader = (args, func) => {
   const [value, setValue] = val();
 
-  const loader = h.ref();
+  const loader = ref();
   effect(args, () => {
     let cancelled;
     const [load, st] = status(() => Promise.resolve(func()).then(then));
