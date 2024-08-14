@@ -26,10 +26,10 @@ export const hook = Builder((tasks, el, ctx) => {
   for (const {names, args} of tasks)
     for (const name of names) {
       hooks[name] ??= Object.assign(
-        (...a) => hooks[name].list.forEach(func => func(...a)),
+        (...a) => hooks[name].list.forEach(f => f(...a)),
         { list: [] }
       );
-      handler.list.push(...args.map(safe));
+      hooks[name].list.push(...args.map(f => safe(f, console.error)));
     }
 });
 export const cls = Builder((tasks, el, ctx) => {
