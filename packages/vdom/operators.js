@@ -1,5 +1,5 @@
 import { Builder } from '../common/builder.js';
-import { isTemplateCall, templateCallToArray } from '../common/func.js';
+import { safe, isTemplateCall, templateCallToArray } from '../common/func.js';
 
 const unwrap = (x) => (typeof x === 'function') ? unwrap(x()) : x;
 
@@ -25,11 +25,11 @@ export const hook = Builder((tasks, el, ctx) => {
   const hooks = el.data.hook ??= {};
   for (const {names, args} of tasks)
     for (const name of names) {
-      const oldHook = hooks[name];
-      hooks[name] = (...a) => {
-        oldHook?.(...a);
-        args.forEach(f => f(...a));
-      };
+      hooks[name] ??= Object.assign(
+        (...a) => hooks[name].list.forEach(func => func(...a)),
+        { list: [] }
+      );
+      handler.list.push(...args.map(safe));
     }
 });
 export const cls = Builder((tasks, el, ctx) => {
