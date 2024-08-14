@@ -38,7 +38,7 @@ export const cls = Builder((tasks, el, ctx) => {
     if (!args.length || args.some(x => unwrap(x))) {
       names.forEach(n => classes.add(kebab(n)));
     } else {
-      names.forEach(n => classes.deconste(kebab(n)));
+      names.forEach(n => classes.delete(kebab(n)));
     }
   }
 });
