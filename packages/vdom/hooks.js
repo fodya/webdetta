@@ -62,11 +62,18 @@ export const status = (func) => {
 
 export const loader = (args, func) => {
   const [value, setValue] = val();
-  const [load, status_] = status(
-    () => Promise.resolve(func()).then(res => setValue(res))
-  );
-  effect(args, () => { load(); });
-  return [value, load, status_, setValue];
+
+  const loader = h.ref();
+  effect(args, () => {
+    let cancelled;
+    const [load, st] = status(() => Promise.resolve(func()).then(then));
+    const then = res => { if (!cancelled) setValue(res); }
+    loader({ load, status: st, cancel });
+    loader().load();
+    return () => { cancelled = true; }
+  });
+
+  return [value, loader().load, loader().status, setValue];
 }
 
 export const event = (target, events, handler) =>
