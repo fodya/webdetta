@@ -5,6 +5,7 @@ import { Builder } from '../common/builder.js';
 const CompData = (ctx) => ({
   stateI: 0,
   state: [],
+  alive: true,
   refresh: ctx.refresh,
   ctx: new Map(),
   parent: ctx.parent,
@@ -75,11 +76,11 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
         comp.appendix.push(op);
     }
 
-    const pAlive = comp.alive !== false;
+    const wasAlive = comp.alive;
     comp.alive = lifecycle() !== false;
 
     vnode.children = [];
-    vnode.construct = comp.alive || pAlive
+    vnode.construct = comp.alive || wasAlive
       ? withOperator(render(...args), ...comp.appendix)
       : oldVnode?.construct;
     vnode.construct = post.length > 0
@@ -87,7 +88,7 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
       : vnode.construct;
 
     const childCtx = { ...ctx, parent: vnode };
-    append(vnode.construct, vnode, childCtx);
+    append(vnode.construct ?? Fragment(), vnode, childCtx);
   } catch (e) {
     console.error(e);
   }

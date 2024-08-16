@@ -24,7 +24,7 @@ const RouterVdom = Component(({
     return () => router.detach();
   });
 
-  const preloaded = {};
+  const [preloaded] = h.val({});
   const preloadPaths = preloadPages.map(k => router.routes[k].path);
   return Fragment(Object.entries(saved).map(([routePath, page]) => {
     const isVisible = r.route?.path == routePath;
