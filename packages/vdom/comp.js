@@ -79,7 +79,7 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
     else comp.alive = true;
 
     vnode.children = [];
-    vnode.construct = vnode.alive === true || vnode.alive === null
+    vnode.construct = comp.alive === true || comp.alive === null
       ? withOperator(render(...args), ...comp.appendix)
       : oldVnode?.construct;
     vnode.construct = post.length > 0
