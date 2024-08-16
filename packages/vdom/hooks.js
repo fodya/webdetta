@@ -75,8 +75,13 @@ export const loader = (args, func) => {
   return [value, load, status_, setValue];
 }
 
-export const event = (target, events, handler) =>
-  effect([target, events, handler], () => {
-    events.forEach(ev => target.addEventListener(ev, handler));
-    return () => events.forEach(ev => target.removeEventListener(ev, handler));
+export const event = (target, events, handler) => {
+  const savedHandler = ref()(handler);
+  const [listener] = val(function() {
+    return savedHandler().apply(this, arguments);
   });
+  effect([target, events, listener], () => {
+    events.forEach(ev => target.addEventListener(ev, listener));
+    return () => events.forEach(ev => target.removeEventListener(ev, listener));
+  });
+}
