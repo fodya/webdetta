@@ -75,11 +75,11 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
         comp.appendix.push(op);
     }
 
-    if (lifecycle() === false) comp.alive = comp.alive === false ? false : null;
-    else comp.alive = true;
+    const pAlive = comp.alive !== false;
+    comp.alive = lifecycle() !== false;
 
     vnode.children = [];
-    vnode.construct = comp.alive === true || comp.alive === null
+    vnode.construct = comp.alive || pAlive
       ? withOperator(render(...args), ...comp.appendix)
       : oldVnode?.construct;
     vnode.construct = post.length > 0
@@ -89,7 +89,6 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
     const childCtx = { ...ctx, parent: vnode };
     append(vnode.construct, vnode, childCtx);
   } catch (e) {
-    if (comp.alive === null) comp.alive = false;
     console.error(e);
   }
   comp = pComp;
