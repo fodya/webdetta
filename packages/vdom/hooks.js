@@ -76,7 +76,7 @@ export const loader = (args, func) => {
 }
 
 export const event = (target, events, handler) => {
-  const savedHandler = ref()(handler);
+  const savedHandler = ref(); savedHandler(handler);
   const [listener] = val(function() {
     return savedHandler().apply(this, arguments);
   });
