@@ -75,8 +75,10 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
         comp.appendix.push(op);
     }
 
-    if (lifecycle() === false) vnode.alive = null;
-    else vnode.alive = true;
+    if (lifecycle() === false)
+      vnode.alive = vnode.alive === false ? false : null;
+    else
+      vnode.alive = true;
 
     vnode.children = [];
     vnode.construct = vnode.alive === true || vnode.alive === null
