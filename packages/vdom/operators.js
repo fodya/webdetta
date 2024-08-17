@@ -1,5 +1,6 @@
 import { Builder } from '../common/builder.js';
 import { safe, isTemplateCall, templateCallToArray } from '../common/func.js';
+import { kebab } from '../common/dom.js';
 
 const unwrap = (x) => (typeof x === 'function') ? unwrap(x()) : x;
 
@@ -10,7 +11,6 @@ function unfoldToString(x) {
   return String(x);
 }
 const argsToString = args => unfoldToString(templateCallToArray(args));
-const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
 
 export const operator = f => Builder((_, ...args) => f(...args));
 export const key = (...args) =>

@@ -1,3 +1,5 @@
+export const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
+
 export const copyText = text => navigator.clipboard.writeText(text);
 
 const a = document.createElement("a");

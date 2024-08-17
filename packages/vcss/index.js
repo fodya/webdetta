@@ -1,3 +1,5 @@
+import { kebab } from '../common/dom.js';
+
 const ID = ((r={}, i={}) => (t, v) => {
   return r[t+v] ??= i[t] = (i[t] ??= -1) + 1;
 })();
@@ -11,7 +13,6 @@ const selectorTmpl = (sel='', val='') => (
   : val + sel
 );
 const splitSelector = str => [str];
-const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
 const styleStr = (style, important) => `{${
   Object.entries(style).map(([k, v]) =>
     kebab(k) + ': ' + v + (important ? ' !important' : '') + ';'
