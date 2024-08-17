@@ -6,7 +6,7 @@ import * as h from './hooks.js';
 
 const el = new Proxy({}, {
   get: (_, k) => k[0].toUpperCase() == k[0]
-    ? Element(kebab(k.toLowerCase()))
+    ? Element(kebab(k[0].toLowerCase() + k.slice(1)))
     : op[k]
 });
 
