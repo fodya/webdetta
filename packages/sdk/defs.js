@@ -6,7 +6,7 @@ const traverseSdkObject = (val, func, path=[], res=[]) => {
       ...entry,
       path: path.concat(entry.path)
     })));
-  } else if (typeof val == 'object') {
+  } else if (typeof val == 'object' && val) {
     for (const [k, v] of Object.entries(val))
       traverseSdkObject(v, func, [...path, k], res);
   } else if (typeof val == 'function') {
