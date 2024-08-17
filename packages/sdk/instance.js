@@ -8,7 +8,7 @@ const defineProperty = (instance, path, descriptor) => {
     } else if (Array.isArray(d)) {
       bound.add(d);
       bound.add(res = d.map(bind));
-    } else if (typeof d == 'object') {
+    } else if (typeof d == 'object' && d) {
       bound.add(d);
       for (const [k, v] of Object.entries(d)) d[k] = bind(v);
     }
