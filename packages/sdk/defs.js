@@ -1,7 +1,7 @@
 import { parseFn, obj2code } from './common.js';
 
 const traverseSdkObject = (val, func, path=[], res=[]) => {
-  if (typeof val == 'object' && SDK_ENTRY in val) {
+  if (typeof val == 'object' && val && SDK_ENTRY in val) {
     res.push(...val.list.map(entry => ({
       ...entry,
       path: path.concat(entry.path)
