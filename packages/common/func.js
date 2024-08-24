@@ -88,8 +88,21 @@ export const textToBase64 = text => {
   return btoa(str);
 }
 
-export const objectMap = (func, obj) => Object.fromEntries(
-  Object.entries(obj).map(([k, v]) => [k, func(v, k, obj)])
+export const objectForeach = (obj, func) => {
+  for (const [k, v] of Object.entries(obj)) func(v, k, obj);
+}
+export const objectMap = (...args) => {
+  if (args.length == 1) {
+    const [func] = args;
+    return (obj) => objectMap(obj, func);
+  }
+  if (args.length == 2) {
+    const [obj, func] = args;
+    const res = {};
+    for (const [k, v] of Object.entries(obj)) res[k] = func(v, k, obj);
+    return res;
+  }
+}
+export const objectPick = (obj, keys) => Object.fromEntries(
+  keys.map(k => [k, obj[k]])
 );
-export const objectForeach = (func, obj) =>
-  Object.entries(obj).map(([k, v]) => func(v, k, obj));
