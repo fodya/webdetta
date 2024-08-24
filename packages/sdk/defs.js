@@ -56,11 +56,7 @@ const syncValue = (handlerId, initial, allowRead, allowWrite) => {
       vars + init + `return a.length > 0 ? (V[h] = a[0]) : V[h];`
     ),
     instanceProperty: {
-      get: new Function(vars + init + (
-        allowWrite
-        ? `return V[h];`
-        : `return Object.freeze(V[h]);`
-      )),
+      get: new Function(vars + init + `return V[h];`),
       set: new Function('value',
         allowWrite
         ? vars + 'this["#internals"].rpc.cast(h, V[h] = value);'
