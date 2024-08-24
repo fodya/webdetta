@@ -88,9 +88,6 @@ export const textToBase64 = text => {
   return btoa(str);
 }
 
-export const objectForeach = (obj, func) => {
-  for (const [k, v] of Object.entries(obj)) func(v, k, obj);
-}
 export const objectMap = (...args) => {
   if (args.length == 1) {
     const [func] = args;
