@@ -100,7 +100,7 @@ export const objectMap = (...args) => {
     return res;
   }
 }
-export const objectPick = (obj, keys) => {
+export const objectPick = (...args) => {
   if (args.length == 1) {
     const [keys] = args;
     return (obj) => objectPick(obj, keys);
