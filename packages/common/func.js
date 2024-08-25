@@ -110,7 +110,7 @@ export const objectPick = (obj, keys) => {
     return Object.fromEntries(keys.map(k => [k, obj[k]]));;
   }
 }
-export const s = (...args) => {
+export const S = (...args) => {
   return templateCallToArray(args).flatMap(d =>
     d.split(/\s+/).map(d => d.trim())
   );
