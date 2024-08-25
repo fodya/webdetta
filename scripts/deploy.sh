@@ -11,7 +11,7 @@ else
 fi
 
 ssh $SSH bash <<eof
-  if [ "$(which docker)" == "" ]; then
+  if [ "\$(which docker)" == "" ]; then
     curl -fsSL https://get.docker.com | bash
   fi
   sudo groupadd docker >/dev/null 2>&1
