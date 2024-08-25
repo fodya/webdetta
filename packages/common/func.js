@@ -100,6 +100,18 @@ export const objectMap = (...args) => {
     return res;
   }
 }
-export const objectPick = (obj, keys) => Object.fromEntries(
-  keys.map(k => [k, obj[k]])
-);
+export const objectPick = (keys, obj) => {
+  if (args.length == 1) {
+    const [func] = args;
+    return (obj) => objectMap(obj, func);
+  }
+  if (args.length == 2) {
+    const [obj, keys] = args;
+    return Object.fromEntries(keys.map(k => [k, obj[k]]));;
+  }
+}
+export const s = (...args) => {
+  return templateCallToArray(args).flatMap(d =>
+    d.split(/\s+/).map(d => d.trim())
+  );
+}
