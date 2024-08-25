@@ -100,10 +100,10 @@ export const objectMap = (...args) => {
     return res;
   }
 }
-export const objectPick = (keys, obj) => {
+export const objectPick = (obj, keys) => {
   if (args.length == 1) {
-    const [func] = args;
-    return (obj) => objectMap(obj, func);
+    const [keys] = args;
+    return (obj) => objectPick(obj, keys);
   }
   if (args.length == 2) {
     const [obj, keys] = args;
