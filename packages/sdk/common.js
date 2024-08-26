@@ -28,7 +28,7 @@ export const parseFn = val => {
 export const obj2code = (obj, vars=[], pad='  ') => {
   if (typeof obj == 'function') {
     const { args, body, isAsync, value, params } = parseFn(obj);
-    const hasCurly = value.replace(params, '').replace(body, '').endsWith('{');
+    const hasCurly = value.includes('{'+body+'}');
     return [isAsync ? 'async ' : '',
       `function (${args.join(',')}) {`,
         vars.length == 0 ? '' : `var ${vars.join(',')};`,
