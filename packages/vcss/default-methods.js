@@ -159,13 +159,18 @@ const some = (args, r) => {
   return null;
 }
 
-const def = (obj, methodName, func) =>
-  Object.fromEntries(Object.entries(obj).map(([name, props]) => [
-    methodName(name),
-    function (...a) {
-      return props.map(p => func(p)(...a)).reduce((a, b) => Object.assign(a, b), {});
+const def = (obj, methodName, func) => {
+  const res = {};
+  for (const [name, props] of Object.entries(obj)) {
+    const propFns = props.map(func);
+    res[methodName(name)] = function (...a) {
+      const style = {};
+      for (const propFn of propFns) Object.assign(style, propFn(...a));
+      return style;
     }
-  ]));
+  }
+  return res;
+}
 
 const gridTrack = (size, str) => {
   let [ , count, track=''] = str.match(/(.*)\[(.*)\]/) ?? [null, str];
