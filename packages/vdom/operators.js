@@ -23,14 +23,13 @@ export const on = Builder((tasks, el, ctx) => {
 });
 export const hook = Builder((tasks, el, ctx) => {
   const hooks = el.data.hook ??= {};
-  for (const {names, args} of tasks)
+  for (const {names, args} of tasks) {
+    const handlers = args.map(f => safe(f, console.error));
     for (const name of names) {
-      hooks[name] ??= Object.assign(
-        (...a) => hooks[name].list.forEach(f => f(...a)),
-        { list: [] }
-      );
-      hooks[name].list.push(...args.map(f => safe(f, console.error)));
+      hooks[name] ??= (...a) => hooks[name].list.forEach(f => f(...a));
+      (hooks[name].list ??= []).push(...handlers);
     }
+  }
 });
 export const cls = Builder((tasks, el, ctx) => {
   const classes = el.data.classes ??= new Set();
