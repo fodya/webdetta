@@ -40,18 +40,20 @@ export const href = (routepath, params={}) => (
 ).replace(/\?$/, '');
 
 const currentRoute = (routesList, loc) => {
-  const search = Object.fromEntries(
-    new URLSearchParams(loc.search).entries()
-  );
-  const res = { route: null, params: search, location: loc };
+  let depth = 0;
+  const res = { route: null, params: {}, location: loc };
   for (const route of routesList) {
     const params = parsePath(route.path, loc.pathname);
-    if (params) {
+    const depth_ = Array.from(route.path).filter(d => d == '/').length;
+    if (params && depth_ >= depth) {
       res.route = route;
-      Object.assign(res.params, params);
-      break;
+      res.params = params;
+      depth = depth_;
     }
   }
+  Object.assign(res.params, Object.fromEntries(
+    new URLSearchParams(loc.search).entries()
+  ));
   return res;
 }
 
