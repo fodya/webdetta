@@ -6,14 +6,14 @@ const CompData = (ctx) => ({
   stateI: 0,
   state: [],
   alive: true,
-  refresh: ctx.refresh,
   ctx: new Map(),
-  parent: ctx.parent,
   appendix: [],
+  refresh: ctx.refresh,
+  parent: ctx.parent,
 });
 
 let comp;
-const appendToComponent = (...a) => comp.appendix.push(...a);
+const appendToCurrentComponent = (...a) => comp.appendix.push(...a);
 
 const Val = (arg) => {
   const j = comp.stateI++;
@@ -57,7 +57,7 @@ const Effect = (args, func) => {
   return { args: st.args, perform, cancel };
 }
 
-const withOperator = (vnode, ...appendix) =>
+const withAppendix = (vnode, ...appendix) =>
   typeof vnode == 'function' ? vnode(...appendix) : vnode;
 const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
   const pComp = comp;
@@ -81,14 +81,14 @@ const updateVnode = (oldVnode, vnode, ctx, render, args, appendix) => {
 
     vnode.children = [];
     vnode.construct = comp.alive || wasAlive
-      ? withOperator(render(...args), ...comp.appendix)
+      ? withAppendix(render(...args), ...comp.appendix)
       : oldVnode?.construct;
     vnode.construct = post.length > 0
-      ? withOperator(vnode.construct, postprocess, ...post)
+      ? withAppendix(vnode.construct, postprocess, ...post)
       : vnode.construct;
 
     const childCtx = { ...ctx, parent: vnode };
-    append(vnode.construct ?? Fragment(), vnode, childCtx);
+    append(vnode.construct, vnode, childCtx);
   } catch (e) {
     console.error(e);
   }
@@ -124,6 +124,7 @@ Object.assign(Component, {
   lifecycle: lifecycle,
   preprocess: (...op) => ({[preprocess.symbol]: op}),
   postprocess: (...op) => ({[postprocess.symbol]: op}),
+  append: appendToCurrentComponent,
   mount: (element, render) => {
     const body = attach(element);
     return new Promise(resolve => body(
@@ -133,4 +134,4 @@ Object.assign(Component, {
   },
 });
 
-export { Component, Val, Effect, appendToComponent };
+export { Component, Val, Effect };

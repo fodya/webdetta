@@ -1,5 +1,5 @@
 import {hook, operator} from './operators.js';
-import {Val, Effect, appendToComponent} from './comp.js';
+import {Component, Val, Effect} from './comp.js';
 
 export const val = Val;
 export const ref = (initial) => {
@@ -25,12 +25,12 @@ const compareArgs = (prev, curr) =>
 export const effect = (args, func) => {
   const ef = Effect(args, func);
   if (compareArgs(ef.args, args)) ef.perform();
-  appendToComponent(hook.destroy(ef.cancel));
+  Component.append(hook.destroy(ef.cancel));
 }
 
 export const redraw = () => {
   let refresh;
-  appendToComponent(operator((_, ctx) => (refresh = ctx.refresh)));
+  Component.append(operator((_, ctx) => (refresh = ctx.refresh)));
   return () => refresh?.();
 }
 
