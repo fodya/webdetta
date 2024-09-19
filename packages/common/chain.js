@@ -38,7 +38,7 @@ export function Chain() {
 
 Chain.symbol = Symbol('Chain.symbol');
 
-export function isBuilder(f) {
+export function isChain(f) {
   return Object.hasOwn(f, Chain.symbol);
 }
 
