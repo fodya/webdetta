@@ -8,11 +8,16 @@ export function isBuilder(f) {
 
 function builder(f) {
   f[Builder.symbol] = true;
+  if (Builder.enableInspect) Object.defineProperty(f, Builder.inspect, {
+    get() { return f(Builder.inspect); }
+  });
   return f;
 }
 
 export function Builder(effect, tasks=[], names=[]) {
   return new Proxy(builder((...args) =>
+    args[0] === Builder.inspect
+    ? [...tasks, { names, args: [] }] :
     args[0] === Builder.symbol
     ? effect([...tasks, { names, args: [] }], ...args.slice(1))
     : Builder(effect, [...tasks, { names, args }], [])
@@ -22,6 +27,9 @@ export function Builder(effect, tasks=[], names=[]) {
   });
 }
 Builder.symbol = Symbol('Builder.symbol');
+Builder.inspect = Symbol('Builder.inspect');
+Builder.enableInspect = false;
+Builder.launch = launch;
 
 export function launch(construct, ...args) {
   return construct(Builder.symbol, ...args);
