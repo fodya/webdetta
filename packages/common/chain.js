@@ -18,8 +18,9 @@ export function postOrder(f) {
 
 export function Chain() {
   let handlersMap = new Map(), handlers;
-  function makeNext(pos = 0, hs = handlers ??= Array.from(handlersMap.values())) {
-    return (...args) => hs[pos]?.(makeNext(pos+1, hs), ...args);
+  function makeNext(hs, pos=0) {
+    hs ??= handlers ??= Array.from(handlersMap.values());
+    return (...args) => hs[pos]?.(makeNext(hs, pos+1), ...args);
   }
   let trigger = (...args) => makeNext()(...args);
   const change = func => (...hs) => {
@@ -28,10 +29,17 @@ export function Chain() {
     return trigger;
   };
   return Object.assign(trigger, {
+    [Chain.symbol]: true,
     on: change(h => handlersMap.set(h, inOrder(h))),
     add: change(h => handlersMap.set(h[ORIGINAL] ?? h, h)),
     delete: change(h => handlersMap.delete(h[ORIGINAL] ?? h)),
   });
+}
+
+Chain.symbol = Symbol('Chain.symbol');
+
+export function isBuilder(f) {
+  return Object.hasOwn(f, Chain.symbol);
 }
 
 export function rVal(v) {
