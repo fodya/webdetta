@@ -9,13 +9,15 @@ export function isBuilder(f) {
 function builder(f) {
   f[Builder.symbol] = true;
   if (Builder.enableInspect) Object.defineProperty(f, Builder.inspect, {
-    get() { return f[Builder.inspect]; }
+    get() { return f(Builder.inspect); }
   });
   return f;
 }
 
 export function Builder(effect, tasks=[], names=[]) {
   return new Proxy(builder((...args) =>
+    args[0] === Builder.inspect
+    ? [...tasks, { names, args: [] }] :
     args[0] === Builder.symbol
     ? effect(
       names.length == 0 ? tasks : [...tasks, { names, args: [] }],
@@ -24,9 +26,7 @@ export function Builder(effect, tasks=[], names=[]) {
     : Builder(effect, [...tasks, { names, args }], [])
   ), {
     get: (target, name) =>
-      name === Builder.inspect
-      ? [...tasks, { names, args: [] }]
-      : Builder(effect, tasks, [...names, name])
+      Builder(effect, tasks, [...names, name])
   });
 }
 Builder.symbol = Symbol('Builder.symbol');
