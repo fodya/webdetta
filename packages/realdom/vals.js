@@ -1,4 +1,4 @@
-import { Chain, Effect, Val } from '../common/chain.js';
+import { Chain, Val } from '../common/chain.js';
 import Ctx from './ctx.js';
 
 const signal = (chain) => {
