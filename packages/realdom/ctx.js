@@ -5,32 +5,28 @@ class Ctx {
 
   ns = null
 
-  connect = Chain()
-  disconnect = Chain()
+  connected = Chain()
   update = null
   parent = null
 
   constructor(update, parent) {
     this.update = update;
     this.parent = parent;
-    if (parent) {
-      parent.connect.on(this.connect);
-      parent.disconnect.on(this.disconnect);
-    }
+    if (parent) parent.connected.on(this.connected);
     this.bind = this.bind.bind(this);
   }
 
-  #chains = new Map()
+  #chains = new Set()
   attachChain(chain) {
-    const update = () => this.update?.();
-    let h = this.#chains.get(chain);
-    if (!h) this.#chains.set(chain, h = {
-      on: () => (update(), chain.on(update)),
-      off: () => chain.off(update)
-    });
+    const update = this.update;
+    if (!update || this.#chains.has(chain)) return;
+    this.#chains.add(chain);
+
     chain.on(update);
-    this.connect.on(h.on);
-    this.disconnect.on(h.off);
+    this.connected.on((v) => {
+      if (v) { update(); chain.on(update); }
+      else { chain.off(update); this.#chains.delete(chain); }
+    });
   }
 
   bind(func) {

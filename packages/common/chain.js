@@ -1,36 +1,46 @@
 const Chain = (...steps) => {
-  let listeners;
-  const on = h => (listeners ??= new Set()).add(h);
-  const off = h => listeners?.delete?.(h);
+  const listeners = new Set();
+  const listen = (...hs) => (hs.forEach(h => listeners.add(h)), trigger);
+  const unlisten = (...hs) => (hs.forEach(h => listeners.delete(h)), trigger);
+
+  const handlers = new Set();
+  const on = (...hs) => (hs.forEach(h => handlers.add(h)), trigger);
+  const off = (...hs) => (hs.forEach(h => handlers.delete(h)), trigger);
 
   const pipeline = steps
-    .map(f => Chain.symbol in f ? f[Chain.symbol] : f)
-    .map((f, i) => (nextChain, args) => {
+    .map(f => Chain.symbol in f ? f.run : f)
+    .map((f, i) => (finish, args) => {
       const next = i + 1 == steps.length
-        ? nextChain
-        : (...args) => pipeline[i + 1](nextChain, args);
+        ? finish
+        : (...args) => pipeline[i + 1](finish, args);
       return f(next, ...args);
     });
 
-  const run = (nextChain, ...args) => {
-    const res = pipeline[0] ? [pipeline[0](nextChain, args)] : args;
-    if (listeners) for (const h of listeners) h(...res);
-    return res[0];
+  const run = (next, ...args) => {
+    for (const h of listeners) h(...args);
+    return pipeline[0]((...res) => {
+      for (const h of handlers) h(...res);
+      next?.(...res);
+    }, args);
   }
-  const trigger = (...args) => run((...args) => args[0], ...args);
 
-  return Object.assign(trigger, { [Chain.symbol]: run, on, off });
+  const trigger = (...args) => run(null, ...args);
+
+  return Object.assign(trigger, {
+    [Chain.symbol]: true,
+    run, on, off, listen, unlisten
+  });
 };
 Chain.symbol = Symbol('Chain.symbol');
 
-const Val = v => Chain((next, ...args) => (
-  args.length > 0 && (v = args[0]),
-  next(v)
-));
+const Val = v => Chain((next, ...args) => {
+  if (args.length > 0) next(v = args[0]);
+  return v;
+});
 
-const Ref = (obj, key) => Chain((next, ...args) => (
-  args.length > 0 && (obj[key] = args[0]),
-  next(obj[key])
-));
+const Ref = (obj, key) => Chain((next, ...args) => {
+  if (args.length > 0) next(obj[key] = args[0]);
+  return obj[key];
+});
 
 export { Chain, Val, Ref };

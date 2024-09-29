@@ -26,24 +26,18 @@ class ComponentInstance {
   init(args, ctx) {
     if (this.initialized) throw new Error('cannot init twice.');
     this.#ctx = new Ctx();
-    this.#ctx.connect.on(once(() => {
+
+    const render = once(() => {
       const elm = this.elm.shadowRoot ?? this.elm;
       const body = this.#func.apply(this, args);
       append(elm, body, this.#ctx);
-    }));
+    });
+    this.#ctx.connected.on(v => { if (v) render(); });
   }
 
-  #connected_ = false
-  get connected() { return this.#connected_; }
-  connect() {
-    this.#connected_ = true;
-    this.#ctx.connect();
-  }
-
-  disconnect() {
-    this.#connected_ = false;
-    this.#ctx.disconnect();
-  }
+  get connected() { return this.#ctx.connected(); }
+  connect() { this.#ctx.connected(true); }
+  disconnect() { this.#ctx.connected(false); }
 
   onAttributeChange(name, oldValue, newValue) {
     for (const obj of this.#attrsHandlers) {
