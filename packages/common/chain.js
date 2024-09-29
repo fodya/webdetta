@@ -23,9 +23,6 @@ const Chain = (...steps) => {
 };
 Chain.symbol = Symbol('Chain.symbol');
 
-const Effect = h => (next, ...a) => (h(...a), next(...a));
-Effect.defer = h => (next, ...a) => (next(...a), h(...a));
-
 const Val = v => Chain((next, ...args) => (
   args.length > 0 && (v = args[0]),
   next(v)
@@ -36,4 +33,4 @@ const Ref = (obj, key) => Chain((next, ...args) => (
   next(obj[key])
 ));
 
-export { Chain, Effect };
+export { Chain, Val, Ref };
