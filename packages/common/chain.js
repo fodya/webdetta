@@ -9,19 +9,15 @@ const Chain = (...steps) => {
 
   const pipeline = steps
     .map(f => Chain.symbol in f ? f.run : f)
-    .map((f, i) => (finish, args) => {
-      const next = i + 1 == steps.length
-        ? finish
-        : (...args) => pipeline[i + 1](finish, args);
-      return f(next, ...args);
-    });
+    .map((f, i) => (...args) => f(pipeline[i + 1], ...args));
+
+  pipeline.push((...res) => {
+    for (const h of handlers) h(...res);
+  });
 
   const run = (next, ...args) => {
     for (const h of listeners) h(...args);
-    return pipeline[0]((...res) => {
-      for (const h of handlers) h(...res);
-      next?.(...res);
-    }, args);
+    return pipeline[0](...args);
   }
 
   const trigger = (...args) => run(null, ...args);
