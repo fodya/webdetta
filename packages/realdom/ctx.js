@@ -49,4 +49,4 @@ class Ctx {
   }
 }
 
-export Ctx;
+export default Ctx;
