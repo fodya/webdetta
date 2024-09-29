@@ -1,5 +1,6 @@
 import { safe, once, throttle } from '../common/func.js';
 import { el, Element, append } from './dom.js';
+import Ctx from './ctx.js';
 
 class ComponentInstance {
   #func = null
@@ -24,8 +25,7 @@ class ComponentInstance {
   get initialized() { return this.#ctx !== null; }
   init(args, ctx) {
     if (this.initialized) throw new Error('cannot init twice.');
-    this.#ctx = ctx;
-
+    this.#ctx = new Ctx();
     this.#ctx.connect.on(once(() => {
       const elm = this.elm.shadowRoot ?? this.elm;
       const body = this.#func.apply(this, args);
@@ -80,8 +80,8 @@ const Component = (name, options, func) => {
   };
   customElements.define(name, domConstructor);
 
-  const result = (...args) => Element(name, {}, (elem, parent, ctx) => {
-    elem.instance.init(args, ctx);
+  const result = (...args) => Element(name, {}, (elem) => {
+    elem.instance.init(args);
   });
   return Object.assign(result, { domConstructor });
 }
