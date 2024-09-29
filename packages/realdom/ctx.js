@@ -1,4 +1,4 @@
-import { Chain, Effect } from '../common/chain.js';
+import { Chain } from '../common/chain.js';
 
 class Ctx {
   static current = Chain()
