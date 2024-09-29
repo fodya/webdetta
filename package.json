@@ -11,6 +11,7 @@
     "./common/*": "./packages/common/*.js",
     "./i18n/*": "./packages/i18n/*.js",
     "./logging/*": "./packages/logging/*.js",
+    "./realdom/*": "./packages/realdom/*.js",
     "./router/*": "./packages/router/*.js",
     "./rpc/*": "./packages/rpc/*.js",
     "./sdk/*": "./packages/sdk/*.js",
