@@ -1,7 +1,6 @@
 import { isTemplateCall, templateCallToArray, safe, throttle } from '../common/func.js';
 import { Builder, isBuilder } from '../common/builder.js';
-import { Chain } from '../common/chain.js';
-import { Ctx } from './vals.js';
+import Ctx from './ctx.js';
 
 const falsy = v => v === undefined || v === null || v === false;
 
