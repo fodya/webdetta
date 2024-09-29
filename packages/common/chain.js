@@ -15,12 +15,10 @@ const Chain = (...steps) => {
     for (const h of handlers) h(...res);
   });
 
-  const run = (next, ...args) => {
+  const trigger = (...args) => {
     for (const h of listeners) h(...args);
     return pipeline[0](...args);
   }
-
-  const trigger = (...args) => run(null, ...args);
 
   return Object.assign(trigger, {
     [Chain.symbol]: true,
