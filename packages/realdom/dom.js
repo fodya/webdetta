@@ -1,6 +1,6 @@
-import { isTemplateCall, templateCallToArray, safe, throttle } from 'webdetta/common/func';
-import { Builder, isBuilder } from 'webdetta/common/builder';
-import { Chain } from 'webdetta/common/chain';
+import { isTemplateCall, templateCallToArray, safe, throttle } from '../common/func.js';
+import { Builder, isBuilder } from '../common/builder.js';
+import { Chain } from '../common/chain.js';
 import { Ctx } from './vals.js';
 
 const falsy = v => v === undefined || v === null || v === false;

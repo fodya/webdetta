@@ -1,4 +1,4 @@
-import { Chain, Effect } from './chain.js';
+import { Chain, Effect } from '../common/chain.js';
 
 let ctx;
 class Ctx {

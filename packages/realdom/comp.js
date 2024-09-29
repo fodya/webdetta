@@ -1,4 +1,4 @@
-import { safe, once, throttle } from 'webdetta/common/func';
+import { safe, once, throttle } from '../common/func.js';
 import { el, Element, append } from './dom.js';
 
 class ComponentInstance {
