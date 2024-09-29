@@ -1,7 +1,7 @@
-import { Chain } from '../common/chain.js';
+import { Chain, Val } from '../common/chain.js';
 
 class Ctx {
-  static current = Chain()
+  static current = Val()
 
   ns = null
 
