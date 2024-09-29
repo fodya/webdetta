@@ -1,0 +1,125 @@
+import { isTemplateCall, templateCallToArray, safe, throttle } from 'webdetta/common/func';
+import { Builder, isBuilder } from 'webdetta/common/builder';
+import { Chain } from 'webdetta/common/chain';
+import { Ctx } from './vals.js';
+
+const falsy = v => v === undefined || v === null || v === false;
+
+function prim(x) {
+  if (falsy(x)) return false;
+  if (isTemplateCall(x)) return prim(templateCallToArray(x));
+  if (Array.isArray(x)) return x.length == 1 ? prim(x[0]) : x.map(prim).join('');
+  if (isBuilder(x)) { throw new Error('Invalid argument'); };
+  if (typeof x === 'function') return prim(x());
+  return x;
+}
+
+const ReactiveBuilder = func => Builder((tasks, elem, ctx) => {
+  const update = throttle(() => updates.forEach(f => f()));
+  const bind = new Ctx(update, ctx).bind;
+  const updates = bind(func)(tasks, elem).map(bind);
+  update();
+});
+
+const diff = (val, effect) => {
+  let prev;
+  return () => {
+    const curr = val();
+    if (prev != curr) effect(prev = curr);
+  }
+}
+const operators = {
+  operator: (func) => Builder((_, elem, ctx) => func(elem, ctx)),
+  on: Builder((tasks, elem) => {
+    for (const {names, args} of tasks)
+      for (const name of names)
+        for (const arg of args)
+          elem.addEventListener(name, arg);
+  }),
+  propRaw: Builder((tasks, elem) => {
+    for (const {names, args} of tasks)
+      for (const name of names) {
+        if (args.length != 1)
+          throw new Error('`propRaw` operator takes exactly 1 argument.');
+        elem[name] = args[0];
+      }
+  }),
+  prop: ReactiveBuilder((tasks, elem) =>
+    tasks.map(({names, args}) => diff(
+      () => prim(args),
+      (val) => names.forEach(name => elem[name] = val)
+    ))
+  ),
+  attr: ReactiveBuilder((tasks, elem) =>
+    tasks.map(({names, args}) => diff(
+      () => prim(args),
+      (val) => names.forEach(name => {
+        if (val === false) elem.removeAttribute(name);
+        else elem.setAttribute(name, val);
+      })
+    ))
+  ),
+  style: ReactiveBuilder((tasks, elem) =>
+    tasks.map(({names, args}) => diff(
+      () => prim(args),
+      (val) => names.forEach(name => {
+        if (val === false) delete elem.style[name];
+        else elem.style[name] = val;
+      })
+    ))
+  ),
+  cls: ReactiveBuilder((tasks, elem) =>
+    tasks.map(({names, args}) => diff(
+      () => prim(args),
+      (val) => names.forEach(name => {
+        if (val === false) elem.classList.remove(name);
+        else elem.classList.add(name);
+      })
+    ))
+  )
+}
+
+const append = safe((parent, op, ctx=new Ctx()) => {
+  if (falsy(op)) {}
+  else if (isBuilder(op)) Builder.launch(op, parent, ctx);
+  else if (Array.isArray(op)) { for (const c of op) append(parent, c, ctx); }
+  else if (op instanceof HTMLElement) parent.appendChild(op);
+  else append(parent, Text(op), ctx);
+});
+
+const Text = val => Builder((_, parent, ctx) => {
+  const elem = document.createTextNode('');
+  const op = ReactiveBuilder((_, elem) => [
+    diff(() => prim(val), v => elem.textContent = v)
+  ]);
+  append(elem, op, ctx);
+  parent.appendChild(elem);
+});
+
+const NS = { svg: 'http://www.w3.org/2000/svg' };
+const Element = (name, options={}, process) => Builder((tasks, parent, ctx) => {
+  const prevNamespace = ctx.ns;
+  try {
+    const elem = (ctx.ns = name in NS ? NS[name] : prevNamespace)
+      ? document.createElementNS(ctx.ns, name, options)
+      : document.createElement(name, options);
+    if (process) process(elem, parent, ctx);
+    for (const {args} of tasks)
+      for (const op of args)
+        append(elem, op, ctx);
+    parent.appendChild(elem);
+  } catch (e) {
+    console.error(e);
+  }
+  ctx.ns = prevNamespace;
+});
+
+const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
+const el = new Proxy({}, {
+  get: (_, name) =>
+    name[0] == name[0].toUpperCase()
+    ? Element(kebab(name[0].toLowerCase() + name.slice(1)))
+    : operators[name]
+});
+
+export { el, Element, append };
