@@ -123,4 +123,4 @@ const el = new Proxy({}, {
     : operators[name]
 });
 
-export { el, Element, append: append_ };
+export { el, Element, append_ as append };
