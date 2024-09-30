@@ -1,5 +1,6 @@
 import { isTemplateCall, templateCallToArray, safe, throttle } from '../common/func.js';
 import { Builder, isBuilder } from '../common/builder.js';
+import { kebab } from '../common/dom.js';
 import Ctx from './ctx.js';
 
 const falsy = v => v === undefined || v === null || v === false;
@@ -115,7 +116,6 @@ const Element = (name, options={}, process) => Builder((tasks, parent, ctx) => {
   ctx.ns = prevNamespace;
 });
 
-const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
 const el = new Proxy({}, {
   get: (_, name) =>
     name[0] == name[0].toUpperCase()
