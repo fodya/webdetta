@@ -1,4 +1,5 @@
 import { kebab } from '../common/dom.js';
+import { isTemplateCall } from '../common/func.js';
 
 const ID = ((r={}, i={}) => (t, v) => {
   return r[t+v] ??= i[t] = (i[t] ??= -1) + 1;
@@ -20,13 +21,11 @@ const styleStr = (style, important) => `{${
 }}`;
 
 const unwrapfn = f => typeof f == 'function' ? unwrapfn(f()) : f;
-const processMethodArgs = args => {
-  const templateCall = Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
-  if (!templateCall) return args;
-  return [
-    ...String.raw(...args).matchAll(/('.*?'|".*?"|\S+)/g)
-  ].map(d => d[0].replace(/(^['"])|(['"]$)/g, ''));
-}
+const processMethodArgs = args =>
+  isTemplateCall(args)
+  ? Array.from(String.raw(...args).matchAll(/('.*?'|".*?"|\S+)/g))
+      .map(d => d[0].replace(/(^['"])|(['"]$)/g, ''))
+  : args.map(unwrapfn);
 
 const NODES = Symbol('VENDETTA_NODES');
 export const inspect = obj => {
