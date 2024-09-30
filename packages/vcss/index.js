@@ -50,10 +50,11 @@ class Node {
     for (const [k, v] of nodeDefaults) {
       const val = data[k] ?? v;
       if (typeof val == 'function') this.updates[k] = val;
-      this[k] = unwrapfn(val);
+      else this[k] = val;
     }
     this.cls = this._cls();
   }
+  cls = null
   _cls() {
     return escape([
       this.media && '𝕄(' + this.media + ')',
@@ -62,7 +63,7 @@ class Node {
       this.important && 'ǃ'
     ].filter(v => v).join(''));
   }
-  recalculate() {
+  update() {
     for (const [k, f] of Object.entries(this.updates)) this[k] = unwrapfn(f);
     this.cls = this._cls();
   }
@@ -202,7 +203,7 @@ const Stack = (wrap, methods) => {
   return stack([], []);
 }
 
-const Processor = ({ addStyle, addClass }) => {
+const Processor = ({ addStyle, addClass, removeClass }) => {
   const stylesheet = new CSSStyleSheet;
   document.adoptedStyleSheets.push(stylesheet);
 
@@ -217,12 +218,15 @@ const Processor = ({ addStyle, addClass }) => {
   const process = (elem, nodes) => {
     //console.log('\n\nprocess elem', { elem, nodes });
     for (const node of nodes) {
+      const prevCls = node.cls;
+      node.update();
       if (node.inline) addStyle(elem, node.style);
       else {
         if (!processedNodes[node.cls]) {
           for (const rule of node.css()) insertRule(rule);
           processedNodes[node.cls] = node
         }
+        if (prevCls && node.cls != prevCls) removeClass?.(elem, prevCls);
         addClass(elem, node.cls);
       }
     }
@@ -231,7 +235,7 @@ const Processor = ({ addStyle, addClass }) => {
     stylesheet.replaceSync('');
     processedRules.clear();
     for (const node of Object.values(processedNodes)) {
-      node.recalculate();
+      node.update();
       for (const rule of node.css()) insertRule(rule);
     }
   }
@@ -239,8 +243,11 @@ const Processor = ({ addStyle, addClass }) => {
   return { process, recalculate, stylesheet }
 }
 
-export const Adapter = ({ wrapper, addClass, addStyle }) => methods => {
-  const { process, recalculate, stylesheet } = Processor({ addStyle, addClass });
+export const Adapter = (options) => methods => {
+  const { wrapper, addClass, addStyle, removeClass } = options;
+  const { process, recalculate, stylesheet } = Processor({
+    addStyle, addClass, removeClass
+  });
   const wrap = (nodes) => wrapper(nodes, process);
   const v = Stack(wrap, methods);
   return { v, recalculate, stylesheet };
