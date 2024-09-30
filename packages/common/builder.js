@@ -8,32 +8,32 @@ export function isBuilder(f) {
 
 function builder(f) {
   f[Builder.symbol] = true;
-  if (Builder.enableInspect) Object.defineProperty(f, Builder.inspect, {
-    get() { return f(Builder.inspect); }
-  });
   return f;
 }
 
-export function Builder(effect, tasks=[], names=[]) {
-  return new Proxy(builder((...args) =>
-    args[0] === Builder.inspect
-    ? [...tasks, { names, args: [] }] :
-    args[0] === Builder.symbol
-    ? effect(
-      names.length == 0 ? tasks : [...tasks, { names, args: [] }],
-      ...args.slice(1)
-    )
-    : Builder(effect, [...tasks, { names, args }], [])
-  ), {
-    get: (target, name) =>
-      Builder(effect, tasks, [...names, name])
-  });
-}
+const Builder_call = (effect, tasks, names, ...args) => (
+  args[0] === Builder.inspect.symbol
+  ? [...tasks, { names, args: [] }] :
+  args[0] === Builder.symbol
+  ? effect(
+    names.length == 0 ? tasks : [...tasks, { names, args: [] }],
+    ...args.slice(1)
+  )
+  : Builder(effect, [...tasks, { names, args }], [])
+);
+const Builder_get = (effect, tasks, names, target, name) => (
+  Builder(effect, tasks, [...names, name])
+);
+export const Builder = (effect, tasks=[], names=[]) => new Proxy(
+  builder(Builder_call.bind(effect, tasks, names)),
+  { get: Builder_get.bind(effect, tasks, names) }
+);
 Builder.symbol = Symbol('Builder.symbol');
-Builder.inspect = Symbol('Builder.inspect');
-Builder.enableInspect = false;
-Builder.launch = launch;
 
+Builder.inspect = construct => construct(Builder.inspect.symbol);
+Builder.inspect.symbol = Symbol('Builder.inspect');
+
+Builder.launch = launch;
 export function launch(construct, ...args) {
   return construct(Builder.symbol, ...args);
 }
