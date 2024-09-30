@@ -63,7 +63,9 @@ class Node {
       this.important && 'ǃ'
     ].filter(v => v).join(''));
   }
+  v = 0
   update() {
+    this.v++;
     for (const [k, f] of Object.entries(this.updates)) this[k] = unwrapfn(f);
     this.cls = this._cls();
   }
@@ -78,13 +80,12 @@ class Node {
 }
 
 const nodeWithArgs = (args, argsmap, func) => {
-  let obj;
-  const recalc = () => {
-    if (obj) return obj;
-    setTimeout(() => { obj = null });
-    return obj = func(argsmap(args));
-  }
-  return new Node({
+  let v, obj;
+  const recalc = () => (
+    (v != node.v) && (v = node.v, obj = func(argsmap(args))),
+    obj
+  );
+  let node; return node = new Node({
     classname: () => (recalc().classname),
     style: () => (recalc().style)
   });
