@@ -95,7 +95,7 @@ const append_ = (parent, ...op) => append(parent, op, Ctx.current());
 
 const Text = val => Builder((_, parent, ctx) => {
   const elem = document.createTextNode('');
-  const op = ReactiveBuilder((_, elem) => [
+  const op = ReactiveElemBuilder((_, elem) => [
     diff(() => prim(val), v => elem.textContent = v)
   ]);
   append(elem, op, ctx);
