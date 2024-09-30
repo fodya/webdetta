@@ -13,7 +13,7 @@ class Ctx {
     this.update = update;
     this.parent = parent;
     if (parent) parent.connected.on(this.connected);
-    this.bind = this.bind.bind(this);
+    this.bindFunction = this.bindFunction.bind(this);
   }
 
   #chains = new Set()
@@ -29,7 +29,7 @@ class Ctx {
     });
   }
 
-  bind(func) {
+  bindFunction(func) {
     return (...a) => {
       const prevCtx = Ctx.current();
       Ctx.current(this);

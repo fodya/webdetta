@@ -15,7 +15,7 @@ function prim(x) {
 
 const ReactiveBuilder = func => Builder((tasks, elem, ctx) => {
   const update = throttle(() => updates.forEach(f => f()));
-  const bind = new Ctx(update, ctx).bind;
+  const bind = new Ctx(update, ctx).bindFunction;
   const updates = bind(func)(tasks, elem).map(bind);
   update();
 });

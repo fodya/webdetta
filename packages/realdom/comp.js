@@ -29,8 +29,8 @@ class ComponentInstance {
 
     const render = once(() => {
       const elm = this.elm.shadowRoot ?? this.elm;
-      const body = this.#func.apply(this, args);
-      append(elm, body, this.#ctx);
+      const func = this.#ctx.bindFunction(this.#func.bind(this));
+      append(elm, func(...args), this.#ctx);
     });
     this.#ctx.connected.on(v => { if (v) render(); });
   }
