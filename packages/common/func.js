@@ -36,8 +36,7 @@ export const sleep = t => new Promise(r => setTimeout(r, t));
 export const throttle = (f) => {
   let promise = null;
   return function () {
-    promise ??= Promise.resolve()
-      .then(() => f.apply(this, arguments))
+    promise ??= Promise.resolve(f.apply(this, arguments))
       .finally(() => (promise = null));
     return promise;
   }
