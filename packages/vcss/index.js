@@ -80,8 +80,8 @@ const nodeWithArgs = (args, argsmap, func) => {
   let obj;
   const recalc = () => {
     if (obj) return obj;
-    obj = func(argsmap(args));
     setTimeout(() => { obj = null });
+    return obj = func(argsmap(args));
   }
   return new Node({
     classname: () => (recalc().classname),
