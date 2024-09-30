@@ -28,6 +28,7 @@ const diff = (val, effect) => {
   }
 }
 const operators = {
+  reactive: (func) => ReactiveBuilder((_, elem, ctx) => func(elem, ctx)),
   operator: (func) => Builder((_, elem, ctx) => func(elem, ctx)),
   on: Builder((tasks, elem) => {
     for (const {names, args} of tasks)
