@@ -76,18 +76,29 @@ class Node {
   }
 }
 
-const StyleNode = (...args) => new Node(
-  args.length == 1
-  ? { classname: 'CSS(' + JSON.stringify(args[0]) + ')', style: args[0] }
-  : { classname: args[0], style: args[1] }
-);
-const MethodNode = (methods, name, args) => {
-  args = processMethodArgs(args);
+const nodeWithArgs = (args, argsmap, func) => {
+  let obj;
+  const recalc = () => {
+    if (obj) return obj;
+    obj = func(argsmap(args));
+    setTimeout(() => { obj = null });
+  }
   return new Node({
-    classname: name + '(' + args.join(',') + ')',
-    style: () => methods[name](...args)
+    classname: () => (recalc().classname),
+    style: () => (recalc().style)
   });
 }
+const StyleNode = (...args) =>
+  nodeWithArgs(args, (args) => args.map(unwrapfn), (args) => (
+    args.length == 1
+    ? { classname: 'CSS(' + JSON.stringify(args[0]) + ')', style: args[0] }
+    : { classname: args[0], style: args[1] }
+  ));
+const MethodNode = (methods, name, args) =>
+  nodeWithArgs(args, processMethodArgs, (args) => ({
+    classname: name + '(' + args.join(',') + ')',
+    style: methods[name](...args)
+  }));
 
 const unwrap = obj => (
   (obj = inspect(obj)) &&
