@@ -25,8 +25,8 @@ const Builder_get = (effect, tasks, names, target, name) => (
   Builder(effect, tasks, [...names, name])
 );
 export const Builder = (effect, tasks=[], names=[]) => new Proxy(
-  builder(Builder_call.bind(effect, tasks, names)),
-  { get: Builder_get.bind(effect, tasks, names) }
+  builder(Builder_call.bind(null, effect, tasks, names)),
+  { get: Builder_get.bind(null, effect, tasks, names) }
 );
 Builder.symbol = Symbol('Builder.symbol');
 
