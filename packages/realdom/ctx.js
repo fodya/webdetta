@@ -44,5 +44,6 @@ class Ctx {
     }
   }
 }
+Ctx.current(new Ctx());
 
 export default Ctx;

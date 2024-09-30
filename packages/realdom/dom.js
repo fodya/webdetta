@@ -87,7 +87,7 @@ const append = safe((parent, op, ctx) => {
   else if (op instanceof HTMLElement) parent.appendChild(op);
   else append(parent, Text(op), ctx);
 });
-const append_ = (parent, ...op) => append(parent, op, new Ctx());
+const append_ = (parent, ...op) => append(parent, op, Ctx.current());
 
 const Text = val => Builder((_, parent, ctx) => {
   const elem = document.createTextNode('');
