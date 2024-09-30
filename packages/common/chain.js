@@ -8,21 +8,14 @@ const Chain = (...steps) => {
   const off = (...hs) => (hs.forEach(h => handlers.delete(h)), trigger);
 
   const pipeline = [
-    ...steps.map((f, i) => (...args) => f(pipeline[i + 1], ...args)),
+    (...args) => (listeners.forEach(h => h(...args)), pipeline[1](...args)),
+    ...steps.map((f, i) => (...args) => f(pipeline[i + 2], ...args)),
     (...res) => handlers.forEach(h => h(...res))
   ];
 
-  const trigger = (...args) => (
-    listeners.forEach(h => h(...res)),
-    pipeline[0](...args)
-  );
-
-  return Object.assign(trigger, {
-    [Chain.symbol]: true,
-    on, off, listen, unlisten
-  });
+  const trigger = pipeline[0];
+  return Object.assign(trigger, { listen, unlisten, on, off });
 };
-Chain.symbol = Symbol('Chain.symbol');
 
 const Val = v => Chain((next, ...args) => {
   if (args.length > 0) next(v = args[0]);
