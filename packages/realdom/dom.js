@@ -14,7 +14,11 @@ function prim(x) {
   return x;
 }
 
-const ReactiveBuilder = func => Builder((tasks, elem, ctx) => {
+const ElemBuilder = func => Builder((tasks, elem, ctx) => {
+  if (elem instanceof ShadowRoot) elem = elem.host;
+  return func(tasks, elem, ctx);
+});
+const ReactiveElemBuilder = func => ElemBuilder((tasks, elem, ctx) => {
   const update = throttle(() => updates.forEach(f => f()));
   const bind = new Ctx(update, ctx).bindFunction;
   const updates = bind(func)(tasks, elem).map(bind);
@@ -29,15 +33,15 @@ const diff = (val, effect) => {
   }
 }
 const operators = {
-  reactive: (func) => ReactiveBuilder((_, elem, ctx) => func(elem, ctx)),
-  operator: (func) => Builder((_, elem, ctx) => func(elem, ctx)),
-  on: Builder((tasks, elem) => {
+  operator: (func) => ElemBuilder((_, elem, ctx) => func(elem, ctx)),
+  reactive: (func) => ReactiveElemBuilder((_, elem, ctx) => func(elem, ctx)),
+  on: ElemBuilder((tasks, elem) => {
     for (const {names, args} of tasks)
       for (const name of names)
         for (const arg of args)
           elem.addEventListener(name, arg);
   }),
-  propRaw: Builder((tasks, elem) => {
+  propRaw: ElemBuilder((tasks, elem) => {
     for (const {names, args} of tasks)
       for (const name of names) {
         if (args.length != 1)
@@ -45,13 +49,13 @@ const operators = {
         elem[name] = args[0];
       }
   }),
-  prop: ReactiveBuilder((tasks, elem) =>
+  prop: ReactiveElemBuilder((tasks, elem) =>
     tasks.map(({names, args}) => diff(
       () => prim(args),
       (val) => names.forEach(name => elem[name] = val)
     ))
   ),
-  attr: ReactiveBuilder((tasks, elem) =>
+  attr: ReactiveElemBuilder((tasks, elem) =>
     tasks.map(({names, args}) => diff(
       () => prim(args),
       (val) => names.forEach(name => {
@@ -60,7 +64,7 @@ const operators = {
       })
     ))
   ),
-  style: ReactiveBuilder((tasks, elem) =>
+  style: ReactiveElemBuilder((tasks, elem) =>
     tasks.map(({names, args}) => diff(
       () => prim(args),
       (val) => names.forEach(name => {
@@ -69,7 +73,7 @@ const operators = {
       })
     ))
   ),
-  cls: ReactiveBuilder((tasks, elem) =>
+  cls: ReactiveElemBuilder((tasks, elem) =>
     tasks.map(({names, args}) => diff(
       () => prim(args),
       (val) => names.forEach(name => {

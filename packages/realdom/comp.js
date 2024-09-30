@@ -15,7 +15,7 @@ class ComponentInstance {
   attachAttrs(obj) {
     if (!this.initialized) throw new Error('cannot attach attrs before initialization.');
     for (const [k, v] of Object.entries(obj)) {
-      this.#append(this.elm, el.attr[k](v));
+      this.#append(el.attr[k](v));
       this.#attrsHandlers.push(obj);
     }
   }
@@ -24,18 +24,16 @@ class ComponentInstance {
   get initialized() { return this.#ctx !== null; }
   #append(...args) {
     if (!this.initialized) throw new Error('cannot append before initialization.');
-    return this.#ctx.bindFunction(append)(...args);
+    const elm = this.elm.shadowRoot ?? this.elm;
+    return this.#ctx.bindFunction(append)(elm, ...args);
   }
 
   init(args, ctx) {
     if (this.initialized) return;
     this.#ctx = new Ctx();
-    const render = once(() => {
-      const elm = this.elm.shadowRoot ?? this.elm;
-      const func = this.#ctx.bindFunction(this.#func.bind(this));
-      this.#append(elm, func(...args), this.#ctx);
-    });
-    this.#ctx.connected.on(v => { if (v) render(); });
+    const func = this.#ctx.bindFunction(this.#func.bind(this));
+    const render = once(() => this.#append(func(...args)));
+    this.#ctx.connected.on(v => v && render());
   }
 
   get connected() { return this.#ctx.connected(); }
