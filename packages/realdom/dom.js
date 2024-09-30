@@ -19,7 +19,7 @@ const ElemBuilder = func => Builder((tasks, elem, ctx) => {
   return func(tasks, elem, ctx);
 });
 const ReactiveElemBuilder = func => ElemBuilder((tasks, elem, ctx) => {
-  const update = throttle(() => updates.forEach(f => f()));
+  const update = throttle.Td(0, () => updates.forEach(f => f()));
   const bind = new Ctx(update, ctx).bindFunction;
   const updates = bind(func)(tasks, elem).map(bind);
   update();
