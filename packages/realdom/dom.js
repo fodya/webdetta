@@ -79,13 +79,14 @@ const operators = {
   )
 }
 
-const append = safe((parent, op, ctx=new Ctx()) => {
+const append = safe((parent, op, ctx) => {
   if (falsy(op)) {}
   else if (isBuilder(op)) Builder.launch(op, parent, ctx);
   else if (Array.isArray(op)) { for (const c of op) append(parent, c, ctx); }
   else if (op instanceof HTMLElement) parent.appendChild(op);
   else append(parent, Text(op), ctx);
 });
+const append_ = (parent, ...op) => append(parent, op, new Ctx());
 
 const Text = val => Builder((_, parent, ctx) => {
   const elem = document.createTextNode('');
@@ -122,4 +123,4 @@ const el = new Proxy({}, {
     : operators[name]
 });
 
-export { el, Element, append };
+export { el, Element, append: append_ };
