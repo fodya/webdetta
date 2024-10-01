@@ -14,27 +14,28 @@ function prim(x) {
   return x;
 }
 
-const ElemBuilder = func => Builder((tasks, elem, ctx) => {
+const ElemBuilder = func => Builder((tasks, elem) => {
   if (elem instanceof ShadowRoot) elem = elem.host;
-  return func(tasks, elem, ctx);
+  return func(tasks, elem);
 });
-const ReactiveElemBuilder = func => ElemBuilder((tasks, elem, ctx) => {
-  const update = throttle.Td(0, () => updates.forEach(f => f()));
-  const bind = new Ctx(update, ctx).bindFunction;
-  const updates = bind(func)(tasks, elem).map(bind);
-  update();
+const ReactiveElemBuilder = func => ElemBuilder((tasks, elem) => {
+  const ctx = Ctx.current().fork(() => {
+    for (const f of updates) ctx.run(f);
+  });
+  const updates = ctx.run(func, [tasks, elem]);
+  ctx.update();
 });
 
 const diff = (val, effect) => {
   let prev;
   return () => {
     const curr = val();
-    if (prev != curr) effect(prev = curr);
+    if (prev !== curr) effect(prev = curr);
   }
 }
 const operators = {
-  operator: (func) => ElemBuilder((_, elem, ctx) => func(elem, ctx)),
-  reactive: (func) => ReactiveElemBuilder((_, elem, ctx) => func(elem, ctx)),
+  operator: (func) => ElemBuilder((_, elem) => func(elem)),
+  reactive: (func) => ReactiveElemBuilder((_, elem) => func(elem)),
   on: ElemBuilder((tasks, elem) => {
     for (const {names, args} of tasks)
       for (const name of names)
@@ -84,26 +85,27 @@ const operators = {
   )
 }
 
-const append = safe((parent, op, ctx) => {
+const append = safe((parent, op) => {
   if (falsy(op)) {}
-  else if (isBuilder(op)) Builder.launch(op, parent, ctx);
-  else if (Array.isArray(op)) { for (const c of op) append(parent, c, ctx); }
-  else if (op instanceof HTMLElement) parent.appendChild(op);
-  else append(parent, Text(op), ctx);
+  else if (isBuilder(op)) Builder.launch(op, parent);
+  else if (Array.isArray(op)) { for (const c of op) append(parent, c); }
+  else if (op instanceof Node) parent.appendChild(op);
+  else append(parent, Text(op));
 });
-const append_ = (parent, ...op) => append(parent, op, Ctx.current());
+const append_ = (parent, ...op) => append(parent, op);
 
-const Text = val => Builder((_, parent, ctx) => {
+const Text = val => Builder((_, parent) => {
   const elem = document.createTextNode('');
   const op = ReactiveElemBuilder((_, elem) => [
     diff(() => prim(val), v => elem.textContent = v)
   ]);
-  append(elem, op, ctx);
+  append(elem, op);
   parent.appendChild(elem);
 });
 
 const NS = { svg: 'http://www.w3.org/2000/svg' };
-const Element = (name, options={}, process) => Builder((tasks, parent, ctx) => {
+const Element = (name, options={}, process) => Builder((tasks, parent) => {
+  const ctx = Ctx.current();
   const prevNamespace = ctx.ns;
   try {
     const elem = (ctx.ns = name in NS ? NS[name] : prevNamespace)

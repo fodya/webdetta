@@ -20,25 +20,20 @@ class ComponentInstance {
     }
   }
 
-  #ctx = null
-  get initialized() { return this.#ctx !== null; }
-  #append(...args) {
-    if (!this.initialized) throw new Error('cannot append before initialization.');
-    const elm = this.elm.shadowRoot ?? this.elm;
-    return this.#ctx.bindFunction(append)(elm, ...args);
-  }
-
-  init(args, ctx) {
+  ctx = null
+  get initialized() { return this.ctx !== null; }
+  init(args) {
     if (this.initialized) return;
-    this.#ctx = new Ctx();
-    const func = this.#ctx.bindFunction(this.#func.bind(this));
-    const render = once(() => this.#append(func(...args)));
-    this.#ctx.connected.on(v => v && render());
+    this.ctx = Ctx.current().fork();
+    const render = once(() => this.#append(
+      this.ctx.run(this.#func, args, this)
+    ));
+    this.ctx.connected.on(v => v && render());
   }
-
-  get connected() { return this.#ctx.connected(); }
-  connect() { this.#ctx.connected(true); }
-  disconnect() { this.#ctx.connected(false); }
+  #append(...args) {
+    const elm = this.elm.shadowRoot ?? this.elm;
+    return this.ctx.run(append, [elm, ...args]);
+  }
 
   onAttributeChange(name, oldValue, newValue) {
     for (const obj of this.#attrsHandlers) {
@@ -63,10 +58,10 @@ const Component = (name, options, func) => {
       });
     }
     connectedCallback() {
-      this.instance.connect();
+      this.instance.ctx.connected(true);
     }
     disconnectedCallback() {
-      this.instance.disconnect();
+      this.instance.ctx.connected(false);
     }
     attributeChangedCallback(name, oldValue, newValue) {
       const format = attrs[name];
