@@ -19,9 +19,7 @@ const ElemBuilder = func => Builder((tasks, elem) => {
   return func(tasks, elem);
 });
 const ReactiveElemBuilder = func => ElemBuilder((tasks, elem) => {
-  const ctx = Ctx.current().fork(() => {
-    for (const f of updates) ctx.run(f);
-  });
+  const ctx = Ctx.current().fork(() => updates.forEach(f => f()));
   const updates = ctx.run(func, [tasks, elem]);
   ctx.update();
 });
@@ -35,7 +33,7 @@ const diff = (val, effect) => {
 }
 const operators = {
   operator: (func) => ElemBuilder((_, elem) => func(elem)),
-  reactive: (func) => ReactiveElemBuilder((_, elem) => func(elem)),
+  reactive: (func) => ReactiveElemBuilder((_, elem) => [func]),
   on: ElemBuilder((tasks, elem) => {
     for (const {names, args} of tasks)
       for (const name of names)
