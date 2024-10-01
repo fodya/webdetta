@@ -15,18 +15,21 @@ const Chain = (...steps) => {
     (...args) => f(pipeline[i + 1], ...args)
   );
   const trigger = pipeline[0];
-  return Object.assign(trigger, { [symbol]: true, listen, unlisten, on, off });
+  return Object.assign(trigger, {
+    [symbol]: { steps, listeners, handlers }, // debug
+    listen, unlisten, on, off
+  });
 };
 const symbol = Symbol('Chain.symbol');
 Chain.isChain = f => symbol in f;
 
 const Val = v => Chain((next, ...args) => {
-  if (args.length > 0) next(v = args[0]);
+  if (args.length > 0) { v = args[0]; next(...args); }
   return v;
 });
 
 const Ref = (obj, key) => Chain((next, ...args) => {
-  if (args.length > 0) next(obj[key] = args[0]);
+  if (args.length > 0) { obj[key] = args[0]; next(...args); }
   return obj[key];
 });
 
