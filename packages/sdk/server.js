@@ -55,7 +55,13 @@ const bundleCode = async ({ sourcemap, code }) => {
     plugins: [
       PluginVirtual({ code }),
       NodeResolve(),
-      babel({ exclude: 'node_modules/**' })
+      babel({
+        babelHelpers: 'bundled',
+        presets: [['@babel/preset-env', {
+          targets: { ie: "11" },
+          useBuiltIns: "usage"
+        }]]
+      })
     ],
   });
   const result = await bundle.generate({
