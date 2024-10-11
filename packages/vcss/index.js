@@ -1,7 +1,9 @@
 import { kebab } from '../common/dom.js';
 import { isTemplateCall } from '../common/func.js';
 
-const ID = ((r={}) => (v) => (r[''] ??= 0, r[v] ??= 'v' + r['']++))();
+const ID = ((r={}, i={}) => (t, v) => {
+  return r[t+v] ??= i[t] = (i[t] ??= -1) + 1;
+})();
 const chars = Object.fromEntries([...
   ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕`.matchAll(/../g)
 ].map(v => v[0].split('')));
@@ -50,7 +52,6 @@ class Node {
       if (typeof val == 'function') this.updates[k] = val;
       else this[k] = val;
     }
-    this.cls = this._cls();
   }
   escape = escape
   cls = null
@@ -208,20 +209,25 @@ const Stack = (wrap, methods, escape) => {
 }
 
 const Processor = ({ addStyle, addClass, removeClass }) => {
-  const stylesheet = new CSSStyleSheet;
-  document.adoptedStyleSheets.push(stylesheet);
+  const style = document.createElement('style');
+  document.head.appendChild(style);
 
   const processedRules = new Set();
+  let p;
   const insertRule = rule => {
     if (processedRules.has(rule)) return;
     processedRules.add(rule);
-    stylesheet.insertRule(rule, stylesheet.cssRules.length);
+    p ??= Promise.resolve().then(() => {
+      style.textContent = [...processedRules].join('\n');
+      p = null;
+    });
   }
 
   const processedNodes = {};
   const process = (elem, nodes) => {
     //console.log('\n\nprocess elem', { elem, nodes });
     for (const node of nodes) {
+      if (!node.cls) node.update();
       const prevCls = node.cls;
       node.update();
       if (node.inline) addStyle(elem, node.style);
@@ -230,13 +236,13 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
           for (const rule of node.css()) insertRule(rule);
           processedNodes[node.cls] = node
         }
-        if (prevCls && node.cls != prevCls) removeClass?.(elem, prevCls);
+        if (prevCls && node.cls != prevCls) console.log(prevCls, node.cls)||removeClass?.(elem, prevCls);
         addClass(elem, node.cls);
       }
     }
   }
   const recalculate = () => {
-    stylesheet.replaceSync('');
+    style.textContent.replaceSync('');
     processedRules.clear();
     for (const node of Object.values(processedNodes)) {
       node.update();
@@ -244,7 +250,7 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
     }
   }
 
-  return { process, recalculate, stylesheet }
+  return { process, recalculate }
 }
 
 export const Adapter = (options) => ({ methods, enumerate=false }) => {
@@ -253,6 +259,6 @@ export const Adapter = (options) => ({ methods, enumerate=false }) => {
     addStyle, addClass, removeClass
   });
   const wrap = (nodes) => wrapper(nodes, process);
-  const v = Stack(wrap, methods, enumerate ? ID : escape);
+  const v = Stack(wrap, methods, enumerate ? d => 'v' + ID('', d) : escape);
   return { v, recalculate, stylesheet };
 }
