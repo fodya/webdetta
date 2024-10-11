@@ -22,6 +22,7 @@
     "./vdom/*": "./packages/vdom/*.js"
   },
   "dependencies": {
+    "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-virtual": "^3.0.2",
