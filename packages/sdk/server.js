@@ -46,6 +46,7 @@ export const SdkServer = (methods) => {
 }
 
 import {rollup} from 'rollup';
+import terser from '@rollup/plugin-terser';
 import PluginVirtual from '@rollup/plugin-virtual';
 import NodeResolve from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
@@ -55,13 +56,7 @@ const bundleCode = async ({ sourcemap, code }) => {
     plugins: [
       PluginVirtual({ code }),
       NodeResolve(),
-      babel({
-        babelHelpers: 'bundled',
-        presets: [['@babel/preset-env', {
-          targets: { ie: "11" },
-          useBuiltIns: "usage"
-        }]]
-      })
+      terser({ ecma: '5' })
     ],
   });
   const result = await bundle.generate({
