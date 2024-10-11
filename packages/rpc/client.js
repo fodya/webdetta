@@ -74,7 +74,7 @@ export function RpcClient(url, pulse=60_000) {
     return connPromise ??= new Promise((resolve, reject) => {
       isOpen(undefined); // connecting...
       ws = new WebSocket(url);
-      //ws.binaryType = "arraybuffer";
+      ws.binaryType = "arraybuffer";
       ws.onopen = async (e) => {
         // the strange order of calls in the next three lines guarantees that
         // the preflight RPC calls happening in isOpen will go before any
@@ -92,7 +92,7 @@ export function RpcClient(url, pulse=60_000) {
       ws.onmessage = (e) => {
         lastMessage(e);
         kick();
-        if (e.data.length > 0) process(instance, e.data);
+        if (e.data?.byteLength > 0) process(instance, e.data);
       };
       ws.onerror = (e) => {
         lastError(e);

@@ -2,12 +2,10 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/proto.js
 
-/*
-import * as msgpack{ addExtension, encode, decode } from "msgpackr";
+import * as msgpack from "msgpack";
 
 const INCLUDE_STACK_TRACE = false;
-
-addExtension({
+msgpack.addExtension({
   Class: Error,
   type: 1,
   read: function (e) {
@@ -21,10 +19,7 @@ addExtension({
 });
 const decode = data => msgpack.decode(new Uint8Array(data));
 const encode = msgpack.encode;
-*/
-export const encode = obj => typeof obj == 'string' ? obj : JSON.stringify(obj);
-export const decode = str => JSON.parse(str);
-export const EMPTY = '';
+export const EMPTY = new UInt8Array(0);
 
 export const processCall = async (methods, ctx, name, args) => {
   let res, err;
