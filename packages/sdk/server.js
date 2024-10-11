@@ -49,7 +49,6 @@ import {rollup} from 'rollup';
 import terser from '@rollup/plugin-terser';
 import PluginVirtual from '@rollup/plugin-virtual';
 import NodeResolve from '@rollup/plugin-node-resolve';
-import babel from '@rollup/plugin-babel';
 const bundleCode = async ({ sourcemap, code }) => {
   const bundle = await rollup({
     input: 'code',

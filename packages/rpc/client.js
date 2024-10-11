@@ -2,7 +2,7 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/client.js
 
-import { Proto } from "./proto.js";
+import { Proto, EMPTY } from "./proto.js";
 import { Val } from "../common/chain.js";
 
 const normUrl = (s) => {
@@ -11,8 +11,6 @@ const normUrl = (s) => {
   if (!u.protocol.startsWith("wss")) u.protocol = "ws";
   return u.toString();
 };
-
-const EMPTY = new Uint8Array(0);
 
 export function genKey(len=32) {
   return btoa(
