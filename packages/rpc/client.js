@@ -3,7 +3,7 @@
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/client.js
 
 import { Proto } from "./proto.js";
-import { rVal } from "../common/chain.js";
+import { Val } from "../common/chain.js";
 
 const normUrl = (s) => {
   let u = new URL(s, globalThis.document?.location ?? s);
@@ -103,10 +103,10 @@ export function RpcClient(url, pulse=60_000) {
     });
   }
 
-  const isOpen = rVal(false);
-  const lastMessage = rVal();
-  const lastError = rVal();
-  const lastSent = rVal();
+  const isOpen = Val(false);
+  const lastMessage = Val();
+  const lastError = Val();
+  const lastSent = Val();
 
   const instance = {
     methods: {},
@@ -123,4 +123,3 @@ export function RpcClient(url, pulse=60_000) {
 
   return instance;
 }
-
