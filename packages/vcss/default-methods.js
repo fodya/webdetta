@@ -128,7 +128,7 @@ const whiteSpace = {
   bs: 'break-spaces'
 }
 
-const sides = {}
+const sides = { '': [''] }
 sides.T = ['Top'];
 sides.B = ['Bottom'];
 sides.L = ['Left'];
@@ -140,7 +140,7 @@ sides.b = ['BlockEnd'];
 sides.l = ['InlineStart'];
 sides.r = ['InlineEnd'];
 
-const corners = {}
+const corners = { '': [''] }
 corners.TL = corners.tl = ['StartStart'];
 corners.TR = corners.tr = ['StartEnd'];
 corners.BL = corners.bl = ['EndStart'];

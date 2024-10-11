@@ -48,7 +48,7 @@ class Node {
   constructor(data) {
     this.updates = {};
     for (const [k, v] of nodeDefaults) {
-      const val = data[k] ?? v;
+      const val = data.updates?.[k] ?? data[k] ?? v;
       if (typeof val == 'function') this.updates[k] = val;
       else this[k] = val;
     }
@@ -96,11 +96,13 @@ const StyleNode = (...args) =>
     ? { classname: 'CSS(' + JSON.stringify(args[0]) + ')', style: args[0] }
     : { classname: args[0], style: args[1] }
   ));
-const MethodNode = (methods, name, args) =>
-  nodeWithArgs(args, processMethodArgs, (args) => ({
+const MethodNode = (methods, name, args) => {
+  if (!methods[name]) throw new Error('method not found: ' + name);
+  return nodeWithArgs(args, processMethodArgs, (args) => ({
     classname: name + '(' + args.join(',') + ')',
     style: methods[name](...args)
   }));
+}
 
 const unwrap = obj => (
   (obj = inspect(obj)) &&
