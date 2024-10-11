@@ -24,7 +24,7 @@ const encode = msgpack.encode;
 */
 export const encode = obj => typeof obj == 'string' ? obj : JSON.stringify(obj);
 export const decode = str => JSON.parse(str);
-export const const EMPTY = '';
+export const EMPTY = '';
 
 export const processCall = async (methods, ctx, name, args) => {
   let res, err;
