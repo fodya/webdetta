@@ -23,8 +23,10 @@ const decode = data => msgpack.decode(new Uint8Array(data));
 const encode = msgpack.encode;
 */
 const objProto = Object.getPrototypeOf({});
-const encode = obj => Object.getPrototypeOf(obj) == objProto ? JSON.stringify(obj) : String(obj);
-const decode = str => JSON.parse(str);
+export const encode = obj => Object.getPrototypeOf(obj) == objProto
+  ? JSON.stringify(obj)
+  : String(obj);
+export const decode = str => JSON.parse(str);
 
 export const processCall = async (methods, ctx, name, args) => {
   let res, err;

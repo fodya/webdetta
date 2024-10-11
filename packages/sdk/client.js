@@ -1,4 +1,4 @@
-import { encode, decode } from "msgpackr";
+import { encode, decode } from "../rpc/proto.js";
 import { RpcClient } from '../rpc/client.js';
 import { SdkInstance } from './instance.js';
 
