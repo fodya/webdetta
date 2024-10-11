@@ -4,7 +4,7 @@
 
 import * as msgpack from "@msgpack/msgpack";
 
-const INCLUDE_STACK_TRACE = false;
+/*const INCLUDE_STACK_TRACE = false;
 msgpack.addExtension({
   Class: Error,
   type: 1,
@@ -16,7 +16,7 @@ msgpack.addExtension({
     if (INCLUDE_STACK_TRACE) result.stack = e.stack;
     return result;
   },
-});
+});*/
 export const decode = data => msgpack.decode(new Uint8Array(data));
 export const encode = msgpack.encode;
 export const EMPTY = new UInt8Array(0);
