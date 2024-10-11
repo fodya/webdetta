@@ -2,7 +2,7 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/proto.js
 
-import * as msgpack from "msgpack";
+import * as msgpack from "@msgpack/msgpack";
 
 const INCLUDE_STACK_TRACE = false;
 msgpack.addExtension({

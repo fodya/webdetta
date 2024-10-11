@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@babel/preset-env": "^7.25.8",
+    "@msgpack/msgpack": "^3.0.0-beta2",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
