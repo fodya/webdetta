@@ -1,9 +1,7 @@
 import { kebab } from '../common/dom.js';
 import { isTemplateCall } from '../common/func.js';
 
-const ID = ((r={}, i={}) => (t, v) => {
-  return r[t+v] ??= i[t] = (i[t] ??= -1) + 1;
-})();
+const ID = ((r={}) => (v) => (r[''] ??= 0, r[v] ??= 'v' + r['']++))();
 const chars = Object.fromEntries([...
   ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕`.matchAll(/../g)
 ].map(v => v[0].split('')));
@@ -54,14 +52,15 @@ class Node {
     }
     this.cls = this._cls();
   }
+  escape = escape
   cls = null
   _cls() {
-    return escape([
-      this.media && '𝕄(' + this.media + ')',
-      this.selector && '𝕊(' + this.selector + ')',
-      this.classname,
-      this.important && 'ǃ'
-    ].filter(v => v).join(''));
+    return this.escape([
+      this.media ? '𝕄(' + this.media + ')' : '',
+      this.selector ? '𝕊(' + this.selector + ')' : '',
+      this.classname ? this.classname : '',
+      this.important ? 'ǃ' : ''
+    ].join(''));
   }
   v = 0
   update() {
@@ -176,7 +175,7 @@ const operators = {
   },
 }
 
-const Stack = (wrap, methods) => {
+const Stack = (wrap, methods, escape) => {
   const style = (...args) => stack([],
     [StyleNode(...args)]
   );
@@ -189,12 +188,14 @@ const Stack = (wrap, methods) => {
 
   const stack = (props, nodes) => {
     nodes = unwrap(nodes);
+    for (const n of nodes) n.escape = escape;
     const res =
       props.length ? method(nodes, props)
       : !nodes.length ? style
       : wrap(nodes);
     return new Proxy(res, {
-      has: (_, name) => name == NODES || name in methods || name in operators || name in res,
+      has: (_, name) =>
+        name == NODES || name in methods || name in operators || name in res,
       get: (_, name) =>
         typeof name == 'symbol'
         ? name == NODES ? nodes : res[name]
@@ -246,12 +247,12 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
   return { process, recalculate, stylesheet }
 }
 
-export const Adapter = (options) => methods => {
+export const Adapter = (options) => ({ methods, enumerate=false }) => {
   const { wrapper, addClass, addStyle, removeClass } = options;
   const { process, recalculate, stylesheet } = Processor({
     addStyle, addClass, removeClass
   });
   const wrap = (nodes) => wrapper(nodes, process);
-  const v = Stack(wrap, methods);
+  const v = Stack(wrap, methods, enumerate ? ID : escape);
   return { v, recalculate, stylesheet };
 }
