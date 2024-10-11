@@ -17,8 +17,8 @@ msgpack.addExtension({
     return result;
   },
 });
-const decode = data => msgpack.decode(new Uint8Array(data));
-const encode = msgpack.encode;
+export const decode = data => msgpack.decode(new Uint8Array(data));
+export const encode = msgpack.encode;
 export const EMPTY = new UInt8Array(0);
 
 export const processCall = async (methods, ctx, name, args) => {
