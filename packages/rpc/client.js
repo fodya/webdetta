@@ -92,7 +92,7 @@ export function RpcClient(url, pulse=60_000) {
       ws.onmessage = (e) => {
         lastMessage(e);
         kick();
-        if (e.data > 0) process(instance, e.data);
+        if (e.data.length > 0) process(instance, e.data);
       };
       ws.onerror = (e) => {
         lastError(e);
