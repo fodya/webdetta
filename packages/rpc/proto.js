@@ -2,7 +2,8 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/proto.js
 
-import { addExtension, encode, decode } from "msgpackr";
+/*
+import * as msgpack{ addExtension, encode, decode } from "msgpackr";
 
 const INCLUDE_STACK_TRACE = false;
 
@@ -18,6 +19,11 @@ addExtension({
     return result;
   },
 });
+const decode = data => msgpack.decode(new Uint8Array(data));
+const encode = msgpack.encode;
+*/
+const encode = obj => JSON.stringify(obj);
+const decode = str => JSON.parse(str);
 
 export const processCall = async (methods, ctx, name, args) => {
   let res, err;
@@ -45,7 +51,7 @@ export function Proto(send, getMethods) {
   let counter = 0;
   async function process(ctx, data /* : ArrayBuffer */) {
     try {
-      data = decode(new Uint8Array(data));
+      data = decode(data);
       // message ::= { call, from, args } | { to, res|err }
       if ('to' in data) handlers[data.to]?.(data);
       else if ('call' in data && Array.isArray(data.args)) {
@@ -81,4 +87,3 @@ export function Proto(send, getMethods) {
   }
   return { process, cast, call, abort };
 }
-
