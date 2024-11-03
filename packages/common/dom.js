@@ -1,6 +1,24 @@
 export const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
 
-export const copyText = text => navigator.clipboard.writeText(text);
+export const copyText = async text => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const node = document.createElement("textarea");
+    node.value = text;
+
+    node.style.top = "0";
+    node.style.left = "0";
+    node.style.position = "fixed";
+
+    document.body.appendChild(node);
+    node.focus();
+    node.select();
+
+    document.execCommand('copy');
+    node.remove();
+  }
+}
 
 const a = document.createElement("a");
 document.head.appendChild(a);
@@ -37,3 +55,12 @@ export const colorToHex = (colorStr) => {
 }
 
 export const forceReflow = elem => { elem.offsetHeight; }
+
+export const setLayoutWidth = (width, body=document.body) => {
+  const update = () => {
+    const val = typeof width == 'function' ? width() : width;
+    body.style.zoom = window.innerWidth / val;
+  }
+  window.addEventListener('resize', update);
+  update();
+}

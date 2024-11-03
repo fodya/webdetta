@@ -34,74 +34,60 @@ export const inspect = obj => {
   return wrapped ? inspect(obj[NODES]) : obj;
 }
 
-const nodeDefaults = [
-  ['selector', ''],
-  ['media', ''],
-  ['important', false],
-  ['inline', false],
-  ['classname', null],
-  ['rules', null],
-  ['style', null]
-];
-
 class Node {
-  constructor(data) {
-    this.updates = {};
-    for (const [k, v] of nodeDefaults) {
-      const val = data.updates?.[k] ?? data[k] ?? v;
-      if (typeof val == 'function') this.updates[k] = val;
-      else this[k] = val;
-    }
-  }
-  escape = escape
+  selector = ''
+  media = ''
+  important = false
+  inline = false
+  classname = null
+  rules = []
+  style = {}
   cls = null
-  _cls() {
-    return this.escape([
-      this.media ? '𝕄(' + this.media + ')' : '',
-      this.selector ? '𝕊(' + this.selector + ')' : '',
-      this.classname ? this.classname : '',
-      this.important ? 'ǃ' : ''
-    ].join(''));
+
+  updates = []
+  constructor(...updates) {
+    this.updates = updates;
   }
-  v = 0
-  update() {
-    this.v++;
-    for (const [k, f] of Object.entries(this.updates)) this[k] = unwrapfn(f);
-    this.cls = this._cls();
+  fork(...updates) {
+    return new Node(...this.updates, ...updates);
+  }
+
+  update(escapeClass=escape) {
+    for (const update of this.updates) update.call(this);
+    this.cls = escapeClass(
+      (this.media ? '𝕄(' + this.media + ')' : '') +
+      (this.selector ? '𝕊(' + this.selector + ')' : '') +
+      (this.classname ? this.classname : '') +
+      (this.important ? 'ǃ' : '')
+    );
   }
   css() {
     const sel = selectorTmpl(this.selector, '.' + this.cls);
     const str = sel + styleStr(this.style, this.important);
     return [
-      ...(this.rules ?? []),
+      ...this.rules,
       this.media ? `@media ${this.media} {${str}}` : str
     ];
   }
 }
 
-const nodeWithArgs = (args, argsmap, func) => {
-  let v, obj;
-  const recalc = () => (
-    (v != node.v) && (v = node.v, obj = func(argsmap(args))),
-    obj
-  );
-  let node; return node = new Node({
-    classname: () => (recalc().classname),
-    style: () => (recalc().style)
-  });
-}
-const StyleNode = (...args) =>
-  nodeWithArgs(args, (args) => args.map(unwrapfn), (args) => (
-    args.length == 1
-    ? { classname: 'CSS(' + JSON.stringify(args[0]) + ')', style: args[0] }
-    : { classname: args[0], style: args[1] }
-  ));
-const MethodNode = (methods, name, args) => {
+const StyleNode = (...args_) => new Node(function() {
+  const args = args_.map(unwrapfn);
+  if (args.length === 1) {
+    this.classname = 'CSS(' + JSON.stringify(args[0]) + ')';
+    this.style = args[0];
+  } else {
+    this.classname = args[0];
+    this.style = args[1];
+  }
+});
+const MethodNode = (methods, name, args_) => {
   if (!methods[name]) throw new Error('method not found: ' + name);
-  return nodeWithArgs(args, processMethodArgs, (args) => ({
-    classname: name + '(' + args.join(',') + ')',
-    style: methods[name](...args)
-  }));
+  return new Node(function() {
+    const args = processMethodArgs(args_);
+    this.classname = name + '(' + args.join(',') + ')';
+    this.style = methods[name](...args);
+  });
 }
 
 const unwrap = obj => (
@@ -132,51 +118,49 @@ const operators = {
   Sel: (selStr, ...args) => {
     const nodes = unwrap(args);
     return splitSelector(selStr).flatMap(selStr =>
-      nodes.map(node => new Node({
-        ...node,
-        selector: node.selector ? selectorTmpl(selStr, node.selector) : selStr
+      nodes.map(node => node.fork(function() {
+        this.selector = node.selector
+          ? selectorTmpl(selStr, node.selector)
+          : selStr;
       }))
     );
   },
-  Media: (queryStr, ...args) => unwrap(args).map(node => new Node({
-    ...node,
-    media: node.media ? node.media + ' and ' + queryStr : queryStr
-  })),
-  Important: (...args) => unwrap(args).map(node => new Node({
-    ...node,
-    important: true
-  })),
-  Inline: (...args) => unwrap(args).map(node => new Node({
-    ...node,
-    inline: true
-  })),
+  Media: (queryStr, ...args) =>
+    unwrap(args).map(node => node.fork(function() {
+      this.media = node.media ? node.media + ' and ' + queryStr : queryStr;
+    })),
+  Important: (...args) =>
+    unwrap(args).map(node => node.fork(function() {
+      this.important = true;
+    })),
+  Inline: (...args) =>
+    unwrap(args).map(node => node.fork(function() {
+      this.inline = true;
+    })),
   Transition: (param, ...args) => {
     const nodes = unwrap(args);
-    const keys = () => Object.keys(combinedStyle(nodes));
-    return nodes.concat(new Node({
-      classname: () => '𝕋(' + ID('transition', param + keys().join(',')) + ')',
-      style: () => ({
-        transition: keys().map(k => param + ' ' + kebab(k)).join(',')
-      })
+    return nodes.concat(new Node(function() {
+      const keys = Object.keys(combinedStyle(nodes));
+      this.classname = '𝕋(' + ID('transition', param + keys.join(',')) + ')';
+      this.style = {
+        transition: keys.map(k => param + ' ' + kebab(k)).join(',')
+      };
     }));
   },
-  Animation: (param, keyframes) => {
-    const str = () =>
-      Object.entries(keyframes).map(([ident, nodes]) => {
-        const style = combinedStyle(unwrap(nodes));
-        return ident + '% ' + styleStr(style, false);
-      }).join('\n');
-    const kfId = ID('keyframes', str());
+  Animation: (param, keyframes) => [new Node(function() {
+    const str = Object.entries(keyframes).map(([ident, nodes]) => {
+      const style = combinedStyle(unwrap(nodes));
+      return ident + '% ' + styleStr(style, false);
+    }).join('\n');
+    const kfId = ID('keyframes', str);
     const aId = ID('animation', param + kfId)
-    return [new Node({
-      classname: () => '𝔸(' + aId + ')',
-      rules: () => [`@keyframes 𝔸${kfId} {\n${str()}\n}`],
-      style: () => ({ animation: param + ' 𝔸' + kfId })
-    })];
-  },
+    this.classname = '𝔸(' + aId + ')';
+    this.rules = [`@keyframes 𝔸${kfId} {\n${str}\n}`];
+    this.style = { animation: param + ' 𝔸' + kfId };
+  })],
 }
 
-const Stack = (wrap, methods, escape) => {
+const Stack = (wrap, methods) => {
   const style = (...args) => stack([],
     [StyleNode(...args)]
   );
@@ -189,7 +173,6 @@ const Stack = (wrap, methods, escape) => {
 
   const stack = (props, nodes) => {
     nodes = unwrap(nodes);
-    for (const n of nodes) n.escape = escape;
     const res =
       props.length ? method(nodes, props)
       : !nodes.length ? style
@@ -208,7 +191,7 @@ const Stack = (wrap, methods, escape) => {
   return stack([], []);
 }
 
-const Processor = ({ addStyle, addClass, removeClass }) => {
+const Processor = ({ addStyle, addClass, removeClass, escapeClass }) => {
   const style = document.createElement('style');
   document.head.appendChild(style);
 
@@ -227,16 +210,16 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
   const process = (elem, nodes) => {
     //console.log('\n\nprocess elem', { elem, nodes });
     for (const node of nodes) {
-      if (!node.cls) node.update();
+      if (!node.cls) node.update(escapeClass);
       const prevCls = node.cls;
-      node.update();
+      node.update(escapeClass);
       if (node.inline) addStyle(elem, node.style);
       else {
         if (!processedNodes[node.cls]) {
           for (const rule of node.css()) insertRule(rule);
           processedNodes[node.cls] = node
         }
-        if (prevCls && node.cls != prevCls) console.log(prevCls, node.cls)||removeClass?.(elem, prevCls);
+        if (prevCls && node.cls != prevCls) removeClass?.(elem, prevCls);
         addClass(elem, node.cls);
       }
     }
@@ -245,7 +228,7 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
     style.textContent.replaceSync('');
     processedRules.clear();
     for (const node of Object.values(processedNodes)) {
-      node.update();
+      node.update(escapeClass);
       for (const rule of node.css()) insertRule(rule);
     }
   }
@@ -255,10 +238,11 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
 
 export const Adapter = (options) => ({ methods, enumerate=false }) => {
   const { wrapper, addClass, addStyle, removeClass } = options;
-  const { process, recalculate, stylesheet } = Processor({
-    addStyle, addClass, removeClass
+  const { process, recalculate } = Processor({
+    addStyle, addClass, removeClass,
+    escapeClass: enumerate ? d => 'v' + ID('', d) : escape
   });
   const wrap = (nodes) => wrapper(nodes, process);
-  const v = Stack(wrap, methods, enumerate ? d => 'v' + ID('', d) : escape);
-  return { v, recalculate, stylesheet };
+  const v = Stack(wrap, methods);
+  return { v, recalculate };
 }
