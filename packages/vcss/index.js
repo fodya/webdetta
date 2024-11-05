@@ -27,7 +27,7 @@ const processMethodArgs = args =>
       .map(d => d[0].replace(/(^['"])|(['"]$)/g, ''))
   : args.map(unwrapfn);
 
-const NODES = Symbol('VENDETTA_NODES');
+const NODES = Symbol('VCSS_NODES');
 export const inspect = obj => {
   if (typeof obj != 'function' && typeof obj != 'object') return null;
   const wrapped = obj && NODES in obj;
@@ -52,9 +52,12 @@ class Node {
     return new Node(...this.updates, ...updates);
   }
 
-  update(escapeClass=escape) {
-    for (const update of this.updates) update.call(this);
-    this.cls = escapeClass(
+  init(esc=escape) {
+    if (!this.cls) this.update(esc);
+  }
+  update(esc=escape) {
+    for (const update of this.updates) update.call(this, esc);
+    this.cls = esc(
       (this.media ? '𝕄(' + this.media + ')' : '') +
       (this.selector ? '𝕊(' + this.selector + ')' : '') +
       (this.classname ? this.classname : '') +
@@ -107,7 +110,9 @@ const styleCombinator = (key, val1, val2) => {
     default:             return val2;
   }
 }
+
 const combinedStyle = nodes => nodes.reduce((obj, node) => {
+  node.init();
   const style = node.updates.style?.() ?? node.style ?? {};
   for (const [k, v] of Object.entries(style))
     obj[k] = styleCombinator(k, obj[k], v);
@@ -140,6 +145,7 @@ const operators = {
   Transition: (param, ...args) => {
     const nodes = unwrap(args);
     return nodes.concat(new Node(function() {
+      for (const node of nodes) node.init();
       const keys = Object.keys(combinedStyle(nodes));
       this.classname = '𝕋(' + ID('transition', param + keys.join(',')) + ')';
       this.style = {
@@ -147,13 +153,15 @@ const operators = {
       };
     }));
   },
-  Animation: (param, keyframes) => [new Node(function() {
+  Animation: (param, keyframes) => [new Node(function(esc) {
     const str = Object.entries(keyframes).map(([ident, nodes]) => {
-      const style = combinedStyle(unwrap(nodes));
+      nodes = unwrap(nodes);
+      for (const node of nodes) node.init();
+      const style = combinedStyle(nodes);
       return ident + '% ' + styleStr(style, false);
     }).join('\n');
     const kfId = ID('keyframes', str);
-    const aId = ID('animation', param + kfId)
+    const aId = ID('animation', param + kfId);
     this.classname = '𝔸(' + aId + ')';
     this.rules = [`@keyframes 𝔸${kfId} {\n${str}\n}`];
     this.style = { animation: param + ' 𝔸' + kfId };
@@ -191,7 +199,7 @@ const Stack = (wrap, methods) => {
   return stack([], []);
 }
 
-const Processor = ({ addStyle, addClass, removeClass, escapeClass }) => {
+const Processor = ({ addStyle, addClass, removeClass, esc }) => {
   const style = document.createElement('style');
   document.head.appendChild(style);
 
@@ -210,9 +218,8 @@ const Processor = ({ addStyle, addClass, removeClass, escapeClass }) => {
   const process = (elem, nodes) => {
     //console.log('\n\nprocess elem', { elem, nodes });
     for (const node of nodes) {
-      if (!node.cls) node.update(escapeClass);
+      node.init();
       const prevCls = node.cls;
-      node.update(escapeClass);
       if (node.inline) addStyle(elem, node.style);
       else {
         if (!processedNodes[node.cls]) {
@@ -228,7 +235,7 @@ const Processor = ({ addStyle, addClass, removeClass, escapeClass }) => {
     style.textContent.replaceSync('');
     processedRules.clear();
     for (const node of Object.values(processedNodes)) {
-      node.update(escapeClass);
+      node.update(esc);
       for (const rule of node.css()) insertRule(rule);
     }
   }
@@ -240,7 +247,7 @@ export const Adapter = (options) => ({ methods, enumerate=false }) => {
   const { wrapper, addClass, addStyle, removeClass } = options;
   const { process, recalculate } = Processor({
     addStyle, addClass, removeClass,
-    escapeClass: enumerate ? d => 'v' + ID('', d) : escape
+    esc: enumerate ? d => 'v' + ID('', d) : escape
   });
   const wrap = (nodes) => wrapper(nodes, process);
   const v = Stack(wrap, methods);
