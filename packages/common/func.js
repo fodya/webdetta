@@ -39,9 +39,10 @@ export const throttle = (f) => {
   let promise = null;
   return function () {
     if (promise) return promise;
-    promise = Promise.resolve();
     const res = f.apply(this, arguments);
-    return promise.then(() => res).finally(() => (promise = null));
+    return promise = Promise.resolve()
+      .then(() => res)
+      .finally(() => (promise = null));
   }
 }
 throttle.T = (delay, f) => throttle(async function () {

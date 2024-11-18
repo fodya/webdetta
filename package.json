@@ -1,6 +1,6 @@
 {
   "name": "webdetta",
-  "version": "0.1.5",
+  "version": "0.0.390",
   "author": "Fedot Kriutchenko <fodyadev@gmail.com>",
   "description": "",
   "license": "MIT",
@@ -20,7 +20,8 @@
     "./vcss/*": "./packages/vcss/*.js",
     "./vdom/*": "./packages/vdom/*.js",
     "./realdom/*": "./packages/realdom/*.js",
-    "./reactivity/*": "./packages/reactivity/*.js"
+    "./reactivity/*": "./packages/reactivity/*.js",
+    "./webcomp/*": "./packages/webcomp/*.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.25.8",

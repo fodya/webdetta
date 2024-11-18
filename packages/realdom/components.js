@@ -6,7 +6,6 @@ import { builder, Element, Component } from './dom.js';
 const listRoot = Symbol('List.root');
 const createList = ({
   rootEl,
-  state,
   itemsFn,
   elemKey=(item, i, arr)=>i,
   dataKey=(item, i, arr)=>i,
@@ -19,43 +18,44 @@ const createList = ({
   const llistNext = { [listRoot]: undefined };
   const llistPrev = { [listRoot]: undefined };
 
-  const connectItem = (key) => {
-    elems[key] ??= render(data[key], key);
+  const connectItem = (k) => {
+    elems[k] ??= render(data[k], k);
   }
-  const resetItem = (key) => {
+  const moveItem = (k, nextK) => {
+    llistNext[k] = nextK;
+    llistPrev[nextK] = k;
+    elems[k].after(elems[nextK]);
   }
-  const disconnectItem = (key) => {
-    delete data[key];
-    elems[key].remove();
-    delete elems[key];
+  const resetItem = (k) => {
+
+  }
+  const disconnectItem = (k) => {
+    const [prev, next] = [llistPrev[k], llistNext[k]];
+    if (prev) llistNext[prev] = next;
+    if (next) llistPrev[next] = prev;
+    delete llistPrev[k];
+    delete llistNext[k];
+
+    delete data[k];
+    elems[k].remove();
+    delete elems[k];
   }
 
   let prevKeys = new Set();
   let prevDataKeys = [];
   const updateKeys = (keys, dataKeys) => {
     const currKeys = new Set(keys);
-    for (const k of prevKeys) if (!currKeys.has(k)) {
-      const [prev, next] = [llistPrev[k], llistNext[k]];
-      if (prev) llistNext[prev] = next;
-      if (next) llistPrev[next] = prev;
-      delete llistPrev[k];
-      delete llistNext[k];
+    for (const k of prevKeys) if (!currKeys.has(k))
       disconnectItem(k);
-    }
-    for (const k of keys) if (!prevKeys.has(k)) {
+    for (const k of keys) if (!prevKeys.has(k))
       connectItem(k);
-    }
     for (let i = 0, l = keys.length; i < l; i++) {
       const k = i == 0 ? listRoot : keys[i - 1];
       const nextK = keys[i];
-      if (llistNext[k] != nextK || llistPrev[nextK] != k) {
-        llistNext[k] = nextK;
-        llistPrev[nextK] = k;
-        elems[k].after(elems[nextK]);
-      }
-      if (i < prevDataKeys.length && prevDataKeys[i] != dataKeys[i]) {
+      if (llistNext[k] != nextK || llistPrev[nextK] != k)
+        moveItem(k, nextK);
+      if (i < prevDataKeys.length && prevDataKeys[i] != dataKeys[i])
         resetItem(k);
-      }
     }
     prevKeys = currKeys;
     prevDataKeys = dataKeys;
@@ -78,26 +78,16 @@ const createList = ({
 }
 
 export const list = (itemsFn, render) => Element('')(
-  ref((dom, state) => createList({
-    rootEl: dom,
-    state,
-    itemsFn,
-    render
-  }))
+  ref(dom => createList({ rootEl: dom, itemsFn, render }))
 );
 
-const if_ = (func, elem) => Element('')(ref((dom) => {
-  const f = typeof elem == 'function' && elem[builder] === undefined;
-  const root = dom;
-  const eldom = Component(() => f ? elem() : elem)();
+const if_ = (func, elem) => Element('')(ref((root) => {
+  const dom = typeof elem == 'function' && elem[builder] === undefined
+    ? Component(elem)()
+    : elem;
   const update = (val) => {
-    if (val) {
-      root.after(eldom);
-      root.remove();
-    } else {
-      eldom.after(root);
-      eldom.remove();
-    }
+    if (val) { root.after(dom); root.remove(); }
+    else { dom.after(root); dom.remove(); }
   }
   r.effect(() => update(func()));
 }));
