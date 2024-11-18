@@ -2,7 +2,7 @@ import { isTemplateCall, throttle } from '../common/func.js';
 
 let currentOwner;
 let currentHandler;
-export const getCurrentOwner = () => currentHandler;
+export const getCurrentOwner = () => currentOwner;
 export const getCurrentHandler = () => currentHandler;
 
 export const Signal = ({ handlers, get, set }) => {
