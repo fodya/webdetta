@@ -9,7 +9,7 @@ const toString = args => {
   return str;
 }
 
-export const textContent = Operator(false, (node, _, args) => r.effect(() =>
+export const textContent = Operator(false, (node, _, args) => r.effect(() => {
   node.textContent = toString(args)
 }));
 
