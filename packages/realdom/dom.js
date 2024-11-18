@@ -29,6 +29,7 @@ export const Element = tag => elementBuilder(tag, (content, node, init) => {
   if (!node && (init = true)) switch (tag) {
     case '': node = document.createTextNode(''); break;
     case '!': node = document.createComment(''); break;
+    case ':': node = document.createDocumentFragment(); break;
     default: node = document.createElement(tag);
   }
 
