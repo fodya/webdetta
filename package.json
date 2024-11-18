@@ -18,7 +18,9 @@
     "./state/*": "./packages/state/*.js",
     "./subprocess/*": "./packages/subprocess/*.js",
     "./vcss/*": "./packages/vcss/*.js",
-    "./vdom/*": "./packages/vdom/*.js"
+    "./vdom/*": "./packages/vdom/*.js",
+    "./realdom/*": "./packages/realdom/*.js",
+    "./reactivity/*": "./packages/reactivity/*.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.25.8",

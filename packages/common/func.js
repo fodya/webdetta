@@ -2,6 +2,8 @@ const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
 export const isPromise = d => d == Promise.resolve(d);
 
+export const unwrapFn = d => typeof d == 'function' ? unwrapFn(d()) : d;
+
 export const safe = (f, errorHandler=safe.errorHandler) => function() {
   try {
     return isAsync(f)
