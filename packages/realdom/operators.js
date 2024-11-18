@@ -9,11 +9,11 @@ const toString = args => {
   return str;
 }
 
-export const textContent = Operator(false, (node, _, args, init) => {
-  r.effect(() => node.textContent = toString(args));
-});
+export const textContent = Operator(false, (node, _, args) => r.effect(() =>
+  node.textContent = toString(args)
+}));
 
-export const ref = Operator(true, (node, _, args, init) => {
+export const ref = Operator(true, (node, _, args) => {
   for (const func of args) func(node);
 });
 export const attr = Operator(false, (node, names, args) => r.effect(() => {
