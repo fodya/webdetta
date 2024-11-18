@@ -62,7 +62,6 @@ const createList = ({
   }
 
   const updateItems = (list=[]) => {
-    console.log(rootEl);
     const keys = [];
     const dataKeys = []
     for (let i = 0, l = list.length; i < l; i++) {
