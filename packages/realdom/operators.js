@@ -33,3 +33,7 @@ export const prop = Operator(true, (node, names, args) => r.effect(() => {
   const value = toString(args);
   for (const name of names) node[name] = value;
 }));
+export const propRaw = Operator(true, (node, names, args) => {
+  const value = args[0];
+  for (const name of names) node[name] = value;
+});
