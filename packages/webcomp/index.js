@@ -1,4 +1,5 @@
 import { Signal } from '../reactivity/index.js';
+import { objectPick, S } from '../common/func.js';
 
 const WebComponent = (name, options, func) => {
   const { attrs={}, shadow } = options;
@@ -45,7 +46,8 @@ const WebComponent = (name, options, func) => {
       writable: false,
       configurable: false
     });
-    const res = func.apply(dom.instance, args);
+    const ctx = objectPick(instance, S`dom onConnect onDisconnect attrs`);
+    const res = func.apply(ctx, args);
     if (res) (dom.shadowRoot ?? dom).appendChild(res);
     return dom;
   };
