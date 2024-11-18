@@ -2,6 +2,7 @@ import { isTemplateCall, throttle } from '../common/func.js';
 
 let currentOwner;
 let currentHandler;
+export const getCurrentOwner = () => currentHandler;
 export const getCurrentHandler = () => currentHandler;
 
 export const Signal = ({ handlers, get, set }) => {
@@ -33,7 +34,7 @@ const Reference = (target, key) => Signal({
 
 const effect = (func, owner=currentOwner, listen=true) => {
   const run = handler => runWithOwner(owner, handler, func, null, [owner]);
-  return run(listen ? run.bind(null, null) : null);
+  return run(listen ? () => run(null) : null);
 }
 const derive = func => {
   const value = Value();
