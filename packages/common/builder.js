@@ -13,7 +13,7 @@ export const Builder = (effect, tasks=[], names=[]) => new Proxy(
 });
 
 Builder.symbol = Symbol('Builder.symbol');
-Builder.isBuilder = (f) => Object.hasOwn(f, Builder.symbol);
+Builder.isBuilder = (f) => f && Object.hasOwn(f, Builder.symbol);
 Builder.launch = (f, ...args) => f(Builder.symbol, ...args);
 
 export default Builder;

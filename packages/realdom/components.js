@@ -1,4 +1,5 @@
 import Builder from '../common/builder.js';
+import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { ref } from './operators.js';
 import { Element, Component } from './dom.js';
@@ -74,15 +75,16 @@ const createList = ({
     updateKeys(keys, dataKeys);
   };
 
-  r.effect(() => updateItems(itemsFn()));
+  r.effect(() => updateItems(unwrapFn(itemsFn)));
 }
 
 export const list = (itemsFn, render) => Element('')(
   ref(dom => createList({ rootEl: dom, itemsFn, render }))
 );
 
-const if_ = (func, elem) => Element('')(ref((root) => {
-  const dom = Builder.launch(Builder.isBuilder(elem) ? elem : elem(), null);
+const if_ = (func, arg) => Element('')(ref((root) => {
+  const item = Element.from(arg);
+  const dom = Builder.isBuilder(item) ? Builder.launch(item, null) : item;
   const update = (val) => {
     if (val) { root.after(dom); root.remove(); }
     else { dom.after(root); dom.remove(); }

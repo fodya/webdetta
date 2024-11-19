@@ -57,11 +57,16 @@ export const Element = tag => elementBuilder(tag, (node, content, init) => {
   }
   return node;
 });
+Element.from = arg =>
+  arg && arg[builder] === 1 || arg instanceof Node ? arg :
+  typeof arg === 'function' ? Element.from(arg()) :
+  Array.isArray(arg) ? Element(':')(...arg) :
+  Element('')(arg);
 
 export const Component = func => {
   let tmpl;
   return func.component ??= function (...args) {
-    const elem = func.apply(this, args);
+    const elem = Element.from(func.apply(this, args));
     if (!Builder.isBuilder(elem)) return elem;
     tmpl ??= Builder.launch(elem, null);
     return Builder.launch(elem, tmpl.cloneNode(true));
