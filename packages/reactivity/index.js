@@ -1,5 +1,3 @@
-import { isTemplateCall, throttle } from '../common/func.js';
-
 let currentOwner;
 let currentHandler;
 export const getCurrentOwner = () => currentOwner;
@@ -8,15 +6,18 @@ export const getCurrentHandler = () => currentHandler;
 export const Signal = ({ handlers, get, set }) => {
   const accessor = (...a) => {
     if (a.length === 0) {
-      if (handlers && currentHandler) handlers.add(currentHandler);
+      listen(currentHandler);
       return get();
     } else {
-      const val = set(a[0]);
+      const val = set(...a);
       if (handlers) for (const handler of handlers) handler(val);
       return val;
     }
   }
-  return (accessor[Signal.symbol] = true, accessor);
+  const listen = accessor.on = h => h && handlers?.add(h);
+  accessor.off = h => h && handlers?.delete(h);
+  accessor[Signal.symbol] = true
+  return accessor;
 }
 Signal.symbol = Symbol('Signal.symbol');
 Signal.isSignal = f => f && Object.hasOwn(f, Signal.symbol);

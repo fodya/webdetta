@@ -1,7 +1,7 @@
 import { Signal } from '../reactivity/index.js';
-import { objectPick, S } from '../common/func.js';
+import { objectPick, S } from '../common/utils.js';
 
-const WebComponent = (name, options, func) => {
+export const WebComponent = (name, options, func) => {
   const { attrs={}, shadow } = options;
 
   const domConstructor = class extends HTMLElement {
@@ -17,7 +17,7 @@ const WebComponent = (name, options, func) => {
       this.instance.disconnect();
     }
     attributeChangedCallback(name, oldValue, newValue) {
-      this.instance.attrs[name](format(attrs[name]));
+      this.instance.attrs[name](attrs[name](newValue), false);
     }
   };
   globalThis.customElements.define(name, domConstructor);
@@ -37,7 +37,11 @@ const WebComponent = (name, options, func) => {
         return [k, Signal({
           handlers: new Set(),
           get: () => v,
-          set: vv => dom.setAttribute(k, v = vv)
+          set: (vv, setAttr=true) => {
+            v = vv;
+            if (setAttr) dom.setAttribute(k, v);
+            return v;
+          }
         })];
       }))
     };
@@ -53,5 +57,3 @@ const WebComponent = (name, options, func) => {
   };
   return Object.assign(result, { domConstructor });
 }
-
-export { WebComponent }

@@ -1,14 +1,11 @@
 import Builder from '../common/builder.js';
-import { templateCallToArray } from '../common/func.js';
+import { templateCallToArray } from '../common/utils.js';
 import { textContent } from './operators.js';
 
-const isReactive = args =>
-  args.some(d => typeof d == 'function');
-
-export const builder = Builder.symbol;
+const builder = Builder.symbol;
 const elementBuilder = (tag, func) => {
   const effect = (tasks, node, init) => {
-    let res; for (const {args} of tasks) res ??= func(args, node, init);
+    let res; for (const {args} of tasks) res ??= func(node, args, init);
     return res;
   }
   effect[builder] = 1;
@@ -18,14 +15,17 @@ const elementBuilder = (tag, func) => {
 export const Operator = (defer, func) => {
   const effect = (tasks, node, init) => {
     for (const {names, args} of tasks) {
-      if (init ? !defer : isReactive(args)) func(node, names, args, init)
+      const shouldRun = init
+        ? !defer
+        : args.some(d => typeof d == 'function');
+      if (shouldRun) func(node, names, args, init)
     }
   }
   effect[builder] = 2;
   return Builder(effect);
 }
 
-export const Element = tag => elementBuilder(tag, (content, node, init) => {
+export const Element = tag => elementBuilder(tag, (node, content, init) => {
   if (!node && (init = true)) switch (tag) {
     case '': node = document.createTextNode(''); break;
     case '!': node = document.createComment(''); break;
@@ -60,9 +60,9 @@ export const Element = tag => elementBuilder(tag, (content, node, init) => {
 
 export const Component = func => {
   let tmpl;
-  return func.component ??= (...args) => {
-    const elem = func(...args);
-    if (elem instanceof Node) return elem;
+  return func.component ??= function (...args) {
+    const elem = func.apply(this, args);
+    if (!Builder.isBuilder(elem)) return elem;
     tmpl ??= Builder.launch(elem, null);
     return Builder.launch(elem, tmpl.cloneNode(true));
   }

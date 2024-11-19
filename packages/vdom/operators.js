@@ -1,5 +1,5 @@
 import { Builder } from '../common/builder.js';
-import { safe, isTemplateCall, templateCallToArray } from '../common/func.js';
+import { safe, isTemplateCall, templateCallToArray } from '../common/utils.js';
 import { kebab } from '../common/dom.js';
 
 const unwrap = (x) => (typeof x === 'function') ? unwrap(x()) : x;

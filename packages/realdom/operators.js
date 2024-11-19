@@ -1,5 +1,5 @@
 import { kebab } from '../common/dom.js';
-import { unwrapFn } from '../common/func.js';
+import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Operator } from './dom.js';
 

@@ -3,7 +3,7 @@
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/client.js
 
 import { Proto, EMPTY } from "./proto.js";
-import { Val } from "../common/chain.js";
+import { Value } from '../reactivity/index.js';
 
 const normUrl = (s) => {
   let u = new URL(s, globalThis.document?.location ?? s);
@@ -101,10 +101,10 @@ export function RpcClient(url, pulse=60_000) {
     });
   }
 
-  const isOpen = Val(false);
-  const lastMessage = Val();
-  const lastError = Val();
-  const lastSent = Val();
+  const isOpen = Value(false);
+  const lastMessage = Value();
+  const lastError = Value();
+  const lastSent = Value();
 
   const instance = {
     methods: {},

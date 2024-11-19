@@ -1,4 +1,4 @@
-import { safe } from '../common/func.js';
+import { safe } from '../common/utils.js';
 import { Api } from '../sdk/common.js';
 import { SdkServer } from '../sdk/server.js';
 import bytes from 'bytes';

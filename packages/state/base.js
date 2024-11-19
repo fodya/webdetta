@@ -26,4 +26,3 @@ export async function State({ read, write, interval = 5000 }) {
   await read(self);
   return self;
 }
-

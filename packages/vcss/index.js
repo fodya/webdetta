@@ -1,5 +1,5 @@
 import { kebab } from '../common/dom.js';
-import { isTemplateCall } from '../common/func.js';
+import { isTemplateCall } from '../common/utils.js';
 
 const ID = ((r={}, i={}) => (t, v) => {
   return r[t+v] ??= i[t] = (i[t] ??= -1) + 1;

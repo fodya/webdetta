@@ -1,5 +1,5 @@
 import { Builder, launch, isBuilder } from '../common/builder.js';
-import { throttle, templateCallToArray } from '../common/func.js';
+import { throttle, templateCallToArray } from '../common/utils.js';
 import { patch, VNode } from './snabb.js';
 
 export { VNode };

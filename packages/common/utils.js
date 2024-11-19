@@ -110,7 +110,7 @@ export const objectPick = (...args) => {
   }
   if (args.length == 2) {
     const [obj, keys] = args;
-    return Object.fromEntries(keys.map(k => [k, obj[k]]));;
+    return Object.fromEntries(keys.map(k => [k, obj[k]]));
   }
 }
 export const S = (...args) => {

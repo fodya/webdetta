@@ -1,7 +1,7 @@
 import Builder from '../common/builder.js';
 import { r } from '../reactivity/index.js';
 import { ref } from './operators.js';
-import { builder, Element, Component } from './dom.js';
+import { Element, Component } from './dom.js';
 
 const listRoot = Symbol('List.root');
 const createList = ({
@@ -82,9 +82,7 @@ export const list = (itemsFn, render) => Element('')(
 );
 
 const if_ = (func, elem) => Element('')(ref((root) => {
-  const dom = typeof elem == 'function' && elem[builder] === undefined
-    ? Component(elem)()
-    : elem;
+  const dom = Builder.launch(Builder.isBuilder(elem) ? elem : elem(), null);
   const update = (val) => {
     if (val) { root.after(dom); root.remove(); }
     else { dom.after(root); dom.remove(); }
