@@ -1,4 +1,5 @@
 import Builder from '../common/builder.js';
+import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent } from './operators.js';
 
@@ -15,10 +16,10 @@ const elementBuilder = (tag, func) => {
 export const Operator = (defer, func) => {
   const effect = (tasks, node, init) => {
     for (const {names, args} of tasks) {
-      const shouldRun = init
+      const shouldRun = init === null || (init
         ? !defer
-        : args.some(d => typeof d == 'function');
-      if (shouldRun) func(node, names, args, init)
+        : args.some(d => typeof d == 'function'));
+      if (shouldRun) func(node, names, args);
     }
   }
   effect[builder] = 2;
@@ -42,19 +43,23 @@ export const Element = tag => elementBuilder(tag, (node, content, init) => {
   }
   const apply = item => Builder.launch(item, node, init);
 
-  for (const item of templateCallToArray(content)) switch (item[builder]) {
-    case 1: (init ? append : hydrate)(item); break;
-    case 2: apply(item); break;
-    default:
-      if (tag === '' || tag === '!') apply(textContent(item));
-      else if (init) {
-        if (item instanceof Node) {}
-        else append(Element('')(textContent(item)));
-      } else {
-        if (item instanceof Node) child.before(item);
-        else hydrate(textContent(item));
-      }
+  const process = list => {
+    for (const item of list) switch (item[builder]) {
+      case 1: (init ? append : hydrate)(item); break;
+      case 2: apply(item); break;
+      default:
+        if (Array.isArray(item)) process(item);
+        else if (tag === '' || tag === '!') apply(textContent(item));
+        else if (init) {
+          if (item instanceof Node) {}
+          else append(Element('')(textContent(item)));
+        } else {
+          if (item instanceof Node) child.before(item);
+          else hydrate(textContent(item));
+        }
+    }
   }
+  process(templateCallToArray(content));
   return node;
 });
 Element.from = arg =>
@@ -66,9 +71,18 @@ Element.from = arg =>
 export const Component = func => {
   let tmpl;
   return func.component ??= function (...args) {
-    const elem = Element.from(func.apply(this, args));
-    if (!Builder.isBuilder(elem)) return elem;
-    tmpl ??= Builder.launch(elem, null);
-    return Builder.launch(elem, tmpl.cloneNode(true));
+    const onTurnOff = new Set();
+    const owner = {
+      turnOff: () => { for (const h of onTurnOff) h(); },
+      onTurnOff: (h) => onTurnOff.add(h)
+    };
+    const elem = Element.from(r.effect(func.bind(this, ...args), owner, false));
+
+    const dom = !Builder.isBuilder(elem) ? elem : (
+      tmpl ??= Builder.launch(elem, null),
+      Builder.launch(elem, tmpl.cloneNode(true))
+    );
+    dom.turnOff = owner.turnOff;
+    return dom;
   }
 }

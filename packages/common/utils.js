@@ -2,6 +2,7 @@ const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
 export const isPromise = d => d == Promise.resolve(d);
 
+export const callFn = d => typeof d == 'function' ? d() : d;
 export const unwrapFn = d => typeof d == 'function' ? unwrapFn(d()) : d;
 
 export const safe = (f, errorHandler=safe.errorHandler) => function() {
@@ -25,6 +26,16 @@ export const lock = (lockFn, f) => {
   return function() {
     if (lockFn()) return;
     return f.apply(this, arguments);
+  }
+}
+lock.sync = f => {
+  let locked;
+  return function() {
+    if (locked) return;
+    locked = true;
+    const res = f.apply(this, arguments);
+    locked = false;
+    return res;
   }
 }
 

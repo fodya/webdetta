@@ -1,29 +1,45 @@
-let currentOwner;
-let currentHandler;
-export const getCurrentOwner = () => currentOwner;
-export const getCurrentHandler = () => currentHandler;
+import { Context } from '../common/context.js';
+import { throttle } from '../common/utils.js';
+export const handlerCtx = Context();
 
-export const Signal = ({ handlers, get, set }) => {
+const handlers = (clearOnTrigger) => {
+  let list = new Set();
+  const add = handler => list.add(handler);
+  const trigger = (...args) => {
+    const currList = list;
+    if (clearOnTrigger) list = new Set(); // clear all handlers.
+    // handlers will subscribe again upon an effect call.
+    // unreachable handlers will not resubscribe.
+    for (const handler of currList) handler(...args);
+  }
+  return { get list() { return list; }, add, trigger };
+}
+
+export const Signal = ({ handlers=handlers(), get, set }) => {
   const accessor = (...a) => {
     if (a.length === 0) {
-      listen(currentHandler);
+      let h; if (handlers && (h = handlerCtx())) handlers.add(h);
       return get();
     } else {
       const val = set(...a);
-      if (handlers) for (const handler of handlers) handler(val);
+      if (handlers) handlers.trigger(val);
       return val;
     }
   }
-  const listen = accessor.on = h => h && handlers?.add(h);
-  accessor.off = h => h && handlers?.delete(h);
+  accessor.handlers = handlers;
   accessor[Signal.symbol] = true
   return accessor;
 }
 Signal.symbol = Symbol('Signal.symbol');
 Signal.isSignal = f => f && Object.hasOwn(f, Signal.symbol);
 
+const Event = val => Signal({
+  handlers: handlers(false),
+  get: () => val,
+  set: v => val = v
+});
 const Value = val => Signal({
-  handlers: new Set(),
+  handlers: handlers(true),
   get: () => val,
   set: v => val = v
 });
@@ -33,23 +49,14 @@ const Reference = (target, key) => Signal({
   set: v => target()[key] = v
 });
 
-const effect = (func, owner=currentOwner, listen=true) => {
-  const run = handler => runWithOwner(owner, handler, func, null, [owner]);
-  return run(listen ? () => run(null) : null);
+const effect = (func) => {
+  const run = () => handlerCtx.run(run, func, []);
+  return run();
 }
 const derive = func => {
   const value = Value();
   effect(() => value(func()));
   return value;
-}
-
-const runWithOwner = (owner, handler, func, thisArg, args) => {
-  const [pOwner, pHandler] = [currentOwner, currentHandler];
-  [currentOwner, currentHandler] = [owner, handler];
-  let res; try { res = func.apply(thisArg, args); }
-  catch (e) { console.error(e); }
-  [currentOwner, currentHandler] = [pOwner, pHandler];
-  return res;
 }
 
 export const r = {
