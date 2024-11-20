@@ -5,14 +5,6 @@ import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import { lifecycle, createList, createIf } from './dynamic.js';
 
-let id = 0;
-const ids = new WeakMap();
-const argId = arg => {
-  if (typeof arg !== 'object' && typeof arg !== 'function') return arg;
-  const id_ = ids.get(arg);
-  return id_ ? id_ : (ids.set(arg, ++id), id);
-}
-
 const toString = args => {
   let str = '';
   for (const a of args) str += unwrapFn(a);
