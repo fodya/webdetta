@@ -26,22 +26,35 @@ export const Operator = (defer, func) => {
   return Builder(effect);
 }
 
-export const Element = tag => elementBuilder(tag, (node, content, init) => {
+const NS = {
+  svg: 'http://www.w3.org/1998/Math/MathML',
+  math: 'http://www.w3.org/1998/Math/MathML'
+};
+export const Element = tag => elementBuilder(tag, (node, content, init, ns) => {
   if (!node && (init = true)) switch (tag) {
     case '': node = document.createTextNode(''); break;
     case '!': node = document.createComment(''); break;
     case ':': node = document.createDocumentFragment(); break;
-    default: node = document.createElement(tag);
+    default: node = (
+      (ns = NS[tag] ?? ns)
+      ? document.createElementNS(ns, tag)
+      : document.createElement(tag)
+    );
   }
 
   let child = init ? null : node.firstChild;
-  const append = item => node.appendChild(Builder.launch(item, null, init));
+  const append = item => {
+    const child = Builder.launch(item, null, init, ns);
+    node.appendChild(child);
+  }
   const hydrate = (item) => {
     const next = child?.nextSibling;
-    Builder.launch(item, child, init);
+    Builder.launch(item, child, init, ns);
     child = next;
   }
-  const apply = item => Builder.launch(item, node, init);
+  const apply = item => {
+    Builder.launch(item, node, init, ns);
+  }
 
   const process = list => {
     for (const item of list) switch (item[builder]) {
