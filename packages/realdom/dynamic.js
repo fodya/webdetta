@@ -1,8 +1,7 @@
 import Builder from '../common/builder.js';
 import { Context } from '../common/context.js';
-import { callFn, unwrapFn, once } from '../common/utils.js';
+import { callFn, unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
-import { ref } from './operators.js';
 import { Element, Component } from './dom.js';
 
 export const lifecycle = Context();

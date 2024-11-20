@@ -71,18 +71,9 @@ Element.from = arg =>
 export const Component = func => {
   let tmpl;
   return func.component ??= function (...args) {
-    const onTurnOff = new Set();
-    const owner = {
-      turnOff: () => { for (const h of onTurnOff) h(); },
-      onTurnOff: (h) => onTurnOff.add(h)
-    };
-    const elem = Element.from(r.effect(func.bind(this, ...args), owner, false));
-
-    const dom = !Builder.isBuilder(elem) ? elem : (
-      tmpl ??= Builder.launch(elem, null),
-      Builder.launch(elem, tmpl.cloneNode(true))
-    );
-    dom.turnOff = owner.turnOff;
-    return dom;
+    const elem = Element.from(func(...args));
+    if (!Builder.isBuilder(elem)) return elem;
+    tmpl ??= Builder.launch(elem, null);
+    return Builder.launch(elem, tmpl.cloneNode(true));
   }
 }
