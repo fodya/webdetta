@@ -1,6 +1,6 @@
 import Builder from '../common/builder.js';
 import { Context } from '../common/context.js';
-import { callFn, unwrapFn } from '../common/utils.js';
+import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Component } from './dom.js';
 
@@ -129,5 +129,5 @@ export const createIf = (root, condition, args) => {
       stop();
     }
   }
-  r.effect(() => update(callFn(condition)));
+  r.effect(() => update(unwrapFn(condition)));
 }

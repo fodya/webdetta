@@ -3,7 +3,6 @@
 // Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/client.js
 
 import { Proto, EMPTY } from "./proto.js";
-import { Event } from '../reactivity/index.js';
 
 const normUrl = (s) => {
   let u = new URL(s, globalThis.document?.location ?? s);
@@ -20,6 +19,14 @@ export function genKey(len=32) {
 
 globalThis.localStorage ??= {};
 
+const Emitter = v => {
+  const handlers = new Set();
+  const accessor = (...a) => a.length === 0
+    ? v
+    : (v = a[0], handlers.forEach(h => h(v)), v);
+  accessor.on = h => handlers.add(h);
+  return accessor;
+}
 export function RpcClient(url, pulse=60_000) {
   // `pulse` is the minimum throughput. The default is one frame per minute.
   // 2 minutes without communication will close the socket.
@@ -101,10 +108,10 @@ export function RpcClient(url, pulse=60_000) {
     });
   }
 
-  const isOpen = Event(false);
-  const lastMessage = Event();
-  const lastError = Event();
-  const lastSent = Event();
+  const isOpen = Emitter(false);
+  const lastMessage = Emitter();
+  const lastError = Emitter();
+  const lastSent = Emitter();
 
   const instance = {
     methods: {},

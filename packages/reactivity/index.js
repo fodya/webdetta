@@ -1,6 +1,6 @@
 import { Context } from '../common/context.js';
 import { throttle } from '../common/utils.js';
-export const handlerCtx = Context();
+export const currentHandler = Context();
 
 const handlers = (clearOnTrigger) => {
   let list = new Set();
@@ -18,7 +18,7 @@ const handlers = (clearOnTrigger) => {
 export const Signal = ({ handlers=handlers(), get, set }) => {
   const accessor = (...a) => {
     if (a.length === 0) {
-      let h; if (handlers && (h = handlerCtx())) handlers.add(h);
+      let h; if (handlers && (h = currentHandler())) handlers.add(h);
       return get();
     } else {
       const val = set(...a);
@@ -33,11 +33,6 @@ export const Signal = ({ handlers=handlers(), get, set }) => {
 Signal.symbol = Symbol('Signal.symbol');
 Signal.isSignal = f => f && Object.hasOwn(f, Signal.symbol);
 
-const Event = val => Signal({
-  handlers: handlers(false),
-  get: () => val,
-  set: v => val = v
-});
 const Value = val => Signal({
   handlers: handlers(true),
   get: () => val,
@@ -50,7 +45,7 @@ const Reference = (target, key) => Signal({
 });
 
 const effect = (func) => {
-  const run = () => handlerCtx.run(run, func, []);
+  const run = () => currentHandler.run(run, func, []);
   return run();
 }
 const derive = func => {

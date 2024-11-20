@@ -32,7 +32,7 @@ export const attr = Operator(false, (node, names, args) => {
     for (const name of names) node.setAttribute(name, value);
   });
 
-  lifecycle()?.onStop?.(() => {
+  lifecycle()?.onStop(() => {
     for (const name of names) node.removeAttribute(name);
   });
 });
@@ -40,7 +40,7 @@ export const on = Operator(true, (node, names, args) => {
   for (const name of names) for (const func of args)
     node.addEventListener(name, func);
 
-  lifecycle()?.onStop?.(() => {
+  lifecycle()?.onStop(() => {
     for (const name of names) for (const func of args)
       node.removeEventListener(name, func);
   });
@@ -51,7 +51,7 @@ const class_ = Operator(false, (node, names, args) => {
     if (value) node.classList.add(...names.map(kebab));
   });
 
-  lifecycle()?.onStop?.(() => {
+  lifecycle()?.onStop(() => {
     if (value) node.classList.remove(...names.map(kebab));
   });
 });
@@ -62,7 +62,7 @@ export const style = Operator(false, (node, names, args) => {
     for (const name of names) node.style.setProperty(kebab(name), value);
   });
 
-  lifecycle()?.onStop?.(() => {
+  lifecycle()?.onStop(() => {
     for (const name of names) node.style.removeProperty(name);
   });
 });
@@ -73,7 +73,7 @@ export const prop = Operator(true, (node, names, args) => {
     for (const name of names) node[name] = value;
   });
 
-  lifecycle()?.onStop?.(() => {
+  lifecycle()?.onStop(() => {
     for (const name of names) delete node[name];
   });
 });

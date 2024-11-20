@@ -1,14 +1,22 @@
 import Builder from '../common/builder.js';
+import { Context } from '../common/context.js';
 import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent } from './operators.js';
 
+const NS = {
+  svg: 'http://www.w3.org/2000/svg',
+  math: 'http://www.w3.org/1998/Math/MathML'
+};
+export const currentNS = Context();
+
 const builder = Builder.symbol;
 const elementBuilder = (tag, func) => {
-  const effect = (tasks, node, init) => {
+  const ns = NS[tag] ?? currentNS();
+  const effect = (tasks, node, init) => currentNS.run(ns, () => {
     let res; for (const {args} of tasks) res ??= func(node, args, init);
     return res;
-  }
+  });
   effect[builder] = 1;
   return Builder(effect);
 }
@@ -26,17 +34,14 @@ export const Operator = (defer, func) => {
   return Builder(effect);
 }
 
-const NS = {
-  svg: 'http://www.w3.org/2000/svg',
-  math: 'http://www.w3.org/1998/Math/MathML'
-};
-export const Element = tag => elementBuilder(tag, (node, content, init, ns) => {
+export const Element = tag => elementBuilder(tag, (node, content, init) => {
+  const ns = currentNS();
   if (!node && (init = true)) switch (tag) {
     case '': node = document.createTextNode(''); break;
     case '!': node = document.createComment(''); break;
     case ':': node = document.createDocumentFragment(); break;
     default: node = (
-      (ns = NS[tag] ?? ns)
+      ns
       ? document.createElementNS(ns, tag)
       : document.createElement(tag)
     );
@@ -44,16 +49,16 @@ export const Element = tag => elementBuilder(tag, (node, content, init, ns) => {
 
   let child = init ? null : node.firstChild;
   const append = item => {
-    const child = Builder.launch(item, null, init, ns);
+    const child = Builder.launch(item, null, init);
     node.appendChild(child);
   }
   const hydrate = (item) => {
     const next = child?.nextSibling;
-    Builder.launch(item, child, init, ns);
+    Builder.launch(item, child, init);
     child = next;
   }
   const apply = item => {
-    Builder.launch(item, node, init, ns);
+    Builder.launch(item, node, init);
   }
 
   const process = list => {
