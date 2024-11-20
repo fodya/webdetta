@@ -27,7 +27,7 @@ export const Operator = (defer, func) => {
 }
 
 const NS = {
-  svg: 'http://www.w3.org/1998/Math/MathML',
+  svg: 'http://www.w3.org/2000/svg',
   math: 'http://www.w3.org/1998/Math/MathML'
 };
 export const Element = tag => elementBuilder(tag, (node, content, init, ns) => {
