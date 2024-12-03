@@ -50,8 +50,9 @@ export const throttle = (f) => {
   let promise = null;
   return function () {
     if (promise) return promise;
+    promise = Promise.resolve();
     const res = f.apply(this, arguments);
-    return promise = Promise.resolve()
+    return promise
       .then(() => res)
       .finally(() => (promise = null));
   }
@@ -124,8 +125,5 @@ export const objectPick = (...args) => {
     return Object.fromEntries(keys.map(k => [k, obj[k]]));
   }
 }
-export const S = (...args) => {
-  return templateCallToArray(args).flatMap(d =>
-    d.split(/\s+/).map(d => d.trim())
-  );
-}
+export const S = (...args) =>
+  String.raw(...args).match(/\S+/g) ?? [];

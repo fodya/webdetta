@@ -1,4 +1,4 @@
-import { Builder, launch, isBuilder } from '../common/builder.js';
+import { Builder } from '../common/builder.js';
 import { throttle, templateCallToArray } from '../common/utils.js';
 import { patch, VNode } from './snabb.js';
 
@@ -25,7 +25,7 @@ export const Fragment = Element(undefined);
 
 export function append(child, el, ctx) {
   if (child === undefined || child === null || child === false) {}
-  else if (isBuilder(child)) launch(child, el, ctx);
+  else if (Builder.isBuilder(child)) Builder.launch(child, el, ctx);
   else if (Array.isArray(child)) child.forEach(c => append(c, el, ctx));
   else if (typeof child === 'function') append(child(), el, ctx);
   else if (child instanceof VNode) el.children.push(child);
@@ -33,8 +33,8 @@ export function append(child, el, ctx) {
 }
 
 export function attach(domEl) {
-  let vEl, content = [], refresh = throttle(() => {
-    let view = new VNode(domEl.tagName, {}, []);
+  let vEl, content = [], refresh = throttle.T(0, () => {
+    let view = new VNode(domEl.tagName.toLowerCase(), {}, []);
     let ctx = { refresh };
     for (const child of content) append(child, view, ctx);
     vEl = patch(vEl ?? domEl, view);

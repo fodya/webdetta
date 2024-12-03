@@ -31,12 +31,13 @@ export const saveBlob = (filename, blob) => {
   window.URL.revokeObjectURL(url);
 };
 
-export const fileToDatauri = file => new Promise((resolve, reject) => {
+export const blobToDatauri = blob => new Promise((resolve, reject) => {
   const reader = new FileReader();
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(blob);
   reader.onload = () => resolve(reader.result);
   reader.onerror = reject;
 });
+export const fileToDatauri = blobToDatauri;
 
 export const datauriToBlob = datauri => fetch(datauri).then(res => res.blob());
 

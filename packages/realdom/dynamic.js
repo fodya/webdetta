@@ -2,7 +2,7 @@ import Builder from '../common/builder.js';
 import { Context } from '../common/context.js';
 import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
-import { Element, Component } from './dom.js';
+import { Element, Component, initializing, render, hydrate } from './dom.js';
 
 export const lifecycle = Context();
 const Lifecycle = () => {
@@ -32,9 +32,9 @@ const createList_ = ({
   itemsFn,
   elemKey=(item, i, arr)=>i,
   dataKey=(item, i, arr)=>i,
-  render,
+  renderItem,
 }) => {
-  render = Component(render);
+  renderItem = Component(renderItem);
 
   const data = {};
   const elems = { [listRoot]: root };
@@ -42,7 +42,9 @@ const createList_ = ({
   const llistPrev = { [listRoot]: undefined };
 
   const connectItem = (k) => {
-    elems[k] ??= render(data[k], k);
+    if (elems[k]) return elems[k];
+    const elem = renderItem(data[k], k);
+    elems[k] = elem instanceof Node ? elem : render(elem);
   }
   const moveItem = (k, nextK) => {
     llistNext[k] = nextK;
@@ -100,34 +102,41 @@ const createList_ = ({
   r.effect(() => updateItems(unwrapFn(itemsFn)));
 }
 
-export const createList = (root, itemsFn, render) =>
-  createList_({ root, itemsFn, render });
+export const createList = (root, itemsFn, renderItem) =>
+  createList_({ root, itemsFn, renderItem });
 
-export const createIf = (root, condition, args) => {
+export const appendItems = (parentNode, node, items) => {
   const children = [], operators = [];
-  const process = item => {
+  const process = initializing.bind(null, item => {
     const builder = item[Builder.symbol];
-    if (builder === 1) children.push(Builder.launch(item, null));
+    if (builder === 1) children.push(render(item));
     else if (builder === 2) operators.push(item);
     else if (typeof item === 'function') process(item());
     else if (Array.isArray(item)) item.forEach(process);
-    else children.push(Builder.launch(Element.from(item), null))
-  }
-  process(args);
+    else if (item instanceof Node) children.push(item);
+    else children.push(render(Element.from(item)))
+  });
+  process(items);
 
+  initializing.run(null, () => {
+    for (const op of operators) hydrate(parentNode, op);
+    for (const dom of children) parentNode.insertBefore(dom, node);
+    lifecycle()?.onStop(() => {
+      for (const dom of children) dom.remove();
+    });
+  });
+}
+
+export const createIf = (root, conditions) => {
   const parentNode = root.parentNode;
   const { start, stop, onStart, onStop } = Lifecycle();
-  const update = (val) => {
-    if (val) {
-      onStart(() => {
-        for (const op of operators) Builder.launch(op, parentNode, null);
-        for (const dom of children) root.before(dom);
-        onStop(() => { for (const dom of children) dom.remove(); });
-      });
-      start();
-    } else {
-      stop();
-    }
-  }
-  r.effect(() => update(unwrapFn(condition)));
+  let index = -1;
+  r.effect(initializing.bind(null, () => {
+    const newIndex = conditions.findIndex(d => unwrapFn(d.cond));
+    if (index == newIndex) return;
+    const content = conditions[index = newIndex]?.args;
+    stop();
+    if (content) onStart(() => appendItems(parentNode, root, content));
+    start();
+  }));
 }

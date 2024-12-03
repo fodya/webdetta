@@ -1,13 +1,15 @@
-export const Context = () => {
-  let value;
+export const Context = (initialValue) => {
+  let value = initialValue;
   const context = () => value;
-  context.run = function (data, func, ...args) {
+  const run = context.run = function (data, func, ...args) {
     const prev = value;
     value = data;
     let res; try { res = func.apply(this, args); }
-    catch (e) { console.error(e); }
-    value = prev;
-    return res;
+    catch (e) { value = prev; throw e; }
+    value = prev; return res;
   }
+  context.bind = (data, func) => function (...args) {
+    return run.call(this, data, func, ...args)
+  };
   return context;
 };

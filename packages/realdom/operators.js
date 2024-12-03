@@ -74,7 +74,19 @@ export const list = (itemsFn, render) => Element('')(
   ref(root => createList(root, itemsFn, render))
 );
 
-const if_ = (condition, ...args) => Element('')(
-  ref(root => createIf(root, condition, args))
-);
+const ifBuilder = (conditions, finalized=false) => {
+  const elem = Element('')(ref(root => createIf(root, conditions)));
+  return new Proxy(elem, {
+    get: (_, key) =>
+      finalized && (key == 'elif' || key == 'else') ? null
+      : key == 'elif' ? (cond, ...args) =>
+        ifBuilder([...conditions, { cond, args }], false)
+      : key == 'else' ? (...args) =>
+        ifBuilder([...conditions, { cond: true, args }], true)
+      : elem[key]
+  });
+}
+
+const if_ = (cond, ...args) =>
+  ifBuilder([{ cond, args }], false);
 export { if_ as 'if' };

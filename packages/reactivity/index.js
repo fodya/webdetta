@@ -45,8 +45,8 @@ const Reference = (target, key) => Signal({
 });
 
 const effect = (func) => {
-  const run = () => currentHandler.run(run, func, []);
-  return run();
+  const handler = () => currentHandler.run(handler, func, []);
+  return handler();
 }
 const derive = func => {
   const value = Value();

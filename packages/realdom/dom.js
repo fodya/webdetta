@@ -9,22 +9,73 @@ const NS = {
   math: 'http://www.w3.org/1998/Math/MathML'
 };
 export const currentNS = Context();
+export const initializing = Context();
 
 const builder = Builder.symbol;
-const elementBuilder = (tag, func) => {
-  const ns = NS[tag] ?? currentNS();
-  const effect = (tasks, node, init) => currentNS.run(ns, () => {
-    let res; for (const {args} of tasks) res ??= func(node, args, init);
-    return res;
-  });
+
+const processContent = (node, content) => {
+  const init = initializing();
+  let child = init ? null : node.firstChild;
+  const appendChild = item => node.appendChild(render(item));
+  const applyOperator = item => hydrate(node, item);
+  const hydrateChild = item => {
+    const next = child?.nextSibling;
+    hydrate(child, item);
+    child = next;
+  }
+
+  const isTextNode = node.nodeType === 3 || node.nodeType === 8;
+  const process = list => {
+    for (const item of list) switch (item[builder]) {
+      case 1: (init ? appendChild : hydrateChild)(item); break;
+      case 2: applyOperator(item); break;
+      default:
+        if (Array.isArray(item)) process(item);
+        else if (isTextNode) applyOperator(textContent(item));
+        else if (init) {
+          if (item instanceof Node) {}
+          else appendChild(Element('')(textContent(item)));
+        } else {
+          if (item instanceof Node) node.insertBefore(item, child);
+          else hydrateChild(textContent(item));
+        }
+    }
+  }
+  process(templateCallToArray(content));
+  return node;
+}
+export const Element = (tag) => {
+  const effect = (tasks, node) => {
+    if (!node) switch (tag) {
+      case '': node = document.createTextNode(''); break;
+      case '!': node = document.createComment(''); break;
+      case ':': node = document.createDocumentFragment(); break;
+      default: {
+        const ns = currentNS();
+        node = ns
+          ? document.createElementNS(ns, tag)
+          : document.createElement(tag);
+      }
+    }
+    return currentNS.run(NS[tag] ?? currentNS(),
+      processContent, node, tasks.map(t => t.args)
+    );
+  }
   effect[builder] = 1;
   return Builder(effect);
 }
+Element.from = arg =>
+  arg?.[builder] === 1 ? arg :
+  Array.isArray(arg) ? Element(':')(...arg) :
+  Element('')(arg);
+
 
 export const Operator = (defer, func) => {
-  const effect = (tasks, node, init) => {
+  const effect = (tasks, node) => {
+    const init = initializing();
+    const force = init === null;
     for (const {names, args} of tasks) {
-      const shouldRun = init === null || (init
+      const shouldRun = force || (init
         ? !defer
         : args.some(d => typeof d == 'function'));
       if (shouldRun) func(node, names, args);
@@ -34,64 +85,20 @@ export const Operator = (defer, func) => {
   return Builder(effect);
 }
 
-export const Element = tag => elementBuilder(tag, (node, content, init) => {
-  const ns = currentNS();
-  if (!node && (init = true)) switch (tag) {
-    case '': node = document.createTextNode(''); break;
-    case '!': node = document.createComment(''); break;
-    case ':': node = document.createDocumentFragment(); break;
-    default: node = (
-      ns
-      ? document.createElementNS(ns, tag)
-      : document.createElement(tag)
-    );
-  }
-
-  let child = init ? null : node.firstChild;
-  const append = item => {
-    const child = Builder.launch(item, null, init);
-    node.appendChild(child);
-  }
-  const hydrate = (item) => {
-    const next = child?.nextSibling;
-    Builder.launch(item, child, init);
-    child = next;
-  }
-  const apply = item => {
-    Builder.launch(item, node, init);
-  }
-
-  const process = list => {
-    for (const item of list) switch (item[builder]) {
-      case 1: (init ? append : hydrate)(item); break;
-      case 2: apply(item); break;
-      default:
-        if (Array.isArray(item)) process(item);
-        else if (tag === '' || tag === '!') apply(textContent(item));
-        else if (init) {
-          if (item instanceof Node) {}
-          else append(Element('')(textContent(item)));
-        } else {
-          if (item instanceof Node) child.before(item);
-          else hydrate(textContent(item));
-        }
-    }
-  }
-  process(templateCallToArray(content));
-  return node;
-});
-Element.from = arg =>
-  arg && arg[builder] === 1 || arg instanceof Node ? arg :
-  typeof arg === 'function' ? Element.from(arg()) :
-  Array.isArray(arg) ? Element(':')(...arg) :
-  Element('')(arg);
-
 export const Component = func => {
   let tmpl;
-  return func.component ??= function (...args) {
-    const elem = Element.from(func(...args));
-    if (!Builder.isBuilder(elem)) return elem;
-    tmpl ??= Builder.launch(elem, null);
-    return Builder.launch(elem, tmpl.cloneNode(true));
+  return func.component ??= (...args) => {
+    let elem = func(...args);
+    if (elem instanceof Node) return elem;
+    elem = Element.from(elem);
+    tmpl ??= initializing.run(true, render, elem);
+    const effect = tasks => initializing.run(false, () => {
+      const elem_ = elem(...tasks.map(t => t.args));
+      return hydrate(tmpl.cloneNode(true), elem_);
+    });
+    effect[builder] = 1;
+    return Builder(effect);
   }
 }
+export const render = elem => Builder.launch(elem);
+export const hydrate = (node, elem) => Builder.launch(elem, node);
