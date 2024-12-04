@@ -1,7 +1,5 @@
 #!/bin/bash
 
-SSH="$SSH_USER@$SSH_HOST"
-
 status=$(ssh -o BatchMode=yes -o ConnectTimeout=5 $SSH echo ok 2>&1)
 if [[ $status == ok ]] ; then
   :
@@ -19,5 +17,5 @@ ssh $SSH bash <<eof
 eof
 
 export DOCKER_HOST="ssh://$SSH"
-docker compose --file $DOCKER_COMPOSE_FILE -p $COMPOSE_PROJECT_NAME up --build --renew-anon-volumes -d
+docker compose --file $DOCKER_COMPOSE_FILE -p $COMPOSE_PROJECT_NAME up --build --renew-anon-volumes -d &&
 docker ps

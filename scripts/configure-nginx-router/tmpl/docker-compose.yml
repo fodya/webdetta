@@ -1,0 +1,23 @@
+services:
+  nginx:
+    build: .
+    environment:
+      CERTBOT_EMAIL: $CERTBOT_EMAIL
+      CERTBOT_AUTHENTICATOR: webroot
+      CERTBOT_DNS_PROPAGATION_SECONDS: ""
+      RENEWAL_INTERVAL: 8d
+      STAGING: 0
+      DHPARAM_SIZE: 2048
+      ELLIPTIC_CURVE: secp256r1
+      RSA_KEY_SIZE: 2048
+      USE_ECDSA: 1
+      USE_LOCAL_CA: 0
+      DEBUG: 0
+    volumes:
+      $VOLUMES
+      - nginx_secrets:/etc/letsencrypt
+    restart: unless-stopped
+    network_mode: host
+
+volumes:
+  nginx_secrets:

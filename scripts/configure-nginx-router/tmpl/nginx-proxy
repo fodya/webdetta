@@ -1,0 +1,20 @@
+location ~ ^/$PATH/(.*) {
+  rewrite /$PATH/(.*) /$1 break;
+  proxy_pass $PROXY_URL;
+  proxy_redirect off;
+  proxy_no_cache 1;
+  proxy_cache_bypass 1;
+
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header Host $host;
+  proxy_set_header Origin $http_origin;
+
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "upgrade";
+  proxy_read_timeout 86400;
+}
+
+location ~ ^/$PATH {
+  rewrite /$PATH /$PATH/;
+}

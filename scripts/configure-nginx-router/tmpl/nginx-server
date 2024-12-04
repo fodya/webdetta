@@ -1,0 +1,20 @@
+server {
+  listen 80;
+  server_name $DOMAIN;
+  return 301 https://$host$request_uri;
+}
+server {
+  listen 443 ssl;
+  server_name $DOMAIN;
+
+  ssl_certificate         /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+  ssl_certificate_key     /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+  ssl_trusted_certificate /etc/letsencrypt/live/$DOMAIN/chain.pem;
+
+  ssl_dhparam /etc/letsencrypt/dhparams/dhparam.pem;
+  client_max_body_size 50M;
+
+  root /var/www/;
+
+  $LOCATIONS
+}
