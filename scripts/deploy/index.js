@@ -1,7 +1,7 @@
 import subprocess from '../../packages/subprocess/index.js';
 import path from 'path';
-import {fileURLToPath} from 'url';
-const dir = path.dirname(fileURLToPath(import.meta.url));
+import { __dirname } from '../../packages/common/node.js';
+const dir = __dirname(import.meta.url);
 
 export default program => program.command('deploy')
   .description('Deploys services defined in docker-compose.yml file into a remote machine via SSH.')

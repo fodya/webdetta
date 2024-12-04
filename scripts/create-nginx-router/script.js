@@ -21,22 +21,27 @@ const toURL = (str) => {
 const trimSlash = (str) => str.replace(/(^\/)|(\/$)/g, '');
 
 export default async ({
+  certsPath,
   certbotEmail,
-  route,
-  out
+  routes,
+  output
 }) => {
   const IN = p => path.join(__dirname(import.meta.url), p);
-  const OUT = p => path.join(path.resolve(process.cwd(), out), p);
+  const OUT = p => path.join(path.resolve(process.cwd(), output), p);
 
   const $SERVERS = {};
   const $VOLUMES = [];
-  const routes = route.map(d => d.trim().split(/\s+/))
-  for (const [route, str] of routes) {
+  routes = routes
+    .flatMap(d => d.split(/[\;\n]/)).filter(d => d)
+    .map(d => d.trim().split(/\s+/))
+    .map(d => ({ route: d[0], target: d[1] }));
+  console.table(routes);
+  for (const { route, target } of routes) {
     const url = toURL(route);
     const domain = url.host;
     const pathname = trimSlash(url.href.replace(url.origin, ''));
     if (!domain) throw new Error(`Invalid route: ${route}`);
-    const targetUrl = toURL(str);
+    const targetUrl = toURL(target);
 
     const locations = $SERVERS[domain] ??= [];
     if (targetUrl) {
@@ -46,7 +51,7 @@ export default async ({
       }));
     } else {
       const dist = crypto.randomUUID();
-      $VOLUMES.push(`- ${str}:/var/www/${dist}/`);
+      $VOLUMES.push(`- ${target}:/var/www/${dist}/`);
       locations.push(await fileSubst(IN(`./tmpl/nginx-dist`), {
         $PATH: pathname,
         $DIST: dist
@@ -66,7 +71,13 @@ export default async ({
     ).then(r => r.join('\n'))
   });
   await fileMap(IN('./tmpl/docker-compose.yml'), OUT('./docker-compose.yml'), {
+    $NGINX_SECRETS: certsPath,
     $CERTBOT_EMAIL: certbotEmail,
     $VOLUMES: $VOLUMES.flatMap(d => d.split('\n')).join('\n      ')
   });
+  console.log('Generated files:');
+  console.log(OUT(''));
+  console.log('- docker-compose.yml');
+  console.log('- Dockerfile');
+  console.log('- nginx.conf');
 }

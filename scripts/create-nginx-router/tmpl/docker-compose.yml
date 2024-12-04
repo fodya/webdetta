@@ -15,9 +15,6 @@ services:
       DEBUG: 0
     volumes:
       $VOLUMES
-      - nginx_secrets:/etc/letsencrypt
+      - $NGINX_SECRETS:/etc/letsencrypt
     restart: unless-stopped
     network_mode: host
-
-volumes:
-  nginx_secrets:
