@@ -4,7 +4,7 @@ location /$PATH {
 
   expires $expire;
   add_header Cache-Control $cache_control;
-  add_header X-Robots-Tag "noindex, follow" always;
+  $SETTINGS
 
   try_files $uri $uri/ /$uri.html /$PATH/index.html;
 }

@@ -12,9 +12,15 @@ export default program => program.command('create-nginx-router')
   .option('--routes <routes>', [
     'Newline-separated routes.',
     '  Route format:',
-    '    <hostname>[:port]      <directory|proxy_url>',
+    '    <hostname>[:port]      <directory|proxy_url> { nginx_conf_directirves }',
     '  Example:',
-    '    subdomain.domain.com   /var/www/website',
-    '    0.0.0.0:1234           http://127.0.0.1:8000/some-proxy'
-  ].join('\n'), (v, acc=[]) => [...acc, v])
+    '    0.0.0.0:9876           /var/www/something',
+    '    0.0.0.0:1234           http://127.0.0.1:8000/some-proxy',
+    '    domain                 /var/www/landing',
+    '    app.domain.com         /var/www/app',
+    '    api.domain.com         http://127.0.0.1:1000/api {',
+    '      proxy_set_header X-Some-Header "Test";',
+    '      proxy_cache my_cache;',
+    '    }',
+  ].join('\n'), (v, acc='') => (acc += '\n' + v))
   .action(script);

@@ -20,6 +20,22 @@ const toURL = (str) => {
 }
 const trimSlash = (str) => str.replace(/(^\/)|(\/$)/g, '');
 
+function splitString(str, delimeter, brackets) {
+  const res = [];
+  const [open, close] = brackets;
+  let acc = '', depth = 0;
+
+  const push = () => acc && (res.push(acc), acc = '');
+  for (const c of str) {
+    depth += c == open ? 1 : c == close ? -1 : 0;
+    if (c == delimeter && depth == 0) push();
+    else acc += c;
+  }
+  push();
+
+  return res;
+}
+
 export default async ({
   certsPath,
   certbotEmail,
@@ -31,12 +47,14 @@ export default async ({
 
   const $SERVERS = {};
   const $VOLUMES = [];
-  routes = routes
-    .flatMap(d => d.split(/[\;\n]/)).filter(d => d)
-    .map(d => d.trim().split(/\s+/))
-    .map(d => ({ route: d[0], target: d[1] }));
+  console.log(routes);
+  routes = splitString(routes, '\n', '{}').map(line => {
+    let [route, target, settings=''] = splitString(line, ' ', '{}');
+    settings = settings.replace(/^\{/, '').replace(/\}$/, '');
+    return { route, target, settings };
+  });
   console.table(routes);
-  for (const { route, target } of routes) {
+  for (const { route, target, settings } of routes) {
     const url = toURL(route);
     const domain = url.host;
     const pathname = trimSlash(url.href.replace(url.origin, ''));
@@ -47,14 +65,16 @@ export default async ({
     if (targetUrl) {
       locations.push(await fileSubst(IN(`./tmpl/nginx-proxy`), {
         $PATH: pathname,
-        $PROXY_URL: trimSlash(targetUrl.toString())
+        $PROXY_URL: trimSlash(targetUrl.toString()),
+        $SETTINGS: settings
       }));
     } else {
-      const dist = crypto.randomUUID();
+      const dist = crypto.createHash('md5').update(target).digest('hex');
       $VOLUMES.push(`- ${target}:/var/www/${dist}/`);
       locations.push(await fileSubst(IN(`./tmpl/nginx-dist`), {
         $PATH: pathname,
-        $DIST: dist
+        $DIST: dist,
+        $SETTINGS: settings
       }));
     }
   }
