@@ -1,18 +1,17 @@
 import subprocess from '../../packages/subprocess/index.js';
-import path from 'path';
-import {fileURLToPath} from 'url';
-const dir = path.dirname(fileURLToPath(import.meta.url));
+const dir = import.meta.dirname;
 
 import script from './script.js';
-export default program => program.command('create-nginx-router')
-  .description('Creates an nginx router configuration.')
+export default program => program.command('deploy-nginx-router')
+  .description('Deploys an nginx router.')
+  .option('--name [string]', 'Deployment name')
+  .option('--flags [string]', 'Docker compose command line arguments.')
   .requiredOption('--certs-path <path>', 'Directory where SSL certificates will be stored')
   .requiredOption('--certbot-email <email>', 'Email to be used with certbot')
-  .requiredOption('--output <path>', 'Output directory')
-  .option('--routes <routes>', [
-    'Newline-separated routes.',
+  .requiredOption('--ssh <string>', 'SSH connection string user@host:port')
+  .requiredOption('--routes <routes>', ['Newline-separated routes.',
     '  Route format:',
-    '    hostname:port          directory|proxy_url { nginx_conf_directirves }',
+    '    hostname:port          directory|proxy_url { nginx_conf_directives }',
     '  Example:',
     '    0.0.0.0:9876           /var/www/something',
     '    0.0.0.0:1234           http://127.0.0.1:8000/some-proxy',

@@ -1,6 +1,7 @@
+name: nginx-router
 services:
   nginx:
-    build: .
+    build: $PWD
     environment:
       CERTBOT_EMAIL: $CERTBOT_EMAIL
       CERTBOT_AUTHENTICATOR: webroot

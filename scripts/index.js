@@ -5,7 +5,7 @@ import {Command, Option} from 'commander';
 const scripts = [
   import('./help.js'),
   import('./deploy/index.js'),
-  import('./create-nginx-router/index.js')
+  import('./deploy-nginx-router/index.js')
 ];
 
 const program = new Command();

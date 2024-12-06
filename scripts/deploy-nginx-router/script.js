@@ -3,9 +3,8 @@ import crypto from 'crypto';
 import path from 'path';
 import subprocess from '../../packages/subprocess/index.js';
 import { S } from '../../packages/common/utils.js';
-import { __dirname } from '../../packages/common/node.js';
+import { tmpDir } from "../../packages/common/node.js";
 
-const exec = (...cmd) => subprocess(...cmd, { stdio: 'inherit' });
 const fileSubst = async (file, env) => {
   let str = (await readFile(file)).toString('utf8');
   for (const [k, v] of Object.entries(env)) str = str.replaceAll(k, v);
@@ -32,7 +31,6 @@ function splitString(str, delimeter, brackets) {
     else acc += c;
   }
   push();
-
   return res;
 }
 
@@ -40,19 +38,21 @@ export default async ({
   certsPath,
   certbotEmail,
   routes,
-  output
+  ssh,
+  flags
 }) => {
-  const IN = p => path.join(__dirname(import.meta.url), p);
-  const OUT = p => path.join(path.resolve(process.cwd(), output), p);
+  const output = await tmpDir();
+  const IN = p => path.join(import.meta.dirname, p);
+  const OUT = p => path.join(output, p);
 
   const $SERVERS = {};
   const $VOLUMES = [];
-  console.log(routes);
   routes = splitString(routes, '\n', '{}').map(line => {
+    if (!(line = line.trim())) return;
     let [route, target, settings=''] = splitString(line, ' ', '{}');
     settings = settings.replace(/^\{/, '').replace(/\}$/, '');
     return { route, target, settings };
-  });
+  }).filter(d => d);
   console.table(routes);
   for (const { route, target, settings } of routes) {
     const url = toURL(route);
@@ -95,9 +95,15 @@ export default async ({
     $CERTBOT_EMAIL: certbotEmail,
     $VOLUMES: $VOLUMES.flatMap(d => d.split('\n')).join('\n      ')
   });
+  await fileMap(IN('./Dockerfile'), OUT('./Dockerfile'), {});
+
   console.log('Generated files:');
-  console.log(OUT(''));
-  console.log('- docker-compose.yml');
-  console.log('- Dockerfile');
-  console.log('- nginx.conf');
+  console.log('-', OUT('docker-compose.yml'));
+  console.log('-', OUT('Dockerfile'));
+  console.log('-', OUT('nginx.conf'));
+  await subprocess(...S`npx webdetta deploy
+    --file ${OUT('docker-compose.yml')}
+    --ssh ${ssh}
+    ${flags ? `--flags ${flags}` : ''}
+  `);
 }

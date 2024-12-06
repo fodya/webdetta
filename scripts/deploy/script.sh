@@ -16,6 +16,16 @@ ssh $SSH bash <<eof
   sudo usermod -aG docker \$USER
 eof
 
+cd -- $(dirname "$FILE")
+
+TMP=$(mktemp -d)
+envsubst < "$FILE" > "$TMP/docker-compose.yml"
+echo "Generated file: $TMP/docker-compose.yml"
+
+
 export DOCKER_HOST="ssh://$SSH"
-docker compose --file $DOCKER_COMPOSE_FILE -p $COMPOSE_PROJECT_NAME up --build --renew-anon-volumes -d &&
+docker compose \
+  --file "$TMP/docker-compose.yml" \
+  ${NAME:+ -p "$NAME"} \
+  up --build $FLAGS &&
 docker ps

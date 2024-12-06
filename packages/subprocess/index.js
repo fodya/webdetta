@@ -7,6 +7,7 @@ export default (...argv) => {
     argv = argv.slice(0, -1);
   }
 
+  options.stdio ??= 'inherit';
   const proc = child_process.spawn(argv[0], argv.slice(1), options);
   const proxy = new Proxy(new Promise((resolve, reject) => {
     proc.on('error', reject)
