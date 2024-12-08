@@ -1,7 +1,7 @@
 name: nginx-router
 services:
   nginx:
-    build: $PWD
+    build: .
     environment:
       CERTBOT_EMAIL: $CERTBOT_EMAIL
       CERTBOT_AUTHENTICATOR: webroot
@@ -12,7 +12,7 @@ services:
       ELLIPTIC_CURVE: secp256r1
       RSA_KEY_SIZE: 2048
       USE_ECDSA: 1
-      USE_LOCAL_CA: 0
+      USE_LOCAL_CA: $LOCAL_CA
       DEBUG: 0
     volumes:
       $VOLUMES

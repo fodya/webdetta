@@ -1,4 +1,8 @@
 #!/bin/bash
+echo "Deployment name: $NAME"
+echo "Compose file: $FILE"
+echo "Project directory: $DIR"
+echo "Host: $SSH"
 
 status=$(ssh -o BatchMode=yes -o ConnectTimeout=5 $SSH echo ok 2>&1)
 if [[ $status == ok ]] ; then
@@ -16,16 +20,10 @@ ssh $SSH bash <<eof
   sudo usermod -aG docker \$USER
 eof
 
-cd -- $(dirname "$FILE")
-
-TMP=$(mktemp -d)
-envsubst < "$FILE" > "$TMP/docker-compose.yml"
-echo "Generated file: $TMP/docker-compose.yml"
-
-
 export DOCKER_HOST="ssh://$SSH"
 docker compose \
-  --file "$TMP/docker-compose.yml" \
+  --file "$FILE" \
+  ${DIR:+ --project-directory "$DIR"} \
   ${NAME:+ -p "$NAME"} \
-  up --build $FLAGS &&
+  up --build --detach &&
 docker ps

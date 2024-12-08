@@ -1,4 +1,4 @@
-import { writeFile, readFile, copyFile, readdir } from 'fs/promises';
+import fs from 'fs/promises';
 import crypto from 'crypto';
 import path from 'path';
 import subprocess from '../../packages/subprocess/index.js';
@@ -6,12 +6,12 @@ import { S } from '../../packages/common/utils.js';
 import { tmpDir } from "../../packages/common/node.js";
 
 const fileSubst = async (file, env) => {
-  let str = (await readFile(file)).toString('utf8');
+  let str = (await fs.readFile(file)).toString('utf8');
   for (const [k, v] of Object.entries(env)) str = str.replaceAll(k, v);
   return str;
 }
 const fileMap = async (fileIn, fileOut, env) =>
-  await writeFile(fileOut, await fileSubst(fileIn, env));
+  await fs.writeFile(fileOut, await fileSubst(fileIn, env));
 const toURL = (str) => {
   if (str.startsWith('/')) return null;
   try { return new URL(str); } catch (e) {};
@@ -39,7 +39,7 @@ export default async ({
   certbotEmail,
   routes,
   ssh,
-  flags
+  local
 }) => {
   const output = await tmpDir();
   const IN = p => path.join(import.meta.dirname, p);
@@ -79,7 +79,7 @@ export default async ({
     }
   }
 
-  await copyFile(IN('./Dockerfile'), OUT('./Dockerfile'));
+  await fs.copyFile(IN('./Dockerfile'), OUT('./Dockerfile'));
   await fileMap(IN('./tmpl/nginx.conf'), OUT('./nginx.conf'), {
     $SERVERS: await Promise.all(
       Object.entries($SERVERS).map(([$DOMAIN, $LOCATIONS]) =>
@@ -91,6 +91,7 @@ export default async ({
     ).then(r => r.join('\n'))
   });
   await fileMap(IN('./tmpl/docker-compose.yml'), OUT('./docker-compose.yml'), {
+    $LOCAL_CA: local ? 1 : 0,
     $NGINX_SECRETS: certsPath,
     $CERTBOT_EMAIL: certbotEmail,
     $VOLUMES: $VOLUMES.flatMap(d => d.split('\n')).join('\n      ')
@@ -101,9 +102,12 @@ export default async ({
   console.log('-', OUT('docker-compose.yml'));
   console.log('-', OUT('Dockerfile'));
   console.log('-', OUT('nginx.conf'));
-  await subprocess(...S`npx webdetta deploy
-    --file ${OUT('docker-compose.yml')}
-    --ssh ${ssh}
-    ${flags ? `--flags ${flags}` : ''}
-  `);
+  try {
+    await subprocess(...S`npx webdetta deploy
+      --file ${OUT('docker-compose.yml')}
+      --ssh ${ssh}
+    `);
+  }
+  catch (e) { console.error(e); }
+  finally { await fs.rm(OUT('./'), { recursive: true, force: true }); }
 }
