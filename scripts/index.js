@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import chalk from 'chalk';
-import {Command, Option} from 'commander';
+import {Command} from 'commander';
 
 const scripts = [
   import('./help.js'),

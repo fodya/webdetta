@@ -49,10 +49,21 @@ export default async ({
   const $VOLUMES = [];
   routes = splitString(routes, '\n', '{}').map(line => {
     if (!(line = line.trim())) return;
+    const args = splitString(line, ' ', '{}');
+    if (args.length < 2 || args.length > 3) throw new Error(
+      `Invalid route: ${line}.\n`
+    );
+
     let [route, target, settings=''] = splitString(line, ' ', '{}');
+    if (settings[0] != '{' || settings.at(-1) != '}') throw new Error(
+      `Invalid route: ${line}.\n` +
+      `Nginx.conf directives must be enclosed in curly brackets.`
+    );
+
     settings = settings.replace(/^\{/, '').replace(/\}$/, '');
     return { route, target, settings };
   }).filter(d => d);
+
   console.table(routes);
   for (const { route, target, settings } of routes) {
     const url = toURL(route);
