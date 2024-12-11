@@ -55,10 +55,13 @@ export default async ({
     );
 
     let [route, target, settings=''] = splitString(line, ' ', '{}');
-    if (settings[0] != '{' || settings.at(-1) != '}') throw new Error(
-      `Invalid route: ${line}.\n` +
-      `Nginx.conf directives must be enclosed in curly brackets.`
-    );
+    if (settings.length && (settings[0] != '{' || settings.at(-1) != '}')) {
+      console.log({ route, target, settings });
+      throw new Error(
+        `Invalid route: ${line}.\n` +
+        `Nginx.conf directives must be enclosed in curly brackets.`
+      );
+    }
 
     settings = settings.replace(/^\{/, '').replace(/\}$/, '');
     return { route, target, settings };
