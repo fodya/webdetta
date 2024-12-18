@@ -60,8 +60,7 @@ export const forceReflow = elem => { elem.offsetHeight; }
 export const setLayoutWidth = (width, body=document.body) => {
   const update = () => {
     const val = typeof width == 'function' ? width() : width;
-    body.style.transform = `scale(${window.innerWidth / val})`;
-    body.style.transformOrigin = '0 0';
+    body.style.zoom = window.innerWidth / val;
   }
   window.addEventListener('resize', update);
   update();
