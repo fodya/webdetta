@@ -1,9 +1,7 @@
 location /$PATH {
   alias /var/www/$DIST/;
   index index.html;
-
-  expires $expire;
-  add_header Cache-Control $cache_control;
+  
   $SETTINGS
 
   try_files $uri $uri/ /$uri.html /$PATH/index.html;

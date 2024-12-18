@@ -48,6 +48,7 @@ export default async ({
   const $SERVERS = {};
   const $VOLUMES = [];
   routes = splitString(routes, '\n', '{}').map(line => {
+    console.log('>', line)
     if (!(line = line.trim())) return;
     const args = splitString(line, ' ', '{}');
     if (args.length < 2 || args.length > 3) throw new Error(
