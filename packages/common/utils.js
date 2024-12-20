@@ -5,17 +5,18 @@ export const isPromise = d => d == Promise.resolve(d);
 export const callFn = d => typeof d == 'function' ? d() : d;
 export const unwrapFn = d => typeof d == 'function' ? unwrapFn(d()) : d;
 
-export const safe = (f, errorHandler=safe.errorHandler) => function() {
+export const err = (...a) => { throw new Error(...a); };
+
+export const catchErrors = (f, handler=catchErrors.errorHandler) => function() {
   try {
-    return isAsync(f)
-      ? Promise.resolve()
-          .then(() => f.apply(this, arguments))
-          .catch(errorHandler)
-      : f.apply(this, arguments);
+    const res = f.apply(this, arguments);
+    return isPromise(res) ? res.catch(handler) : res;
   }
-  catch (e) { errorHandler(e) }
+  catch (e) {
+    handler(e);
+  }
 }
-safe.errorHandler = e => console.error(e);
+catchErrors.errorHandler = e => console.error(e);
 
 export const lock = (lockFn, f) => {
   if (isPromise(lockFn)) {

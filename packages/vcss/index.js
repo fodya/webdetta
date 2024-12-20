@@ -7,7 +7,7 @@ const ID = ((r={}, i={}) => (t, v) => {
 const chars = Object.fromEntries([...
   ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕`.matchAll(/../g)
 ].map(v => v[0].split('')));
-const escape = str => CSS.escape(str.replaceAll(/./g, v => chars[v] ?? v));
+const escape = str => str.replaceAll(/./g, v => chars[v] ?? v);
 const selectorTmpl = (sel='', val='') => (
   typeof sel == 'function' ? sel(val)
   : sel.includes('&') ? sel.replaceAll('&', val)
@@ -23,9 +23,8 @@ const styleStr = (style, important) => `{${
 const unwrapfn = f => typeof f == 'function' ? unwrapfn(f()) : f;
 const processMethodArgs = args =>
   isTemplateCall(args)
-  ? Array.from(String.raw(...args).matchAll(/('.*?'|".*?"|\S+)/g))
-      .map(d => d[0].replace(/(^['"])|(['"]$)/g, ''))
-  : args.map(unwrapfn);
+  ? String.raw(...args).split(/\s+/)
+  : args.flatMap(unwrapfn);
 
 const NODES = Symbol('VCSS_NODES');
 export const inspect = obj => {
@@ -40,7 +39,7 @@ class Node {
   important = false
   inline = false
   classname = null
-  rules = []
+  css = null
   style = {}
   cls = null
 
@@ -51,26 +50,22 @@ class Node {
   fork(...updates) {
     return new Node(...this.updates, ...updates);
   }
-
-  init(esc=escape) {
-    if (!this.cls) this.update(esc);
-  }
-  update(esc=escape) {
+  calculate(esc=escape) {
+    this.css = '';
     for (const update of this.updates) update.call(this, esc);
+    this.prevCls = this.cls;
     this.cls = esc(
       (this.media ? '𝕄(' + this.media + ')' : '') +
       (this.selector ? '𝕊(' + this.selector + ')' : '') +
       (this.classname ? this.classname : '') +
       (this.important ? 'ǃ' : '')
     );
-  }
-  css() {
-    const sel = selectorTmpl(this.selector, '.' + this.cls);
-    const str = sel + styleStr(this.style, this.important);
-    return [
-      ...this.rules,
-      this.media ? `@media ${this.media} {${str}}` : str
-    ];
+
+    if (!this.css) {
+      const sel = selectorTmpl(this.selector, '.' + this.cls);
+      const str = sel + styleStr(this.style, this.important);
+      this.css = this.media ? `@media ${this.media} {${str}}` : str;
+    }
   }
 }
 
@@ -97,27 +92,18 @@ const unwrap = obj => (
   (obj = inspect(obj)) &&
   Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
   : obj instanceof Node ? obj
-  : typeof obj == 'function' ? unwrap(obj())
   : StyleNode(obj)
 );
 
-const styleJoin = (sep, val1, val2) =>
-  !val1 ? val2 : !val2 ? val1 : val1 + sep + val2;
-const styleCombinator = (key, val1, val2) => {
-  switch (key) {
-    case 'transform':    return styleJoin('', val1, val2);
-    case 'filter':       return styleJoin(' ', val1, val2);
-    default:             return val2;
+const combinedStyle = nodes => {
+  const res = {};
+  for (const node of nodes) {
+    node.calculate();
+    const style = node.updates.style?.() ?? node.style ?? {};
+    Object.assign(res, style);
   }
+  return res;
 }
-
-const combinedStyle = nodes => nodes.reduce((obj, node) => {
-  node.init();
-  const style = node.updates.style?.() ?? node.style ?? {};
-  for (const [k, v] of Object.entries(style))
-    obj[k] = styleCombinator(k, obj[k], v);
-  return obj;
-}, {});
 
 const operators = {
   Sel: (selStr, ...args) => {
@@ -145,7 +131,7 @@ const operators = {
   Transition: (param, ...args) => {
     const nodes = unwrap(args);
     return nodes.concat(new Node(function() {
-      for (const node of nodes) node.init();
+      for (const node of nodes) node.calculate();
       const keys = Object.keys(combinedStyle(nodes));
       this.classname = '𝕋(' + ID('transition', param + keys.join(',')) + ')';
       this.style = {
@@ -156,14 +142,14 @@ const operators = {
   Animation: (param, keyframes) => [new Node(function(esc) {
     const str = Object.entries(keyframes).map(([ident, nodes]) => {
       nodes = unwrap(nodes);
-      for (const node of nodes) node.init();
+      for (const node of nodes) node.calculate();
       const style = combinedStyle(nodes);
       return ident + '% ' + styleStr(style, false);
     }).join('\n');
     const kfId = ID('keyframes', str);
     const aId = ID('animation', param + kfId);
     this.classname = '𝔸(' + aId + ')';
-    this.rules = [`@keyframes 𝔸${kfId} {\n${str}\n}`];
+    this.css = `@keyframes 𝔸${kfId} {\n${str}\n}`;
     this.style = { animation: param + ' 𝔸' + kfId };
   })],
 }
@@ -215,28 +201,24 @@ const Processor = ({ addStyle, addClass, removeClass, esc }) => {
   }
 
   const processedNodes = {};
-  const process = (elem, nodes) => {
-    //console.log('\n\nprocess elem', { elem, nodes });
-    for (const node of nodes) {
-      node.init();
-      const prevCls = node.cls;
-      if (node.inline) addStyle(elem, node.style);
-      else {
-        if (!processedNodes[node.cls]) {
-          for (const rule of node.css()) insertRule(rule);
-          processedNodes[node.cls] = node
-        }
-        if (prevCls && node.cls != prevCls) removeClass?.(elem, prevCls);
-        addClass(elem, node.cls);
+  const process = (elem, node) => {
+    node.calculate();
+    if (node.inline) addStyle(elem, node.style);
+    else {
+      if (!processedNodes[node.cls]) {
+        insertRule(node.css);
+        processedNodes[node.cls] = node
       }
+      if (node.prevCls && node.cls != node.prevCls) removeClass?.(elem, node.prevCls);
+      addClass(elem, node.cls);
     }
   }
   const recalculate = () => {
     style.textContent.replaceSync('');
     processedRules.clear();
     for (const node of Object.values(processedNodes)) {
-      node.update(esc);
-      for (const rule of node.css()) insertRule(rule);
+      node.calculate(esc);
+      insertRule(node.css);
     }
   }
 

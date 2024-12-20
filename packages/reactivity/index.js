@@ -26,6 +26,16 @@ export const Signal = ({ handlers=handlers(), get, set }) => {
       return val;
     }
   }
+
+  accessor.default = function (value, isEmpty) {
+    const curr = get();
+
+    if (arguments.length < 2) isEmpty = !!curr;
+    else if (typeof isEmpty == 'function') isEmpty = isEmpty(curr);
+
+    if (isEmpty) set(value);
+    return accessor;
+  }
   accessor.handlers = handlers;
   accessor[Signal.symbol] = true
   return accessor;
@@ -38,6 +48,8 @@ const Value = val => Signal({
   get: () => val,
   set: v => val = v
 });
+Value.from = thing => Signal.isSignal(thing) ? thing : Value(thing);
+
 const Reference = (target, key) => Signal({
   handlers: null,
   get: () => target()[key],

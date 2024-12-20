@@ -8,97 +8,41 @@ const NS = {
   svg: 'http://www.w3.org/2000/svg',
   math: 'http://www.w3.org/1998/Math/MathML'
 };
-export const currentNS = Context();
-export const initializing = Context();
+const isTextNode = node => {
+  const { nodeType } = node;
+  return nodeType === 3 || node.nodeType === 8;
+}
 
-const builder = Builder.symbol;
-
-const processContent = (node, content) => {
-  const init = initializing();
-  let child = init ? null : node.firstChild;
-  const appendChild = item => node.appendChild(render(item));
-  const applyOperator = item => hydrate(node, item);
-  const hydrateChild = item => {
-    const next = child?.nextSibling;
-    hydrate(child, item);
-    child = next;
-  }
-
-  const isTextNode = node.nodeType === 3 || node.nodeType === 8;
-  const process = list => {
-    for (const item of list) switch (item[builder]) {
-      case 1: (init ? appendChild : hydrateChild)(item); break;
-      case 2: applyOperator(item); break;
-      default:
-        if (Array.isArray(item)) process(item);
-        else if (isTextNode) applyOperator(textContent(item));
-        else if (init) {
-          if (item instanceof Node) {}
-          else appendChild(Element('')(textContent(item)));
-        } else {
-          if (item instanceof Node) node.insertBefore(item, child);
-          else hydrateChild(textContent(item));
-        }
-    }
-  }
-  process(templateCallToArray(content));
+export const Element = (tag, ns) => (...args) => {
+  const node = (
+    tag == '' ? document.createTextNode('') :
+    tag == '!' ? document.createComment('') :
+    tag == ':' ? document.createDocumentFragment() :
+    ns ? document.createElementNS(ns, tag) : document.createElement(tag)
+  );
+  Element.append(node, templateCallToArray(args));
   return node;
 }
-export const Element = (tag) => {
-  const effect = (tasks, node) => {
-    if (!node) switch (tag) {
-      case '': node = document.createTextNode(''); break;
-      case '!': node = document.createComment(''); break;
-      case ':': node = document.createDocumentFragment(); break;
-      default: {
-        const ns = currentNS();
-        node = ns
-          ? document.createElementNS(ns, tag)
-          : document.createElement(tag);
-      }
-    }
-    return currentNS.run(NS[tag] ?? currentNS(),
-      processContent, node, tasks.map(t => t.args)
-    );
-  }
-  effect[builder] = 1;
-  return Builder(effect);
+Element.from = arg => {
+  if (Array.isArray(arg)) return Element(':')(...arg);
+  if (arg instanceof Node) return arg;
+  return Element('')(arg);
 }
-Element.from = arg =>
-  arg?.[builder] === 1 ? arg :
-  Array.isArray(arg) ? Element(':')(...arg) :
-  Element('')(arg);
-
-
-export const Operator = (defer, func) => {
-  const effect = (tasks, node) => {
-    const init = initializing();
-    const force = init === null;
-    for (const {names, args} of tasks) {
-      const shouldRun = force || (init
-        ? !defer
-        : args.some(d => typeof d == 'function'));
-      if (shouldRun) func(node, names, args);
-    }
-  }
-  effect[builder] = 2;
-  return Builder(effect);
+Element.append = (node, item) => {
+  if (Array.isArray(item)) for (const d of item) Element.append(node, d);
+  else if (Operator.isOperator(item)) Operator.apply(node, item);
+  else if (isTextNode(node)) Operator.apply(node, textContent(item));
+  else if (item instanceof Node) node.appendChild(item);
+  else node.appendChild(Element('')(textContent(item)));
 }
 
-export const Component = func => {
-  let tmpl;
-  return func.component ??= (...args) => {
-    let elem = func(...args);
-    if (elem instanceof Node) return elem;
-    elem = Element.from(elem);
-    tmpl ??= initializing.run(true, render, elem);
-    const effect = tasks => initializing.run(false, () => {
-      const elem_ = elem(...tasks.map(t => t.args));
-      return hydrate(tmpl.cloneNode(true), elem_);
-    });
-    effect[builder] = 1;
-    return Builder(effect);
-  }
+export const Operator = (func) => Builder((tasks, node, undoQueue) => {
+  for (const {names, args} of tasks) {
+    const res = func(node, names, args);
+    if (undoQueue && res) undoQueue.push(res);
+  };
+});
+Operator.isOperator = Builder.isBuilder;
+Operator.apply = (node, item, undoQueue) => {
+  Builder.launch(item, node, undoQueue);
 }
-export const render = elem => Builder.launch(elem);
-export const hydrate = (node, elem) => Builder.launch(elem, node);

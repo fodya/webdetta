@@ -1,4 +1,4 @@
-import { safe } from '../common/utils.js';
+import { catchErrors } from '../common/utils.js';
 import { Api } from '../sdk/common.js';
 import { SdkServer } from '../sdk/server.js';
 import bytes from 'bytes';
@@ -15,7 +15,7 @@ const collectMethods = (func, methods) =>
     get: (_, key) => collectMethods(func, (methods ?? []).concat(key))
   });
 
-const resolveProxyOptions = safe(async (rslv, req, ...args) => {
+const resolveProxyOptions = catchErrors(async (rslv, req, ...args) => {
   let result = typeof rslv == 'string' ? rslv : await rslv(req, ...args);
   result = typeof result == 'string' ? { target: result } : result;
   const url = new URL(result.target);
@@ -66,7 +66,7 @@ const Server = (options={}) => {
     wsProxy: (path, resolve) => {
       wss.routeRaw(path, async (req, socket, head) => {
         const opts = await resolveProxyOptions(resolve, req, socket, head) ?? {};
-        await safe(proxy.ws).call(proxy, req, socket, head, opts);
+        await catchErrors(proxy.ws).call(proxy, req, socket, head, opts);
       });
       return instance;
     },
@@ -75,7 +75,7 @@ const Server = (options={}) => {
       for (const method of methods)
         app[method.toLowerCase()](path, async (req, res, next) => {
           const opts = await resolveProxyOptions(resolve, req, res) ?? {};
-          await safe(proxy.web).call(proxy, req, res, opts, next);
+          await catchErrors(proxy.web).call(proxy, req, res, opts, next);
         });
       return instance;
     }),

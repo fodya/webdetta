@@ -1,5 +1,5 @@
 import { Builder } from '../common/builder.js';
-import { safe, isTemplateCall, templateCallToArray } from '../common/utils.js';
+import { catchErrors, isTemplateCall, templateCallToArray } from '../common/utils.js';
 import { kebab } from '../common/dom.js';
 
 const unwrap = (x) => (typeof x === 'function') ? unwrap(x()) : x;
@@ -24,7 +24,7 @@ export const on = Builder((tasks, el, ctx) => {
 export const hook = Builder((tasks, el, ctx) => {
   const hooks = el.data.hook ??= {};
   for (const {names, args} of tasks) {
-    const handlers = args.map(f => safe(f, console.error));
+    const handlers = args.map(f => catchErrors(f, console.error));
     for (const name of names) {
       hooks[name] ??= (...a) => hooks[name].list.forEach(f => f(...a));
       (hooks[name].list ??= []).push(...handlers);
