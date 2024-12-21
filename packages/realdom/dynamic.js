@@ -21,8 +21,7 @@ export const createList = (
 
   const connectItem = (k) => {
     if (elems[k]) return;
-    const elem = renderItem(data[k], k);
-    elems[k] = elem instanceof Node ? elem : render(elem);
+    elems[k] = renderItem(data[k], k)
   }
   const moveItem = (k, nextK) => {
     lNext[k] = nextK;
@@ -83,11 +82,11 @@ export const appendItems = (node, items) => {
   const parentNode = node.parentNode;
 
   const undo = [];
-  for (const op of operators) Operator.apply(parentNode, op, undo);
+  for (const op of operators) undo.push(Operator.apply(parentNode, op));
   for (const dom of children) parentNode.insertBefore(dom, node);
 
   return () => {
-    for (const func of undo) func();
+    for (const func of undo) if (func) func();
     for (const dom of children) dom.remove();
   }
 }

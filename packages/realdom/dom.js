@@ -10,14 +10,14 @@ const NS = {
 };
 const isTextNode = node => {
   const { nodeType } = node;
-  return nodeType === 3 || node.nodeType === 8;
+  return nodeType === 3 || nodeType === 8;
 }
 
 export const Element = (tag, ns) => (...args) => {
   const node = (
-    tag == '' ? document.createTextNode('') :
-    tag == '!' ? document.createComment('') :
-    tag == ':' ? document.createDocumentFragment() :
+    tag === '' ? document.createTextNode('') :
+    tag === '!' ? document.createComment('') :
+    tag === ':' ? document.createDocumentFragment() :
     ns ? document.createElementNS(ns, tag) : document.createElement(tag)
   );
   Element.append(node, templateCallToArray(args));
@@ -36,13 +36,18 @@ Element.append = (node, item) => {
   else node.appendChild(Element('')(textContent(item)));
 }
 
-export const Operator = (func) => Builder((tasks, node, undoQueue) => {
+const performUndo = undo => {
+  if (Array.isArray(undo)) for (const item of undo) performUndo(item);
+  else if (undo) undo();
+}
+export const Operator = (...funcs) => Builder((tasks, node) => {
+  const undo = [];
   for (const {names, args} of tasks) {
-    const res = func(node, names, args);
-    if (undoQueue && res) undoQueue.push(res);
+    for (const func of funcs) {
+      undo.push(func(node, names, args));
+    }
   };
+  return performUndo.bind(null, undo);
 });
 Operator.isOperator = Builder.isBuilder;
-Operator.apply = (node, item, undoQueue) => {
-  Builder.launch(item, node, undoQueue);
-}
+Operator.apply = (node, item) => Builder.launch(item, node);

@@ -5,7 +5,13 @@ export const isPromise = d => d == Promise.resolve(d);
 export const callFn = d => typeof d == 'function' ? d() : d;
 export const unwrapFn = d => typeof d == 'function' ? unwrapFn(d()) : d;
 
-export const err = (...a) => { throw new Error(...a); };
+export const err = (...args) => {
+  throw (
+    isTemplateCall(args)
+    ? new Error(String.raw(...args))
+    : new Error(...args)
+  );
+};
 
 export const catchErrors = (f, handler=catchErrors.errorHandler) => function() {
   try {
