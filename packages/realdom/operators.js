@@ -80,8 +80,9 @@ export const operators = {
       for (const name of names) delete node[name];
     }
   })),
-  list: (itemsFn, render, keyFn) => ref(root => {
-    return createList(root, itemsFn, render, keyFn);
-  }),
-  if: (cond, ...args) => ifBuilder([{ cond, args }], false)
+  list: (items, render, keyFn) => ref(node =>
+    createList(node, items, render, keyFn)
+  ),
+  if: (cond, ...args) =>
+    ifBuilder([{ cond, args }], false)
 }
