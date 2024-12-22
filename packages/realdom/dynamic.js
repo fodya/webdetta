@@ -2,8 +2,9 @@ import { Context } from '../common/context.js';
 import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
+import { performUndo } from './operators.js';
 
-const lRoot = Symbol('List.root');
+const lRoot = Symbol();
 const defaultKeyFn = (d, i) => d?.key ?? d?.id ?? i;
 export const createList = (
   node,
@@ -29,15 +30,17 @@ export const createList = (
     elems[k].after(elems[nextK]);
   }
   const disconnectItem = (k) => {
-    const [prev, next] = [lPrev[k], lNext[k]];
+    const prev = lPrev[k];
+    const next = lNext[k];
     if (prev) lNext[prev] = next;
     if (next) lPrev[next] = prev;
+
     delete lPrev[k];
     delete lNext[k];
-
     delete data[k];
-    elems[k].remove();
     delete elems[k];
+
+    elems[k].remove();
   }
 
   let prevKeys = new Set();
@@ -73,20 +76,19 @@ export const createList = (
 }
 
 export const appendItems = (node, items) => {
+  const parentNode = node.parentNode;
   const children = [], operators = [];
-  for (const item of items.flat(Infinity)) {
+  for (const item of items) {
     if (Operator.isOperator(item)) operators.push(item);
     else children.push(Element.from(item))
   }
-
-  const parentNode = node.parentNode;
 
   const undo = [];
   for (const op of operators) undo.push(Operator.apply(parentNode, op));
   for (const dom of children) parentNode.insertBefore(dom, node);
 
   return () => {
-    for (const func of undo) if (func) func();
+    performUndo(undo);
     for (const dom of children) dom.remove();
   }
 }

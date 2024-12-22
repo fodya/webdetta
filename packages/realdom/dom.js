@@ -2,7 +2,7 @@ import Builder from '../common/builder.js';
 import { Context } from '../common/context.js';
 import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
-import { textContent } from './operators.js';
+import { textContent, performUndo } from './operators.js';
 
 const NS = {
   svg: 'http://www.w3.org/2000/svg',
@@ -36,10 +36,6 @@ Element.append = (node, item) => {
   else node.appendChild(Element('')(textContent(item)));
 }
 
-const performUndo = undo => {
-  if (Array.isArray(undo)) for (const item of undo) performUndo(item);
-  else if (undo) undo();
-}
 export const Operator = (...funcs) => Builder((tasks, node) => {
   const undo = [];
   for (const {names, args} of tasks) {
@@ -50,4 +46,7 @@ export const Operator = (...funcs) => Builder((tasks, node) => {
   return performUndo.bind(null, undo);
 });
 Operator.isOperator = Builder.isBuilder;
-Operator.apply = (node, item) => Builder.launch(item, node);
+Operator.apply = (node, operator) => Builder.launch(operator, node);
+Operator.extend = (operator, { get }) => new Proxy(operator, {
+  get: (_, key) => get(_, key) ?? operator[key]
+});

@@ -61,7 +61,7 @@ class Node {
       (this.important ? 'ǃ' : '')
     );
 
-    if (!this.css) {
+    if (!this.css && this.style) {
       const sel = selectorTmpl(this.selector, '.' + this.cls);
       const str = sel + styleStr(this.style, this.important);
       this.css = this.media ? `@media ${this.media} {${str}}` : str;

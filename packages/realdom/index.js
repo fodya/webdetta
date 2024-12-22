@@ -1,4 +1,4 @@
-import * as operators from './operators.js';
+import { operators } from './operators.js';
 import { Element } from './dom.js';
 import { kebab } from '../common/dom.js';
 
