@@ -70,7 +70,7 @@ export const operators = {
     const value = toString(args);
     for (const name of names) node.style.setProperty(kebab(name), value);
     return () => {
-      for (const name of names) node.style.removeProperty(name);
+      for (const name of names) node.style.removeProperty(kebab(name));
     }
   })),
   prop: Operator((node, names, args) => operation(() => {
