@@ -197,12 +197,15 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
   const stylesheet = style.sheet;
 
   const processedNodes = {};
+  const insertRule = css => {
+    stylesheet.insertRule(css, stylesheet.cssRules.length);
+  }
   const process = (elem, node) => {
     node.calculate();
     if (node.inline) addStyle(elem, node.style);
     else {
       if (!processedNodes[node.cls]) {
-        stylesheet.insertRule(node.css, stylesheet.cssRules.length);
+        insertRule(node.css);
         processedNodes[node.cls] = node
       }
       if (node.prevCls && node.cls != node.prevCls) removeClass?.(elem, node.prevCls);
@@ -210,7 +213,7 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
     }
   }
   const recalculate = () => {
-    stylesheet.replaceSync('');
+    style.innerText = '';
     for (const node of Object.values(processedNodes)) {
       node.calculate();
       insertRule(node.css);
