@@ -30,7 +30,7 @@ const styleStr = (style, important) => `{${
 
 const processMethodArgs = args =>
   isTemplateCall(args)
-  ? String.raw(...args).match(/\S+/) ?? []
+  ? String.raw(...args).match(/\S+/g) ?? []
   : args.flatMap(unwrapFn);
 
 const NODES = Symbol('VCSS_NODES');
