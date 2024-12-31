@@ -27,13 +27,13 @@ export const Signal = ({ handlers=handlers(), get, set }) => {
     }
   }
 
-  accessor.default = function (value, isEmpty) {
+  accessor.default = function (value, shouldReset) {
     const curr = get();
 
-    if (arguments.length < 2) isEmpty = !!curr;
-    else if (typeof isEmpty == 'function') isEmpty = isEmpty(curr);
+    if (arguments.length < 2) shouldReset = !!curr;
+    else if (typeof shouldReset == 'function') shouldReset = shouldReset(curr);
 
-    if (isEmpty) set(value);
+    if (shouldReset) set(value);
     return accessor;
   }
   accessor.handlers = handlers;

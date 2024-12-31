@@ -4,6 +4,7 @@ import { Element, Operator } from './dom.js';
 import { performUndo } from './operators.js';
 
 const lRoot = Symbol();
+const lKey = Symbol();
 const defaultKeyFn = (d, i) => d?.key ?? d?.id ?? i;
 export const createList = (
   node,
@@ -37,9 +38,9 @@ export const createList = (
     delete lPrev[k];
     delete lNext[k];
     delete data[k];
-    delete elems[k];
 
     elems[k].remove();
+    delete elems[k];
   }
 
   let prevKeys = new Set();
@@ -66,7 +67,19 @@ export const createList = (
     updateKeys(keys);
   };
 
-  r.effect(() => updateItems(unwrapFn(itemsFn)));
+  const entriesToItems = (entries) => entries.map(([key, val]) =>
+    typeof val == 'object' ? { key: val.key ?? key, ...val } : val
+  );
+  r.effect(() => {
+    let items = unwrapFn(itemsFn);
+    if (Array.isArray(items))
+      items = items;
+    else if (typeof items[Symbol.iterator] === 'function')
+      items = entriesToItems(Array.from(items.entries()));
+    else if (typeof items == 'object')
+      items = entriesToItems(Object.entries(items));
+    updateItems(items);
+  });
 
   return () => {
     for (const k of prevKeys) disconnectItem(k);

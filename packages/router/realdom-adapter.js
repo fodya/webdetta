@@ -6,12 +6,23 @@ const RouterRealdom = ({
   router,
   preloadPages=[]
 }) => {
+  const paramVals = {};
   const currentRoute = r.val();
   const loadedRoutes = r.val({});
-  const listener = ({ route }) => {
+  const listener = ({ route, params }) => {
     const { key, value } = route;
     const loaded = loadedRoutes();
-    loaded[key] ??= RouterRealdom.ctx.run(router, value);
+
+    paramVals[key] ??= {};
+    for (const [k, v] of Object.entries(params)) {
+      const val = paramVals[key][k] ??= r.val();
+      val(v);
+    }
+
+    loaded[key] ??= RouterRealdom.ctx.run(router, () =>
+      value(new Proxy({}, { get: (_, k) => paramVals[key][k] }))
+    );
+
     loadedRoutes(loaded);
     currentRoute(key);
   }
