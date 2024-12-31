@@ -1,5 +1,4 @@
 import Builder from '../common/builder.js';
-import { Context } from '../common/context.js';
 import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent, performUndo } from './operators.js';
@@ -23,17 +22,14 @@ export const Element = (tag, ns) => (...args) => {
   Element.append(node, templateCallToArray(args));
   return node;
 }
-Element.from = arg => {
-  if (Array.isArray(arg)) return Element(':')(...arg);
-  if (arg instanceof Node) return arg;
-  return Element('')(arg);
-}
+Element.from = arg => arg instanceof Node
+  ? arg
+  : Element('')(textContent(arg));
 Element.append = (node, item) => {
   if (Array.isArray(item)) for (const d of item) Element.append(node, d);
   else if (Operator.isOperator(item)) Operator.apply(node, item);
   else if (isTextNode(node)) Operator.apply(node, textContent(item));
-  else if (item instanceof Node) node.appendChild(item);
-  else node.appendChild(Element('')(textContent(item)));
+  else node.appendChild(Element.from(item));
 }
 
 export const Operator = (...funcs) => Builder((tasks, node) => {

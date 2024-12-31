@@ -1,6 +1,6 @@
 import Builder from '../common/builder.js';
 import { kebab } from '../common/dom.js';
-import { err, callFn, unwrapFn } from '../common/utils.js';
+import { err, unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import { createList, createIf } from './dynamic.js';

@@ -1,13 +1,21 @@
 import { kebab } from '../common/dom.js';
-import { isTemplateCall } from '../common/utils.js';
+import { isTemplateCall, unwrapFn } from '../common/utils.js';
 
-const ID = ((r={}, i={}) => (t, v) => {
-  return r[t+v] ??= i[t] = (i[t] ??= -1) + 1;
+const ID = (() => {
+  const store = {}, indexes = {};
+  return (type, value) => store[type + value] ??= (
+    indexes[type] ??= -1,
+    ++indexes[type]
+  );
 })();
 const chars = Object.fromEntries([...
   ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕`.matchAll(/../g)
 ].map(v => v[0].split('')));
-const escape = str => str.replaceAll(/./g, v => chars[v] ?? v);
+const escape = str => {
+  let res = '';
+  for (const v of str) res += chars[v] ?? v;
+  return CSS.escape(res);
+}
 const selectorTmpl = (sel='', val='') => (
   typeof sel == 'function' ? sel(val)
   : sel.includes('&') ? sel.replaceAll('&', val)
@@ -20,11 +28,10 @@ const styleStr = (style, important) => `{${
   ).join('')
 }}`;
 
-const unwrapfn = f => typeof f == 'function' ? unwrapfn(f()) : f;
 const processMethodArgs = args =>
   isTemplateCall(args)
-  ? String.raw(...args).split(/\s+/)
-  : args.flatMap(unwrapfn);
+  ? String.raw(...args).match(/\S+/) ?? []
+  : args.flatMap(unwrapFn);
 
 const NODES = Symbol('VCSS_NODES');
 export const inspect = obj => {
@@ -50,27 +57,26 @@ class Node {
   fork(...updates) {
     return new Node(...this.updates, ...updates);
   }
-  calculate(esc=escape) {
+  calculate() {
     this.css = '';
-    for (const update of this.updates) update.call(this, esc);
+    for (const update of this.updates) update.call(this);
+    if (!this.style) return;
     this.prevCls = this.cls;
-    this.cls = esc(
+    this.cls = escape(
       (this.media ? '𝕄(' + this.media + ')' : '') +
       (this.selector ? '𝕊(' + this.selector + ')' : '') +
       (this.classname ? this.classname : '') +
       (this.important ? 'ǃ' : '')
     );
 
-    if (!this.css && this.style) {
-      const sel = selectorTmpl(this.selector, '.' + this.cls);
-      const str = sel + styleStr(this.style, this.important);
-      this.css = this.media ? `@media ${this.media} {${str}}` : str;
-    }
+    const sel = selectorTmpl(this.selector, '.' + this.cls);
+    const str = sel + styleStr(this.style, this.important);
+    this.css = this.media ? `@media ${this.media} {${str}}` : str;
   }
 }
 
 const StyleNode = (...args_) => new Node(function() {
-  const args = args_.map(unwrapfn);
+  const args = args_.map(unwrapFn);
   if (args.length === 1) {
     this.classname = 'CSS(' + JSON.stringify(args[0]) + ')';
     this.style = args[0];
@@ -90,7 +96,7 @@ const MethodNode = (methods, name, args_) => {
 
 const unwrap = obj => (
   (obj = inspect(obj)) &&
-  Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
+  Array.isArray(obj) ? obj.filter(d => d)
   : obj instanceof Node ? obj
   : StyleNode(obj)
 );
@@ -185,20 +191,10 @@ const Stack = (wrap, methods) => {
   return stack([], []);
 }
 
-const Processor = ({ addStyle, addClass, removeClass, esc }) => {
+const Processor = ({ addStyle, addClass, removeClass }) => {
   const style = document.createElement('style');
   document.head.appendChild(style);
-
-  const processedRules = new Set();
-  let p;
-  const insertRule = rule => {
-    if (processedRules.has(rule)) return;
-    processedRules.add(rule);
-    p ??= Promise.resolve().then(() => {
-      style.textContent = [...processedRules].join('\n');
-      p = null;
-    });
-  }
+  const stylesheet = style.sheet;
 
   const processedNodes = {};
   const process = (elem, node) => {
@@ -206,7 +202,7 @@ const Processor = ({ addStyle, addClass, removeClass, esc }) => {
     if (node.inline) addStyle(elem, node.style);
     else {
       if (!processedNodes[node.cls]) {
-        insertRule(node.css);
+        stylesheet.insertRule(node.css, stylesheet.cssRules.length);
         processedNodes[node.cls] = node
       }
       if (node.prevCls && node.cls != node.prevCls) removeClass?.(elem, node.prevCls);
@@ -214,10 +210,9 @@ const Processor = ({ addStyle, addClass, removeClass, esc }) => {
     }
   }
   const recalculate = () => {
-    style.textContent.replaceSync('');
-    processedRules.clear();
+    stylesheet.replaceSync('');
     for (const node of Object.values(processedNodes)) {
-      node.calculate(esc);
+      node.calculate();
       insertRule(node.css);
     }
   }
@@ -227,10 +222,7 @@ const Processor = ({ addStyle, addClass, removeClass, esc }) => {
 
 export const Adapter = (options) => ({ methods, enumerate=false }) => {
   const { wrapper, addClass, addStyle, removeClass } = options;
-  const { process, recalculate } = Processor({
-    addStyle, addClass, removeClass,
-    esc: enumerate ? d => 'v' + ID('', d) : escape
-  });
+  const { process, recalculate } = Processor({ addStyle, addClass, removeClass });
   const wrap = (nodes) => wrapper(nodes, process);
   const v = Stack(wrap, methods);
   return { v, recalculate };

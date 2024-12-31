@@ -1,4 +1,3 @@
-import { Context } from '../common/context.js';
 import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
@@ -78,7 +77,7 @@ export const createList = (
 export const appendItems = (node, items) => {
   const parentNode = node.parentNode;
   const children = [], operators = [];
-  for (const item of items) {
+  for (const item of items.flat(Infinity)) {
     if (Operator.isOperator(item)) operators.push(item);
     else children.push(Element.from(item))
   }
