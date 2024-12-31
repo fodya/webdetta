@@ -19,8 +19,7 @@ export const Element = (tag, ns) => (...args) => {
     tag === ':' ? document.createDocumentFragment() :
     ns ? document.createElementNS(ns, tag) : document.createElement(tag)
   );
-  Element.append(node, templateCallToArray(args));
-  return node;
+  return Element.append(node, templateCallToArray(args));
 }
 Element.from = arg => arg instanceof Node
   ? arg
@@ -30,6 +29,7 @@ Element.append = (node, item) => {
   else if (Operator.isOperator(item)) Operator.apply(node, item);
   else if (isTextNode(node)) Operator.apply(node, textContent(item));
   else node.appendChild(Element.from(item));
+  return node;
 }
 
 export const Operator = (...funcs) => Builder((tasks, node) => {

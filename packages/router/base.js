@@ -66,11 +66,14 @@ const Router = (routes, driver) => {
   }
 
   const handlers = [];
-  const listen = (h) => handlers.push(h);
+  const listen = (h) => {
+    handlers.push(h);
+    update();
+  }
 
   const update = () => {
-    const url = driver.get();
-    handlers.forEach(h => h(url));
+    const curr = current();
+    handlers.forEach(h => h(curr));
   }
   const attach = () => driver.attach(update);
   const detach = () => driver.detach(update);
