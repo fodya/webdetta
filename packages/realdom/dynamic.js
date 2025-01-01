@@ -13,7 +13,6 @@ const listNodeWrapper = node => {
 }
 
 const lRoot = Symbol();
-const lKey = Symbol();
 const defaultKeyFn = (d, i) => d?.key ?? d?.id ?? i;
 export const createList = (
   node,
