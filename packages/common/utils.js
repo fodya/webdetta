@@ -35,16 +35,6 @@ export const lock = (lockFn, f) => {
     return f.apply(this, arguments);
   }
 }
-lock.sync = f => {
-  let locked;
-  return function() {
-    if (locked) return;
-    locked = true;
-    const res = f.apply(this, arguments);
-    locked = false;
-    return res;
-  }
-}
 
 export const once = (f) => {
   let called = 0;
@@ -62,6 +52,17 @@ export const throttle = (f) => {
     return promise
       .then(() => res)
       .finally(() => (promise = null));
+  }
+}
+throttle.sync = f => {
+  let locked;
+  return function() {
+    if (locked) return;
+    locked = true;
+    let res; try { res = f.apply(this, arguments); }
+    catch (err) { locked = false; throw err; }
+    locked = false;
+    return res;
   }
 }
 throttle.T = (delay, f) => throttle(async function () {

@@ -5,13 +5,13 @@ export const currentHandler = Context();
 const handlers = (clearOnTrigger) => {
   let list = new Set();
   const add = handler => list.add(handler);
-  const trigger = (...args) => {
+  const trigger = throttle.sync((...args) => {
     const currList = list;
     if (clearOnTrigger) list = new Set(); // clear all handlers.
     // handlers will subscribe again upon an effect call.
     // unreachable handlers will not resubscribe.
     for (const handler of currList) handler(...args);
-  }
+  });
   return { get list() { return list; }, add, trigger };
 }
 
@@ -57,7 +57,7 @@ const Reference = (target, key) => Signal({
 });
 
 const effect = (func) => {
-  const handler = () => currentHandler.run(handler, func, []);
+  const handler = throttle.sync(() => currentHandler.run(handler, func, []));
   return handler();
 }
 const derive = func => {
