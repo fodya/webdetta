@@ -3,6 +3,15 @@ import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import { performUndo } from './operators.js';
 
+const listNodeWrapper = node => {
+  const isFragment = node.nodeType === 11;
+  const children = isFragment ? [...node.childNodes] : [node];
+  const lastNode = children.at(-1);
+  const remove = () => { for (const item of children) item.remove(); }
+  const insertAfter = (refNode) => refNode.after(...children);
+  return { lastNode, insertAfter, remove };
+}
+
 const lRoot = Symbol();
 const lKey = Symbol();
 const defaultKeyFn = (d, i) => d?.key ?? d?.id ?? i;
@@ -16,18 +25,18 @@ export const createList = (
   node.appendChild(root);
 
   const data = {};
-  const elems = { [lRoot]: root };
+  const elems = { [lRoot]: listNodeWrapper(root) };
   const lNext = { [lRoot]: undefined };
   const lPrev = { [lRoot]: undefined };
 
   const connectItem = (k) => {
     if (elems[k]) return;
-    elems[k] = renderItem(data[k], k)
+    elems[k] = listNodeWrapper(renderItem(data[k], k));
   }
   const moveItem = (k, nextK) => {
     lNext[k] = nextK;
     lPrev[nextK] = k;
-    elems[k].after(elems[nextK]);
+    elems[nextK].insertAfter(elems[k].lastNode);
   }
   const disconnectItem = (k) => {
     const prev = lPrev[k];

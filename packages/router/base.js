@@ -44,11 +44,12 @@ const currentRoute = (routesList, loc) => {
   const res = { route: null, params: {}, location: loc };
   for (const route of routesList) {
     const params = parsePath(route.path, loc.pathname);
-    const depth_ = Array.from(route.path).filter(d => d == '/').length;
-    if (params && depth_ >= depth) {
+    const pathDepth = splitPath(route.path).filter(d => d).length;
+    const paramsDepth = Object.values(params ?? {}).filter(d => d).length;
+    if (params && pathDepth == paramsDepth && pathDepth >= depth) {
       res.route = route;
       res.params = params;
-      depth = depth_;
+      depth = pathDepth;
     }
   }
   Object.assign(res.params, Object.fromEntries(

@@ -357,6 +357,7 @@ export const Methods = cfg => {
       if (v) return { cursor: 'pointer' };
       else return { pointerEvents: 'none' };
     },
+    zoom: v => ({ zoom: v }),
 
     // transform
     //tr3: () => ({ transformStyle: 'preserve-3d' }),
@@ -397,6 +398,7 @@ export const Methods = cfg => {
     ].map(([name, prop]) => [name, (...v) => ({
       transform: prop + '(' + v.map(v => size(v)).join(',') + ')'
     })])),
+    trO: (...args) => ({ transformOrigin: args.join(' ') })
   }
 
   return { methods, resolve };

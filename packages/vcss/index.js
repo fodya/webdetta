@@ -47,6 +47,7 @@ class Node {
   inline = false
   classname = null
   css = null
+  additionalCss = null
   style = {}
   cls = null
 
@@ -58,7 +59,7 @@ class Node {
     return new Node(...this.updates, ...updates);
   }
   calculate() {
-    this.css = '';
+    this.css = null;
     for (const update of this.updates) update.call(this);
     if (!this.style) return;
     this.prevCls = this.cls;
@@ -96,17 +97,17 @@ const MethodNode = (methods, name, args_) => {
 
 const unwrap = obj => (
   (obj = inspect(obj)) &&
-  Array.isArray(obj) ? obj.filter(d => d)
+  Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
   : obj instanceof Node ? obj
   : StyleNode(obj)
 );
 
+const joinStyle = (sep, v1, v2) => v1 && v2 ? v1 + sep + v2 : v1 ?? v2;
 const combinedStyle = nodes => {
   const res = {};
   for (const node of nodes) {
     node.calculate();
-    const style = node.updates.style?.() ?? node.style ?? {};
-    Object.assign(res, style);
+    Object.assign(res, node.style ?? {});
   }
   return res;
 }
@@ -137,7 +138,6 @@ const operators = {
   Transition: (param, ...args) => {
     const nodes = unwrap(args);
     return nodes.concat(new Node(function() {
-      for (const node of nodes) node.calculate();
       const keys = Object.keys(combinedStyle(nodes));
       this.classname = '𝕋(' + ID('transition', param + keys.join(',')) + ')';
       this.style = {
@@ -155,7 +155,7 @@ const operators = {
     const kfId = ID('keyframes', str);
     const aId = ID('animation', param + kfId);
     this.classname = '𝔸(' + aId + ')';
-    this.css = `@keyframes 𝔸${kfId} {\n${str}\n}`;
+    this.additionalCss = `@keyframes 𝔸${kfId} {\n${str}\n}`;
     this.style = { animation: param + ' 𝔸' + kfId };
   })],
 }
@@ -197,15 +197,17 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
   const stylesheet = style.sheet;
 
   const processedNodes = {};
-  const insertRule = css => {
-    stylesheet.insertRule(css, stylesheet.cssRules.length);
+  const insertRule = node => {
+    stylesheet.insertRule(node.css, stylesheet.cssRules.length);
+    if (node.additionalCss)
+      stylesheet.insertRule(node.additionalCss, stylesheet.cssRules.length);
   }
   const process = (elem, node) => {
     node.calculate();
     if (node.inline) addStyle(elem, node.style);
     else {
       if (!processedNodes[node.cls]) {
-        insertRule(node.css);
+        insertRule(node);
         processedNodes[node.cls] = node
       }
       if (node.prevCls && node.cls != node.prevCls) removeClass?.(elem, node.prevCls);
@@ -216,7 +218,7 @@ const Processor = ({ addStyle, addClass, removeClass }) => {
     style.innerText = '';
     for (const node of Object.values(processedNodes)) {
       node.calculate();
-      insertRule(node.css);
+      insertRule(node);
     }
   }
 

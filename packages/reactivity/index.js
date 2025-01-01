@@ -65,10 +65,17 @@ const derive = func => {
   effect(() => value(func()));
   return value;
 }
+const proxy = func => new Proxy({}, {
+  get: (_, key) => (...a) => {
+    const target = func();
+    return a.length === 0 ? target[key] : (target[key] = a[0]);
+  }
+});
 
 export const r = {
   val: Value,
   ref: Reference,
   derive: derive,
-  effect: effect
+  effect: effect,
+  proxy: proxy
 }
