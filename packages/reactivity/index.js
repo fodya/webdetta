@@ -6,11 +6,21 @@ const handlers = (clearOnTrigger) => {
   let list = new Set();
   const add = handler => list.add(handler);
   const trigger = throttle.sync((...args) => {
+    const handler = currentHandler();
+    if (handler) { // some other handler is already running
+      const postponed = () => trigger(...args);
+      (handler.sideEffects ??= []).push(postponed);
+      return;
+    }
+
     const currList = list;
     if (clearOnTrigger) list = new Set(); // clear all handlers.
     // handlers will subscribe again upon an effect call.
     // unreachable handlers will not resubscribe.
-    for (const handler of currList) handler(...args);
+    for (const handler of currList) {
+      if (handler.isLocked()) add(handler);
+      else handler(...args);
+    }
   });
   return { get list() { return list; }, add, trigger };
 }
@@ -18,7 +28,8 @@ const handlers = (clearOnTrigger) => {
 export const Signal = ({ handlers=handlers(), get, set }) => {
   const accessor = (...a) => {
     if (a.length === 0) {
-      let h; if (handlers && (h = currentHandler())) handlers.add(h);
+      const handler = currentHandler();
+      if (handlers && handler) handlers.add(handler.func);
       return get();
     } else {
       const val = set(...a);
@@ -57,7 +68,12 @@ const Reference = (target, key) => Signal({
 });
 
 const effect = (func) => {
-  const handler = throttle.sync(() => currentHandler.run(handler, func, []));
+  const handler = throttle.sync(() => {
+    const ctx = { func: handler, sideEffects: null };
+    const res = currentHandler.run(ctx, func, []);
+    if (ctx.sideEffects) for (const func of ctx.sideEffects) func();
+    return res;
+  });
   return handler();
 }
 const derive = func => {

@@ -24,18 +24,6 @@ export const catchErrors = (f, handler=catchErrors.errorHandler) => function() {
 }
 catchErrors.errorHandler = e => console.error(e);
 
-export const lock = (lockFn, f) => {
-  if (isPromise(lockFn)) {
-    let locked = true;
-    lockFn.then(() => { locked = false; });
-    lockFn = () => locked;
-  }
-  return function() {
-    if (lockFn()) return;
-    return f.apply(this, arguments);
-  }
-}
-
 export const once = (f) => {
   let called = 0;
   return lock(() => (called++ > 0), f);
@@ -44,8 +32,8 @@ export const once = (f) => {
 export const sleep = t => new Promise(r => setTimeout(r, t));
 
 export const throttle = (f) => {
-  let promise = null;
-  return function () {
+  let promise;
+  const self = function () {
     if (promise) return promise;
     promise = Promise.resolve();
     const res = f.apply(this, arguments);
@@ -53,17 +41,21 @@ export const throttle = (f) => {
       .then(() => res)
       .finally(() => (promise = null));
   }
+  self.isLocked = () => !!promise;
+  return self;
 }
 throttle.sync = f => {
   let locked;
-  return function() {
+  const self = function() {
     if (locked) return;
     locked = true;
     let res; try { res = f.apply(this, arguments); }
     catch (err) { locked = false; throw err; }
     locked = false;
     return res;
-  }
+  };
+  self.isLocked = () => locked;
+  return self;
 }
 throttle.T = (delay, f) => throttle(async function () {
   await sleep(delay);
