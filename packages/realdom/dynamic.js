@@ -64,29 +64,32 @@ export const createList = (
     prevKeys = currKeys;
   }
 
-  const updateItems = (list=[]) => {
+  const processArray = (arr) => {
     const keys = [];
-    for (let i = 0, l = list.length; i < l; i++) {
-      const item = list[i];
-      const key = keyFn(item, i, list);
+    for (let i = 0, l = arr.length; i < l; i++) {
+      const item = arr[i];
+      const key = keyFn(item, i, arr);
       data[key] ??= item;
       keys.push(key);
     }
     updateKeys(keys);
-  };
-
-  const entriesToItems = (entries) => entries.map(([key, val]) =>
-    typeof val == 'object' ? { key: val.key ?? key, ...val } : val
-  );
+  }
+  const processEntries = (entries) => {
+    const keys = [];
+    for (const [key, val] of entries) {
+      data[key] ??= val;
+      keys.push(key);
+    }
+    updateKeys(keys);
+  }
   r.effect(() => {
-    let items = unwrapFn(itemsFn);
+    const items = unwrapFn(itemsFn);
     if (Array.isArray(items))
-      items = items;
+      processArray(items);
     else if (typeof items[Symbol.iterator] === 'function')
-      items = entriesToItems(Array.from(items.entries()));
+      processEntries(Array.from(items.entries()));
     else if (typeof items == 'object')
-      items = entriesToItems(Object.entries(items));
-    updateItems(items);
+      processEntries(Object.entries(items));
   });
 
   return () => {

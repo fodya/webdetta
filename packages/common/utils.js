@@ -4,6 +4,7 @@ export const isPromise = d => d == Promise.resolve(d);
 
 export const callFn = d => typeof d == 'function' ? d() : d;
 export const unwrapFn = d => typeof d == 'function' ? unwrapFn(d()) : d;
+export const toFn = d => typeof d == 'function' ? d : () => d;
 
 export const err = (...args) => {
   throw (
