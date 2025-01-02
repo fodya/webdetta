@@ -28,7 +28,7 @@ const RouterRealdom = ({
   router.listen(listener);
   router.attach();
 
-  return el[':'](
+  const container = el[':'](
     el.list(() => Object.entries(loadedRoutes()), ([key, dom]) => {
       const isVisible = () => currentRoute() == key;
       return el.append(dom,
@@ -36,6 +36,7 @@ const RouterRealdom = ({
       );
     })
   );
+  return { container, router };
 };
 RouterRealdom.ctx = Context();
 
