@@ -1,3 +1,5 @@
+import { routerAction } from './action.js';
+
 const splitPath = path =>
   path.replace(/\//g, ' ').trim().split(/\s+/);
 
@@ -89,11 +91,13 @@ const Router = (routes, driver) => {
     driver.set({ url: href(routes[key].path, params), replace: true });
 
   const current = () => currentRoute(Object.values(routes), driver.get());
+  const action = (options) => routerAction(self, options);
 
-  return {
+  let self; return self = {
     attach, detach, listen,
     routes, current,
-    go, navigate, replace
+    go, navigate, replace,
+    action
   };
 }
 
