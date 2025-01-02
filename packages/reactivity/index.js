@@ -10,8 +10,8 @@ const handlers = (clearOnTrigger) => {
     if (handler) { // some other handler is already running
       const postponed = () => trigger(...args);
       (handler.sideEffects ??= []).push(postponed);
-      return;
     }
+    if (handler) return;
 
     const currList = list;
     if (clearOnTrigger) list = new Set(); // clear all handlers.
@@ -67,9 +67,9 @@ const Reference = (target, key) => Signal({
 
 const effect = (func) => {
   const handler = throttle.sync(() => {
-    const ctx = { func: handler, sideEffects: null };
+    const ctx = { func: handler, sideEffects: [] };
     const res = currentHandler.run(ctx, func, []);
-    if (ctx.sideEffects) for (const func of ctx.sideEffects) func();
+    for (const func of ctx.sideEffects) func();
     return res;
   });
   return handler();
@@ -87,8 +87,7 @@ const diff = (...args) => {
     }
     return res;
   }
-  let saved;
-  r.effect(() => changed() ? (saved = func(...values)) : saved);
+  r.effect(() => changed() && func(...values));
 }
 const derive = func => {
   const value = Value();
