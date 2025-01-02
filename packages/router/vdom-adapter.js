@@ -11,12 +11,12 @@ const RouterVdom = Component(({
   const redraw = h.redraw();
 
   const saved = h.ref({})();
-  if (r.route) saved[r.route.path] = r.route.value(r.params);
+  if (r.route) saved[r.path] = r.route.value(r.params);
 
   h.effect([], () => {
     for (const routeKey of preloadPages) {
       const pr = router.routes[routeKey];
-      if (pr.path == r.route?.path) continue;
+      if (pr.path == r?.path) continue;
       saved[pr.path] = pr.value({});
     }
     router.listen(redraw);
@@ -27,7 +27,7 @@ const RouterVdom = Component(({
   const [preloaded] = h.val({});
   const preloadPaths = preloadPages.map(k => router.routes[k].path);
   return Fragment(Object.entries(saved).map(([routePath, page]) => {
-    const isVisible = r.route?.path == routePath;
+    const isVisible = r?.path == routePath;
     let isAlive = isVisible;
     if (preloadPaths.includes(routePath))
       preloaded[preloadPaths] ??= (isAlive = true);

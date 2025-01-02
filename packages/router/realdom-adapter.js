@@ -9,8 +9,7 @@ const RouterRealdom = ({
   const paramVals = {};
   const currentRoute = r.val();
   const loadedRoutes = r.val({});
-  const listener = ({ route, params }) => {
-    const { key, value } = route;
+  const listener = ({ key, value, params }) => {
     const loaded = loadedRoutes();
 
     paramVals[key] ??= {};

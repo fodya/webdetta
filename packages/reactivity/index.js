@@ -74,6 +74,22 @@ const effect = (func) => {
   });
   return handler();
 }
+const diff = (...args) => {
+  const signals = args.slice(0, -1);
+  const func = args.at(-1);
+  const values = [];
+  const changed = () => {
+    let res = false;
+    for (let i = 0, l = signals.length; i < l; i++) {
+      const val = signals[i]();
+      res ||= val != values[i];
+      values[i] = val;
+    }
+    return res;
+  }
+  let saved;
+  r.effect(() => changed() ? (saved = func(...values)) : saved);
+}
 const derive = func => {
   const value = Value();
   effect(() => value(func()));
@@ -90,6 +106,7 @@ export const r = {
   val: Value,
   ref: Reference,
   derive: derive,
+  diff: diff,
   effect: effect,
-  proxy: proxy
+  proxy: proxy,
 }

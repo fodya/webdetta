@@ -41,13 +41,15 @@ export const href = (routepath, params={}) => (
 
 const currentRoute = (routesList, loc) => {
   let depth = 0;
-  const res = { route: null, params: {}, location: loc };
+  const res = { key: null, path: null, value: null, params: {}, location: loc };
   for (const route of routesList) {
     const params = parsePath(route.path, loc.pathname);
     const pathDepth = splitPath(route.path).filter(d => d).length;
     const paramsDepth = Object.values(params ?? {}).filter(d => d).length;
     if (params && pathDepth == paramsDepth && pathDepth >= depth) {
-      res.route = route;
+      res.key = route.key;
+      res.path = route.path;
+      res.value = route.value;
       res.params = params;
       depth = pathDepth;
     }
@@ -69,7 +71,7 @@ const Router = (routes, driver) => {
   const handlers = [];
   const listen = (h) => {
     handlers.push(h);
-    update();
+    h(current());
   }
 
   const update = () => {
