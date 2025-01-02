@@ -59,8 +59,6 @@ const Value = val => Signal({
   get: () => val,
   set: v => val = v
 });
-Value.from = thing => Signal.isSignal(thing) ? thing : Value(thing);
-
 const Reference = (target, key) => Signal({
   handlers: null,
   get: () => target()[key],
