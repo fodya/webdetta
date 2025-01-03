@@ -25,7 +25,8 @@ Element.from = arg => arg instanceof Node
   ? arg
   : Element('')(textContent(arg));
 Element.append = (node, item) => {
-  if (Array.isArray(item)) for (const d of item) Element.append(node, d);
+  if (item === undefined || item === null) {}
+  else if (Array.isArray(item)) for (const d of item) Element.append(node, d);
   else if (Operator.isOperator(item)) Operator.apply(node, item);
   else if (isTextNode(node)) Operator.apply(node, textContent(item));
   else node.appendChild(Element.from(item));
