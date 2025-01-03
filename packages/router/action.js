@@ -22,18 +22,18 @@ export const routerAction = (router, {
   }
 
   const currentRoute = router.current().key;
+  let prevRoute;
   let prevActive;
-  let prevRoute = null;
   router.listen(({key: route, params}) => {
     const active = ids().has(id);
     if (prevRoute != route && endOnRouteChange) {
       end();
       onEnd();
+      prevRoute = route;
     } else if (prevActive != active) {
       (active ? onBegin : onEnd)();
       prevActive = active;
     }
-    prevRoute = route;
   });
 
   return { begin, end };
