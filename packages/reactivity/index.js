@@ -37,16 +37,7 @@ export const Signal = ({ handlers=handlers(), get, set }) => {
       return val;
     }
   }
-
-  accessor.default = function (value, shouldReset) {
-    const curr = get();
-
-    if (arguments.length < 2) shouldReset = !!curr;
-    else if (typeof shouldReset == 'function') shouldReset = shouldReset(curr);
-
-    if (shouldReset) set(value);
-    return accessor;
-  }
+  
   accessor.handlers = handlers;
   accessor[Signal.symbol] = true
   return accessor;
