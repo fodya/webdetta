@@ -9,9 +9,9 @@ const handlers = (clearOnTrigger) => {
     const handler = currentHandler();
     if (handler) { // some other handler is already running
       const postponed = () => trigger(...args);
-      (handler.sideEffects ??= []).push(postponed);
+      handler.sideEffects.push(postponed);
+      return;
     }
-    if (handler) return;
 
     const currList = list;
     if (clearOnTrigger) list = new Set(); // clear all handlers.
