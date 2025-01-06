@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import path from 'path';
 import subprocess from '../../packages/subprocess/index.js';
 import { S } from '../../packages/common/utils.js';
-import { tmpDir } from "../../packages/common/node.js";
+import { tmpDir } from "../../packages/common/fs.js";
 
 const fileSubst = async (file, env) => {
   let str = (await fs.readFile(file)).toString('utf8');

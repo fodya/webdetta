@@ -1,4 +1,3 @@
-import Builder from '../common/builder.js';
 import { kebab } from '../common/dom.js';
 import { err, unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
@@ -11,7 +10,7 @@ const toString = args => {
   return str;
 }
 
-export const operation = (func) => {
+export const recurrent = (func) => {
   let stopped, undo;
   r.effect(() => (!stopped) && (undo = func()));
   return () => (stopped = true, undo());
@@ -42,7 +41,7 @@ const ref = Operator((node, _, args) => args.map(func => func(node)));
 export const operators = {
   append: Element.append,
   ref: ref,
-  attr: Operator((node, names, args) => operation(() => {
+  attr: Operator((node, names, args) => recurrent(() => {
     const value = toString(args);
     for (const name of names) node.setAttribute(name, value);
     return () => {
@@ -58,7 +57,7 @@ export const operators = {
         node.removeEventListener(name, func);
     }
   }),
-  class: Operator((node, names, args) => operation(() => {
+  class: Operator((node, names, args) => recurrent(() => {
     const value = Boolean(unwrapFn(args[0]));
     if (!value) return;
     node.classList.add(...names.map(kebab));
@@ -66,14 +65,14 @@ export const operators = {
       node.classList.remove(...names.map(kebab));
     }
   })),
-  style: Operator((node, names, args) => operation(() => {
+  style: Operator((node, names, args) => recurrent(() => {
     const value = toString(args);
     for (const name of names) node.style.setProperty(kebab(name), value);
     return () => {
       for (const name of names) node.style.removeProperty(kebab(name));
     }
   })),
-  prop: Operator((node, names, args) => operation(() => {
+  prop: Operator((node, names, args) => recurrent(() => {
     const value = unwrapFn(args[0]);
     for (const name of names) node[name] = value;
     return () => {

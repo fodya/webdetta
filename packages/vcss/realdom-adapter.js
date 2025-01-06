@@ -1,10 +1,10 @@
 import { el } from '../realdom/index.js';
 import { r } from '../reactivity/index.js';
-import { operation } from '../realdom/operators.js';
+import { recurrent } from '../realdom/operators.js';
 import { Adapter } from './index.js';
 
 export default Adapter({
-  wrapper: (nodes, process) => el.ref(dom => operation(() => {
+  wrapper: (nodes, process) => el.ref(dom => recurrent(() => {
     for (const node of nodes) process(dom, node);
     return () => {
       for (const node of nodes) dom.classList.remove(node.cls);
