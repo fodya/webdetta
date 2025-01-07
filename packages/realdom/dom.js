@@ -3,10 +3,6 @@ import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent, performUndo } from './operators.js';
 
-const NS = {
-  svg: 'http://www.w3.org/2000/svg',
-  math: 'http://www.w3.org/1998/Math/MathML'
-};
 const isTextNode = node => {
   const { nodeType } = node;
   return nodeType === 3 || nodeType === 8;

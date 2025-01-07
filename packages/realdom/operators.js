@@ -1,12 +1,12 @@
 import { kebab } from '../common/dom.js';
-import { err, unwrapFn } from '../common/utils.js';
+import { err, unwrapFn, templateCallToArray } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import { createList, createIf } from './dynamic.js';
 
 const toString = args => {
   let str = '';
-  for (const a of args) str += unwrapFn(a);
+  for (const a of templateCallToArray(args)) str += unwrapFn(a);
   return str;
 }
 
@@ -39,7 +39,7 @@ const ifBuilder = (conditions, finalized=false) => {
 const ref = Operator((node, _, args) => args.map(func => func(node)));
 
 export const operators = {
-  append: Element.append,
+  append: (node, ...args) => Element.append(node, args),
   ref: ref,
   attr: Operator((node, names, args) => recurrent(() => {
     const value = toString(args);

@@ -9,7 +9,7 @@ const ID = (() => {
   );
 })();
 const chars = Object.fromEntries([...
-  ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕`.matchAll(/../g)
+  ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕@＠`.matchAll(/../g)
 ].map(v => v[0].split('')));
 const escape = str => {
   let res = '';
@@ -42,7 +42,7 @@ export const inspect = obj => {
 
 class Node {
   selector = ''
-  media = ''
+  atrule = ''
   important = false
   inline = false
   classname = null
@@ -64,7 +64,7 @@ class Node {
     if (!this.style) return;
     this.prevCls = this.cls;
     this.cls = escape(
-      (this.media ? '𝕄(' + this.media + ')' : '') +
+      (this.atrule ? '＠(' + ID('at', this.atrule) + ')' : '') +
       (this.selector ? '𝕊(' + this.selector + ')' : '') +
       (this.classname ? this.classname : '') +
       (this.important ? 'ǃ' : '')
@@ -72,14 +72,14 @@ class Node {
 
     const sel = selectorTmpl(this.selector, '.' + this.cls);
     const str = sel + styleStr(this.style, this.important);
-    this.css = this.media ? `@media ${this.media} {${str}}` : str;
+    this.css = this.atrule ? `${this.atrule} {${str}}` : str;
   }
 }
 
 const StyleNode = (...args_) => new Node(function() {
   const args = args_.map(unwrapFn);
   if (args.length === 1) {
-    this.classname = 'CSS(' + JSON.stringify(args[0]) + ')';
+    this.classname = '𝕀(' + ID('CSS', JSON.stringify(args[0])) + ')';
     this.style = args[0];
   } else {
     this.classname = args[0];
@@ -123,9 +123,9 @@ const operators = {
       }))
     );
   },
-  Media: (queryStr, ...args) =>
+  At: (atRule, ...args) =>
     unwrap(args).map(node => node.fork(function() {
-      this.media = node.media ? node.media + ' and ' + queryStr : queryStr;
+      this.atrule = atRule;
     })),
   Important: (...args) =>
     unwrap(args).map(node => node.fork(function() {
