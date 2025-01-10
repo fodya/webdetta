@@ -1,23 +1,35 @@
 import { Context } from '../common/context.js';
-import { unwrapFn } from '../common/utils.js';
+import { unwrapFn, once } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
+import { recurrent } from './operators.js';
 
 const ctx = Context();
 export const onRemove = f => ctx()?.onRemove.push(f);
-export const onDestroy = f => ctx()?.onDestroy.push(f);
+const removable = func => {
+  const onRemove = [];
+  ctx.run({ onRemove }, func);
+  return once(() => { for (const f of onRemove) f(); });
+}
 
-const listNodeWrapper = node => {
+const nodeWrapper = node => {
   const isFragment = node.nodeType === 11;
-  const children = isFragment ? [...node.childNodes] : [node];
-  const lastNode = children.at(-1);
-  const remove = () => { for (const item of children) item.remove(); }
-  const insertAfter = (refNode) => refNode.after(...children);
-  return { lastNode, insertAfter, remove };
+  const children = isFragment ? Array.from(node.childNodes) : [node];
+  const lastNode = isFragment ? children[children.length - 1] : node;
+  const remove = () => {
+    for (const item of children) item.remove();
+    if (isFragment) node.append(...children);
+  }
+  const after = (...nodes) => lastNode.after(...nodes);
+  return { children, after, remove };
 }
 
 const lRoot = Symbol();
-const defaultKeyFn = (d, i) => d?.key ?? d?.id ?? i;
+const defaultKeyFn = (d, i) => (
+  typeof d == 'number' || typeof d == 'string'
+  ? d
+  : d?.key ?? d?.id
+) ?? i;
 export const createList = (
   node,
   itemsFn,
@@ -28,12 +40,12 @@ export const createList = (
   node.appendChild(root);
 
   const elems = new Map();
-  elems.set(lRoot, listNodeWrapper(root));
-  const connect = (k, v) => elems.set(k, listNodeWrapper(renderItem(v, k)));
-  const move = (prevK, k) => elems.get(k).insertAfter(elems.get(prevK).lastNode);
+  elems.set(lRoot, nodeWrapper(root));
+  const connect = (k, v) => elems.set(k, nodeWrapper(renderItem(v, k)));
+  const move = (prevK, k) => elems.get(prevK).after(...elems.get(k).children);
   const disconnect = (k) => (elems.get(k).remove(), elems.delete(k));
 
-  r.effect(() => {
+  recurrent(() => {
     const items = unwrapFn(itemsFn);
     const entries = (
       Array.isArray(items)
@@ -57,43 +69,42 @@ export const createList = (
       prevK = k;
     }
   });
-
-  return () => {
-    for (const k of Object.keys(elems)) disconnect(k);
-  }
-}
-
-export const appendItems = (node, items) => {
-  const children = [], operators = [];
-  for (const item of items.flat(Infinity)) {
-    if (Operator.isOperator(item)) operators.push(item);
-    else children.push(Element.from(item))
-  }
-
-  const parentNode = node.parentNode;
-  const onRemove = [], onDestroy = [];
-  ctx.run({ onRemove, onDestroy }, () => {
-    for (const op of operators) Operator.apply(parentNode, op);
-  });
-  node.after(...children);
-
-  return () => {
-    for (const f of onRemove) f();
-    for (const dom of children) dom.remove();
-  }
 }
 
 export const createIf = (node, conditions) => {
   const root = document.createTextNode('');
   node.appendChild(root);
 
-  let undo;
+  const appendItems = (items) => {
+    const nodes = [];
+    for (const item of items) {
+      if (Array.isArray(item)) appendItems(item);
+      else if (Operator.isOperator(item)) Operator.apply(node, item);
+      else nodes.push(nodeWrapper(Element.from(item)));
+    }
+    let last = nodeWrapper(root);
+    for (const wrapped of nodes) {
+      last.after(...wrapped.children);
+      last = wrapped;
+    }
+    onRemove(() => {
+      for (const wrapped of nodes) wrapped.remove();
+    });
+  }
+
+  let removeItems;
   let index = -1;
-  r.effect(() => {
+  recurrent(() => {
     const newIndex = conditions.findIndex(d => unwrapFn(d.cond));
     if (index == newIndex) return;
-    const content = conditions[index = newIndex]?.args;
-    undo?.();
-    if (content) undo = appendItems(root, content);
+    removeItems?.();
+    const items = conditions[index = newIndex]?.args;
+    if (items) removeItems = removable(() => appendItems(items));
   });
+
+  // nested if support:
+  // el.if(cond1, el.if(cond2, el.Span('Test'))).
+  // when cond1() is false, nested if block should be removed.
+  // cond1(false) -> if#1.removeItems() -> if#2.onRemove() -> if#2.removeItems()
+  onRemove(() => removeItems?.());
 }
