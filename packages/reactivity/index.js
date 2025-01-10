@@ -33,7 +33,7 @@ const Handlers = () => {
     // unreachable handlers will not resubscribe.
 
     // Example:
-    // The handler will be called exactly 3 times: when val() is 0, 1, and 2.
+    // The handler will be called exactly 2 times: when val() is 0 and 1.
     // The last 2 calls `val(3)` and `val(4)` will not trigger the handler:
     // - condition `stop` causes an early return
     // - an early return causes the handler to not resubscribe to `val` signal
@@ -46,9 +46,11 @@ const Handlers = () => {
     //   console.log('handler: ', val());
     // });
     //
-    // val(1); val(2);
+    // val(1);
     // stop = true;
-    // val(3); val(4);
+    // val(2);
+    // stop = false;
+    // val(3);
 
     for (const func of currList) {
       if (func.isLocked()) {
