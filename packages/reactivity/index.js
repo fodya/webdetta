@@ -75,8 +75,6 @@ export const Signal = ({ handlers=Handlers(), get, set }) => {
       return val;
     }
   }
-
-  accessor.handlers = handlers;
   accessor[Signal.symbol] = true
   return accessor;
 }
