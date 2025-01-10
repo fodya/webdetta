@@ -52,8 +52,8 @@ const Handlers = () => {
 
     for (const func of currList) {
       if (func.isLocked()) {
-        // the `func` is already running, so calling it will have no effect as
-        // it is decorated with `throttle.sync`; just resubscribe it instead.
+        // the `func` is decorated with `throttle.sync` is already running,
+        // calling it will have no effect, just resubscribe it instead.
         add(func);
       } else {
         func();
