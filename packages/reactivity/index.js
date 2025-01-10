@@ -34,7 +34,6 @@ const Handlers = () => {
 
     // Example:
     // The handler will be called exactly 2 times: when val() is 0 and 1.
-    // The last 2 calls `val(3)` and `val(4)` will not trigger the handler:
     // - condition `stop` causes an early return
     // - an early return causes the handler to not resubscribe to `val` signal
     // - this effectively unsubscribes the handler from its signals forever
