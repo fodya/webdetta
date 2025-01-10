@@ -1,7 +1,7 @@
 import Builder from '../common/builder.js';
 import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
-import { textContent, performUndo } from './operators.js';
+import { textContent } from './operators.js';
 
 const isTextNode = node => {
   const { nodeType } = node;
@@ -30,13 +30,9 @@ Element.append = (node, item) => {
 }
 
 export const Operator = (...funcs) => Builder((tasks, node) => {
-  const undo = [];
-  for (const {names, args} of tasks) {
-    for (const func of funcs) {
-      undo.push(func(node, names, args));
-    }
-  };
-  return performUndo.bind(null, undo);
+  for (const {names, args} of tasks)
+    for (const func of funcs)
+      func(node, names, args);
 });
 Operator.isOperator = Builder.isBuilder;
 Operator.apply = (node, operator) => Builder.launch(operator, node);

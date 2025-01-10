@@ -1,52 +1,90 @@
 import { Context } from '../common/context.js';
-import { throttle } from '../common/utils.js';
+import { throttle, objectHasOwn } from '../common/utils.js';
 export const currentHandler = Context();
 
-const handlers = (clearOnTrigger) => {
+const Handlers = () => {
   let list = new Set();
-  const add = handler => list.add(handler);
-  const trigger = throttle.sync((...args) => {
+  const add = func => func && list.add(func);
+  const trigger = throttle.sync(() => {
     const handler = currentHandler();
-    if (handler) { // some other handler is already running
-      const postponed = () => trigger(...args);
-      handler.sideEffects.push(postponed);
+    if (handler) {
+      // If some other handler is already running,
+      // schedule to run current trigger after that handler finishes.
+
+      // Example:
+      // Calling val(1) in `handler1` triggers `handler2`,
+      // but `handler2` will print 3, not 1.
+      //
+      // const val = r.val(0);
+      // r.effect(function handler1() {
+      //   if (val() == 0) { val(1); val(2); val(3); }
+      // });
+      // r.effect(function handler2() {
+      //   console.log(val());
+      // });
+
+      handler.postponed.add(trigger);
       return;
     }
 
     const currList = list;
-    if (clearOnTrigger) list = new Set(); // clear all handlers.
+    list = new Set(); // clear all handlers.
     // handlers will subscribe again upon an effect call.
     // unreachable handlers will not resubscribe.
-    for (const handler of currList) {
-      if (handler.isLocked()) add(handler);
-      else handler(...args);
+
+    // Example:
+    // The handler will be called exactly 3 times: when val() is 0, 1, and 2.
+    // The last 2 calls `val(3)` and `val(4)` will not trigger the handler:
+    // - condition `stop` causes an early return
+    // - an early return causes the handler to not resubscribe to `val` signal
+    // - this effectively unsubscribes the handler from its signals forever
+    //
+    // const val = r.val(0);
+    // let stop;
+    // r.effect(function handler() {
+    //   if (stop) return;
+    //   console.log('handler: ', val());
+    // });
+    //
+    // val(1); val(2);
+    // stop = true;
+    // val(3); val(4);
+
+    for (const func of currList) {
+      if (func.isLocked()) {
+        // the `func` is already running, so calling it will have no effect as
+        // it is decorated with `throttle.sync`; just resubscribe it instead.
+        add(func);
+      } else {
+        func();
+      }
     }
   });
-  return { get list() { return list; }, add, trigger };
+  return { add, trigger };
 }
 
-export const Signal = ({ handlers=handlers(), get, set }) => {
+export const Signal = ({ handlers=Handlers(), get, set }) => {
   const accessor = (...a) => {
     if (a.length === 0) {
       const handler = currentHandler();
-      if (handlers && handler) handlers.add(handler.func);
+      handlers?.add(handler?.func);
       return get();
     } else {
       const val = set(...a);
-      if (handlers) handlers.trigger(val);
+      handlers?.trigger();
       return val;
     }
   }
-  
+
   accessor.handlers = handlers;
   accessor[Signal.symbol] = true
   return accessor;
 }
 Signal.symbol = Symbol('Signal.symbol');
-Signal.isSignal = f => f && Object.hasOwn(f, Signal.symbol);
+Signal.isSignal = f => f && objectHasOwn(f, Signal.symbol);
 
 const Value = val => Signal({
-  handlers: handlers(true),
+  handlers: Handlers(),
   get: () => val,
   set: v => val = v
 });
@@ -58,9 +96,9 @@ const Reference = (target, key) => Signal({
 
 const effect = (func) => {
   const handler = throttle.sync(() => {
-    const ctx = { func: handler, sideEffects: [] };
+    const ctx = { func: handler, postponed: new Set() };
     const res = currentHandler.run(ctx, func, []);
-    for (const func of ctx.sideEffects) func();
+    for (const func of ctx.postponed) func();
     return res;
   });
   return handler();
@@ -73,12 +111,12 @@ const diff = (...args) => {
     let res = false;
     for (let i = 0, l = signals.length; i < l; i++) {
       const val = signals[i]();
-      res ||= val != values[i];
+      if (val !== values[i]) res = true;
       values[i] = val;
     }
     return res;
   }
-  r.effect(() => changed() && func(...values));
+  r.effect(() => changed() && func());
 }
 const derive = func => {
   const value = Value();
@@ -92,7 +130,7 @@ const proxy = func => new Proxy({}, {
   }
 });
 
-export const r = {
+export const r = window.r={
   val: Value,
   ref: Reference,
   derive: derive,

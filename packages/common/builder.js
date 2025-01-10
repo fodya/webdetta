@@ -2,18 +2,21 @@
 // https://github.com/frameorc/frameorc/blob/github/src/builder.js
 // Original author: Michael Lazarev
 
-export const Builder = (effect, tasks=[], names=[]) => new Proxy(
-  (...args) => args[0] === Builder.symbol
+import { objectHasOwn } from './utils.js';
+
+export const Builder = (effect, tasks=[], names=[]) => {
+  const call = (...args) => args[0] === Builder.symbol
     ? (args[0] = tasks, effect(...args))
-    : Builder(effect, [...tasks, { names, args }], []), {
-  get: (_, k) => typeof k === 'symbol'
+    : Builder(effect, [...tasks, { names, args }], []);
+  const get = (_, k) => typeof k === 'symbol'
     ? effect[k]
-    : Builder(effect, tasks, [...names, k]),
-  has: (_, k) => k === Builder.symbol ? true : k in effect
-});
+    : Builder(effect, tasks, [...names, k]);
+  call[Builder.symbol] = true;
+  return new Proxy(call, { get })
+}
 
 Builder.symbol = Symbol('Builder.symbol');
-Builder.isBuilder = (f) => typeof f == 'function' && Builder.symbol in f;
+Builder.isBuilder = (f) => f && objectHasOwn(f, Builder.symbol);
 Builder.launch = (f, ...args) => f(Builder.symbol, ...args);
 
 export default Builder;

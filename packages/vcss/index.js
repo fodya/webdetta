@@ -42,7 +42,7 @@ export const inspect = obj => {
 
 class Node {
   selector = ''
-  atrule = ''
+  query = ''
   important = false
   inline = false
   classname = null
@@ -64,7 +64,7 @@ class Node {
     if (!this.style) return;
     this.prevCls = this.cls;
     this.cls = escape(
-      (this.atrule ? '＠(' + ID('at', this.atrule) + ')' : '') +
+      (this.query ? '＠(' + ID('at', this.query) + ')' : '') +
       (this.selector ? '𝕊(' + this.selector + ')' : '') +
       (this.classname ? this.classname : '') +
       (this.important ? 'ǃ' : '')
@@ -72,18 +72,23 @@ class Node {
 
     const sel = selectorTmpl(this.selector, '.' + this.cls);
     const str = sel + styleStr(this.style, this.important);
-    this.css = this.atrule ? `${this.atrule} {${str}}` : str;
+    this.css = this.query ? `${this.query} {${str}}` : str;
   }
 }
 
+const unwrapStyle = obj => {
+  const res = {};
+  for (const [k, v] of Object.entries(obj)) res[k] = unwrapFn(v);
+  return res;
+}
 const StyleNode = (...args_) => new Node(function() {
   const args = args_.map(unwrapFn);
   if (args.length === 1) {
-    this.classname = '𝕀(' + ID('CSS', JSON.stringify(args[0])) + ')';
-    this.style = args[0];
+    this.style = unwrapStyle(args[0]);
+    this.classname = '𝕀(' + ID('CSS', JSON.stringify(this.style)) + ')';
   } else {
+    this.style = unwrapStyle(args[1]);
     this.classname = args[0];
-    this.style = args[1];
   }
 });
 const MethodNode = (methods, name, args_) => {
@@ -123,9 +128,9 @@ const operators = {
       }))
     );
   },
-  At: (atRule, ...args) =>
+  Query: (query, ...args) =>
     unwrap(args).map(node => node.fork(function() {
-      this.atrule = atRule;
+      this.query = query;
     })),
   Important: (...args) =>
     unwrap(args).map(node => node.fork(function() {
@@ -139,7 +144,10 @@ const operators = {
     const nodes = unwrap(args);
     return nodes.concat(new Node(function() {
       const keys = Object.keys(combinedStyle(nodes));
-      this.classname = '𝕋(' + ID('transition', param + keys.join(',')) + ')';
+      const param_ = unwrapFn(param);
+      this.classname = '𝕋(' +
+        ID('transition', param_ + keys.join(',')) +
+      ')';
       this.style = {
         transition: keys.map(k => param + ' ' + kebab(k)).join(',')
       };
@@ -153,10 +161,11 @@ const operators = {
       return ident + '% ' + styleStr(style, false);
     }).join('\n');
     const kfId = ID('keyframes', str);
-    const aId = ID('animation', param + kfId);
+    const param_ = unwrapFn(param);
+    const aId = ID('animation', param_ + kfId);
     this.classname = '𝔸(' + aId + ')';
     this.additionalCss = `@keyframes 𝔸${kfId} {\n${str}\n}`;
-    this.style = { animation: param + ' 𝔸' + kfId };
+    this.style = { animation: param_ + ' 𝔸' + kfId };
   })],
 }
 

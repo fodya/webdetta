@@ -1,7 +1,11 @@
+import { Context } from '../common/context.js';
 import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
-import { performUndo } from './operators.js';
+
+const ctx = Context();
+export const onRemove = f => ctx()?.onRemove.push(f);
+export const onDestroy = f => ctx()?.onDestroy.push(f);
 
 const listNodeWrapper = node => {
   const isFragment = node.nodeType === 11;
@@ -23,95 +27,58 @@ export const createList = (
   const root = document.createTextNode('');
   node.appendChild(root);
 
-  const data = {};
-  const elems = { [lRoot]: listNodeWrapper(root) };
-  const lNext = { [lRoot]: undefined };
-  const lPrev = { [lRoot]: undefined };
+  const elems = new Map();
+  elems.set(lRoot, listNodeWrapper(root));
+  const connect = (k, v) => elems.set(k, listNodeWrapper(renderItem(v, k)));
+  const move = (prevK, k) => elems.get(k).insertAfter(elems.get(prevK).lastNode);
+  const disconnect = (k) => (elems.get(k).remove(), elems.delete(k));
 
-  const connectItem = (k) => {
-    if (elems[k]) return;
-    elems[k] = listNodeWrapper(renderItem(data[k], k));
-  }
-  const moveItem = (k, nextK) => {
-    lNext[k] = nextK;
-    lPrev[nextK] = k;
-    elems[nextK].insertAfter(elems[k].lastNode);
-  }
-  const disconnectItem = (k) => {
-    const prev = lPrev[k];
-    const next = lNext[k];
-    if (prev) lNext[prev] = next;
-    if (next) lPrev[next] = prev;
-
-    delete lPrev[k];
-    delete lNext[k];
-    delete data[k];
-
-    elems[k].remove();
-    delete elems[k];
-  }
-
-  let prevKeys = new Set();
-  const updateKeys = (keys) => {
-    const currKeys = new Set(keys);
-    for (const k of prevKeys) if (!currKeys.has(k)) disconnectItem(k);
-    for (const k of keys) if (!prevKeys.has(k)) connectItem(k);
-    for (let i = 0, l = keys.length; i < l; i++) {
-      const k = i == 0 ? lRoot : keys[i - 1];
-      const nextK = keys[i];
-      if (lNext[k] != nextK || lPrev[nextK] != k) moveItem(k, nextK);
-    }
-    prevKeys = currKeys;
-  }
-
-  const processArray = (arr) => {
-    const keys = [];
-    for (let i = 0, l = arr.length; i < l; i++) {
-      const item = arr[i];
-      const key = keyFn(item, i, arr);
-      data[key] ??= item;
-      keys.push(key);
-    }
-    updateKeys(keys);
-  }
-  const processEntries = (entries) => {
-    const keys = [];
-    for (const [key, val] of entries) {
-      data[key] ??= val;
-      keys.push(key);
-    }
-    updateKeys(keys);
-  }
   r.effect(() => {
     const items = unwrapFn(itemsFn);
-    if (Array.isArray(items))
-      processArray(items);
-    else if (typeof items[Symbol.iterator] === 'function')
-      processEntries(Array.from(items.entries()));
-    else if (typeof items == 'object')
-      processEntries(Object.entries(items));
+    const entries = (
+      Array.isArray(items)
+      ? items.map((d, i, a) => [keyFn(d, i, a), d])
+      : typeof items[Symbol.iterator] === 'function'
+      ? Array.from(items.entries())
+      : typeof items == 'object'
+      ? Object.entries(items)
+      : null
+    );
+
+    const currKeys = new Set(entries.map(d => d[0]));
+    currKeys.add(lRoot);
+    for (const k of elems.keys()) {
+      if (!currKeys.has(k)) disconnect(k);
+    }
+    let prevK = lRoot;
+    for (const [k, v] of entries) {
+      if (!elems.has(k)) connect(k, v);
+      move(prevK, k);
+      prevK = k;
+    }
   });
 
   return () => {
-    for (const k of prevKeys) disconnectItem(k);
-    prevKeys.clear();
+    for (const k of Object.keys(elems)) disconnect(k);
   }
 }
 
 export const appendItems = (node, items) => {
-  const parentNode = node.parentNode;
   const children = [], operators = [];
   for (const item of items.flat(Infinity)) {
     if (Operator.isOperator(item)) operators.push(item);
     else children.push(Element.from(item))
   }
 
-  const undo = [];
-  for (const op of operators) undo.push(Operator.apply(parentNode, op));
-  for (const dom of children) parentNode.insertBefore(dom, node);
+  const parentNode = node.parentNode;
+  const onRemove = [], onDestroy = [];
+  ctx.run({ onRemove, onDestroy }, () => {
+    for (const op of operators) Operator.apply(parentNode, op);
+  });
+  node.after(...children);
 
   return () => {
-    performUndo(undo);
+    for (const f of onRemove) f();
     for (const dom of children) dom.remove();
   }
 }

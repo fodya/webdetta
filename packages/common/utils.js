@@ -84,7 +84,7 @@ throttle.Td = (delay, f) => {
 }
 
 export const isTemplateCall = args =>
-  Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
+  Array.isArray(args[0]) && objectHasOwn(args[0], 'raw');
 
 export const templateCallToArray = args => {
   if (!isTemplateCall(args)) return args;
@@ -101,13 +101,14 @@ export const base64ToText = base64 => {
   const bytes = Uint8Array.from(str, m => m.codePointAt(0));
   return new TextDecoder().decode(bytes);
 }
-
 export const textToBase64 = text => {
   const bytes = new TextEncoder().encode(text);
   const str = Array.from(bytes, b => String.fromCodePoint(b)).join("");
   return btoa(str);
 }
 
+export const objectHasOwn = (obj, key) =>
+  Object.prototype.hasOwnProperty.call(obj, key);
 export const objectMap = (...args) => {
   if (args.length == 1) {
     const [func] = args;
@@ -130,5 +131,6 @@ export const objectPick = (...args) => {
     return Object.fromEntries(keys.map(k => [k, obj[k]]));
   }
 }
+
 export const S = (...args) =>
   String.raw(...args).match(/\S+/g) ?? [];

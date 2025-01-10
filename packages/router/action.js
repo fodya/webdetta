@@ -1,39 +1,37 @@
+const rand = () => Math.random().toString(16).slice(2, 10);
 export const routerAction = (router, {
-  key='_ra',
+  key='_ra-' + rand(),
+  val=() => 1,
   endOnRouteChange=true,
   onBegin,
   onEnd
 }={}) => {
-  const id = Math.random().toString(16).slice(2, 10);
-  const ids = () => new Set(router.current().params[key]?.split?.('|') ?? []);
-  const setIds = (method, val) => {
-    const { key: route, params } = router.current();
-    router[method](route, { ...params, [key]: [...val].join('|') });
-  }
+  const isActive = () => !!router.current().params[key];
+
   const begin = () => {
-    const val = ids();
-    if (val.has(id)) return;
-    setIds('navigate', (val.add(id), val));
+    if (isActive()) return;
+    const { key: route, params } = router.current();
+    router.navigate(route, { ...params, [key]: val() });
   }
   const end = () => {
-    const val = ids();
-    if (!val.has(id)) return;
+    if (!isActive()) return;
     router.go(-1);
   }
 
   const currentRoute = router.current().key;
   let prevRoute;
   let prevActive;
-  router.listen(({key: route, params}) => {
-    const active = ids().has(id);
-    if (prevRoute != route && endOnRouteChange) {
+  router.listen(({ key: route, params }) => {
+    const active = isActive();
+    console.log({ route, prevRoute, active, prevActive });
+    if (prevRoute && prevRoute != route && endOnRouteChange) {
       end();
       onEnd();
-      prevRoute = route;
     } else if (prevActive != active) {
       (active ? onBegin : onEnd)();
-      prevActive = active;
     }
+    prevActive = active;
+    prevRoute = route;
   });
 
   return { begin, end };
