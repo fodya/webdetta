@@ -33,7 +33,7 @@ const Handlers = () => {
     // unreachable handlers will not resubscribe.
 
     // Example:
-    // The handler will be called exactly 2 times: when val() is 0 and 1.
+    // The handler will print 0, then 1.
     // - condition `stop` causes an early return
     // - an early return causes the handler to not resubscribe to `val` signal
     // - this effectively unsubscribes the handler from its signals
