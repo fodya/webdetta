@@ -18,6 +18,7 @@ const nodeWrapper = node => {
   const lastNode = isFragment ? children[children.length - 1] : node;
   const remove = () => {
     for (const item of children) item.remove();
+    // put removed nodes back into fragment
     if (isFragment) node.append(...children);
   }
   const after = (...nodes) => lastNode.after(...nodes);
@@ -71,15 +72,14 @@ export const createList = (
   });
 }
 
-export const createIf = (node, conditions) => {
+export const createDynamicFragment = (node, content) => {
   const root = document.createTextNode('');
   node.appendChild(root);
 
   const appendItems = (items) => {
     const nodes = [];
-    for (const item of items) {
-      if (Array.isArray(item)) appendItems(item);
-      else if (Operator.isOperator(item)) Operator.apply(node, item);
+    for (const item of [items].flat(Infinity)) {
+      if (Operator.isOperator(item)) Operator.apply(node, item);
       else nodes.push(nodeWrapper(Element.from(item)));
     }
     let last = nodeWrapper(root);
@@ -92,19 +92,14 @@ export const createIf = (node, conditions) => {
     });
   }
 
+  let value;
   let removeItems;
-  let index = -1;
   recurrent(() => {
-    const newIndex = conditions.findIndex(d => unwrapFn(d.cond));
-    if (index == newIndex) return;
+    const newValue = content();
+    if (value == newValue) return;
     removeItems?.();
-    const items = conditions[index = newIndex]?.args;
-    if (items) removeItems = removable(() => appendItems(items));
+    if (value = newValue) removeItems = removable(() => appendItems(value));
   });
 
-  // nested if support:
-  // el.if(cond1, el.if(cond2, el.Span('Test'))).
-  // when cond1() is false, nested if block should be removed.
-  // cond1(false) -> if#1.removeItems() -> if#2.onRemove() -> if#2.removeItems()
   onRemove(() => removeItems?.());
 }

@@ -1,37 +1,6 @@
 import { kebab } from '../common/dom.js';
-import { isTemplateCall, unwrapFn } from '../common/utils.js';
-
-const ID = (() => {
-  const store = {}, indexes = {};
-  return (type, value) => store[type + value] ??= (
-    indexes[type] ??= -1,
-    ++indexes[type]
-  );
-})();
-const chars = Object.fromEntries([...
-  ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕@＠`.matchAll(/../g)
-].map(v => v[0].split('')));
-const escape = str => {
-  let res = '';
-  for (const v of str) res += chars[v] ?? v;
-  return CSS.escape(res);
-}
-const selectorTmpl = (sel='', val='') => (
-  typeof sel == 'function' ? sel(val)
-  : sel.includes('&') ? sel.replaceAll('&', val)
-  : val + sel
-);
-const splitSelector = str => [str];
-const styleStr = (style, important) => `{${
-  Object.entries(style).map(([k, v]) =>
-    kebab(k) + ': ' + v + (important ? ' !important' : '') + ';'
-  ).join('')
-}}`;
-
-const processMethodArgs = args =>
-  isTemplateCall(args)
-  ? String.raw(...args).match(/\S+/g) ?? []
-  : args.flatMap(unwrapFn);
+import { unwrapFn } from '../common/utils.js';
+import { splitSelector, styleStr, processMethodArgs, selectorTmpl, escape, combinedStyle, ID } from './common.js';
 
 const NODES = Symbol('VCSS_NODES');
 export const inspect = obj => {
@@ -39,6 +8,17 @@ export const inspect = obj => {
   const wrapped = obj && NODES in obj;
   return wrapped ? inspect(obj[NODES]) : obj;
 }
+const unwrapStyle = obj => {
+  const res = {};
+  for (const [k, v] of Object.entries(obj)) res[k] = unwrapFn(v);
+  return res;
+}
+const unwrap = obj => (
+  (obj = inspect(obj)) &&
+  Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
+  : obj instanceof Node ? obj
+  : StyleNode(obj)
+);
 
 class Node {
   selector = ''
@@ -74,13 +54,16 @@ class Node {
     const str = sel + styleStr(this.style, this.important);
     this.css = this.query ? `${this.query} {${str}}` : str;
   }
+  insertRule(ctx) {
+    const { stylesheet, processedClasses } = ctx;
+    const { cls, css, additionalCss: css_ } = this;
+    if (processedClasses.has(cls)) return;
+    processedClasses.add(cls);
+    if (css) stylesheet.insertRule(css, stylesheet.cssRules.length);
+    if (css_) stylesheet.insertRule(css_, stylesheet.cssRules.length);
+  }
 }
 
-const unwrapStyle = obj => {
-  const res = {};
-  for (const [k, v] of Object.entries(obj)) res[k] = unwrapFn(v);
-  return res;
-}
 const StyleNode = (...args_) => new Node(function() {
   const args = args_.map(unwrapFn);
   if (args.length === 1) {
@@ -98,23 +81,6 @@ const MethodNode = (methods, name, args_) => {
     this.classname = name + '(' + args.join(',') + ')';
     this.style = methods[name](...args);
   });
-}
-
-const unwrap = obj => (
-  (obj = inspect(obj)) &&
-  Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
-  : obj instanceof Node ? obj
-  : StyleNode(obj)
-);
-
-const joinStyle = (sep, v1, v2) => v1 && v2 ? v1 + sep + v2 : v1 ?? v2;
-const combinedStyle = nodes => {
-  const res = {};
-  for (const node of nodes) {
-    node.calculate();
-    Object.assign(res, node.style ?? {});
-  }
-  return res;
 }
 
 const operators = {
@@ -200,44 +166,23 @@ const Stack = (wrap, methods) => {
   return stack([], []);
 }
 
-const Processor = ({ addStyle, addClass, removeClass }) => {
+export const Adapter = (wrapper) => ({ methods, enumerate=false }) => {
   const style = document.createElement('style');
   document.head.appendChild(style);
-  const stylesheet = style.sheet;
 
-  const processedNodes = {};
-  const insertRule = node => {
-    stylesheet.insertRule(node.css, stylesheet.cssRules.length);
-    if (node.additionalCss)
-      stylesheet.insertRule(node.additionalCss, stylesheet.cssRules.length);
+  const ctx = {
+    stylesheet: style.sheet,
+    processedClasses: new Set()
   }
-  const process = (elem, node) => {
-    node.calculate();
-    if (node.inline) addStyle(elem, node.style);
-    else {
-      if (!processedNodes[node.cls]) {
-        insertRule(node);
-        processedNodes[node.cls] = node
-      }
-      if (node.prevCls && node.cls != node.prevCls) removeClass?.(elem, node.prevCls);
-      addClass(elem, node.cls);
-    }
-  }
+
   const recalculate = () => {
     style.innerText = '';
     for (const node of Object.values(processedNodes)) {
       node.calculate();
-      insertRule(node);
+      node.insertRule(ctx);
     }
   }
 
-  return { process, recalculate }
-}
-
-export const Adapter = (options) => ({ methods, enumerate=false }) => {
-  const { wrapper, addClass, addStyle, removeClass } = options;
-  const { process, recalculate } = Processor({ addStyle, addClass, removeClass });
-  const wrap = (nodes) => wrapper(nodes, process);
-  const v = Stack(wrap, methods);
+  const v = Stack(wrapper.bind(null, ctx), methods);
   return { v, recalculate };
 }

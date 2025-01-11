@@ -2,7 +2,7 @@ import { kebab } from '../common/dom.js';
 import { err, unwrapFn, templateCallToArray } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
-import { createList, createIf, onRemove } from './dynamic.js';
+import { createList, createDynamicFragment, onRemove } from './dynamic.js';
 
 const toString = args => {
   let str = '';
@@ -28,7 +28,9 @@ const ifBuilder = (conditions, finalized=false) => {
     : key == 'else' ? (...args) =>
       ifBuilder([...conditions, { cond: true, args }], true)
     : null;
-  const op = ref(node => createIf(node, conditions));
+  const op = ref(node => createDynamicFragment(node, () =>
+    conditions.find(d => unwrapFn(d.cond))?.args
+  ));
   return Operator.extend(op, { get })
 };
 
@@ -37,8 +39,10 @@ const ref = Operator((node, _, args) => {
 });
 
 export const operators = {
-  append: (node, ...args) => Element.append(node, args),
   ref: ref,
+  append: (node, ...args) => Element.append(node, args),
+
+  dynamic: (func) => ref(node => createDynamicFragment(node, func)),
   list: (items, render, keyFn) => Element(':')(ref(node =>
     createList(node, items, render, keyFn)
   )),
@@ -54,7 +58,6 @@ export const operators = {
   })),
   on: Operator((node, names, args) => {
     let options;
-    const funcs = [];
     for (const arg of args) if (typeof arg != 'function') options = arg;
     for (const e of names) for (const f of args)
       if (typeof f == 'function') node.addEventListener(e, f, options);

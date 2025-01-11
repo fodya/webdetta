@@ -72,15 +72,20 @@ throttle.Ti = (delay, f) => throttle(async function () {
   return res;
 });
 throttle.Td = (delay, f) => {
-  let t, resolve, reject;
-  return function() {
+  let t = null, resolve, reject;
+  const throttled = function() {
     return new Promise((rs, rj) => {
       clearTimeout(t);
       reject?.();
       [resolve, reject] = [rs, rj];
-      t = setTimeout(() => resolve(f.apply(this, arguments)), delay);
+      t = setTimeout(() => {
+        t = null;
+        resolve(f.apply(this, arguments));
+      }, delay);
     }).catch(e => e);
   }
+  throttled.isLocked = () => t !== null;
+  return throttled;
 }
 
 export const isTemplateCall = args =>
