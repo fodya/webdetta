@@ -4,24 +4,26 @@ import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import { recurrent } from './operators.js';
 
-const ctx = Context();
-export const onRemove = f => ctx()?.onRemove.push(f);
+const onRemoveCtx = Context();
+export const onRemove = (f) => onRemoveCtx()?.push(f);
 const removable = func => {
   const onRemove = [];
-  ctx.run({ onRemove }, func);
+  onRemoveCtx.run(onRemove, func);
   return once(() => { for (const f of onRemove) f(); });
 }
 
 const nodeWrapper = node => {
   const isFragment = node.nodeType === 11;
   const children = isFragment ? Array.from(node.childNodes) : [node];
-  const lastNode = isFragment ? children[children.length - 1] : node;
+  const lastNode = isFragment ? children.at(-1) : node;
   const remove = () => {
-    for (const item of children) item.remove();
-    // put removed nodes back into fragment
+    // put removed nodes back into fragment. this will remove them from page
     if (isFragment) node.append(...children);
+    else node.remove();
   }
-  const after = (...nodes) => lastNode.after(...nodes);
+  const after = (...nodes) => {
+    lastNode.after(...nodes);
+  }
   return { children, after, remove };
 }
 
@@ -40,15 +42,35 @@ export const createList = (
   const root = document.createTextNode('');
   node.appendChild(root);
 
-  const elems = new Map();
-  elems.set(lRoot, nodeWrapper(root));
-  const connect = (k, v) => elems.set(k, nodeWrapper(renderItem(v, k)));
-  const move = (prevK, k) => elems.get(prevK).after(...elems.get(k).children);
-  const disconnect = (k) => (elems.get(k).remove(), elems.delete(k));
+  const elems = new Map([
+    [lRoot, nodeWrapper(root)]
+  ]);
+  const prev = new Map();
+  const next = new Map();
+
+  const connect = (k, dom) => {
+    elems.set(k, dom);
+  }
+  const move = (prevK, k) => {
+    if (prev.get(k) == prevK && next.get(prevK) == k) return;
+    prev.set(k, prevK);
+    next.set(prevK, k);
+    elems.get(prevK).after(...elems.get(k).children);
+  }
+  const disconnect = (k) => {
+    const prevK = prev.get(k);
+    const nextK = next.get(k);
+    prev.set(nextK, prevK);
+    next.set(prevK, nextK);
+    prev.delete(k);
+    next.delete(k);
+    elems.get(k).remove();
+    elems.delete(k);
+  }
 
   recurrent(() => {
     const items = unwrapFn(itemsFn);
-    const entries = (
+    const entries = new Map(
       Array.isArray(items)
       ? items.map((d, i, a) => [keyFn(d, i, a), d])
       : typeof items[Symbol.iterator] === 'function'
@@ -58,16 +80,20 @@ export const createList = (
       : null
     );
 
-    const currKeys = new Set(entries.map(d => d[0]));
-    currKeys.add(lRoot);
-    for (const k of elems.keys()) {
-      if (!currKeys.has(k)) disconnect(k);
-    }
+    for (const k of elems.keys())
+      if (k != lRoot && !entries.has(k))
+        disconnect(k);
+
     let prevK = lRoot;
+    let i = 0;
     for (const [k, v] of entries) {
-      if (!elems.has(k)) connect(k, v);
+      if (!elems.has(k)) {
+        const dom = renderItem(v, i, items);
+        connect(k, nodeWrapper(dom));
+      }
       move(prevK, k);
       prevK = k;
+      i++;
     }
   });
 }

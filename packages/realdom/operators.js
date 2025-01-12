@@ -42,12 +42,14 @@ export const operators = {
   ref: ref,
   append: (node, ...args) => Element.append(node, args),
 
-  dynamic: (func) => ref(node => createDynamicFragment(node, func)),
   list: (items, render, keyFn) => Element(':')(ref(node =>
     createList(node, items, render, keyFn)
   )),
   if: (cond, ...args) =>
     ifBuilder([{ cond, args }], false),
+  dynamicfragment: (func) => ref(node =>
+    createDynamicFragment(node, func)
+  ),
 
   attr: Operator((node, names, args) => recurrent(() => {
     const value = toString(args);
