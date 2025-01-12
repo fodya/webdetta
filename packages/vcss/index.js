@@ -20,6 +20,20 @@ const unwrap = obj => (
   : StyleNode(obj)
 );
 
+class StyleSheet {
+  processedClasses = new Set();
+  constructor(style) {
+    this.stylesheet = style.sheet;
+  }
+  insertNode(node) {
+    const { cls, css, additionalCss: css_ } = node;
+    if (this.processedClasses.has(cls)) return;
+    this.processedClasses.add(cls);
+    if (css) this.stylesheet.insertRule(css, this.stylesheet.cssRules.length);
+    if (css_) this.stylesheet.insertRule(css_, this.stylesheet.cssRules.length);
+  }
+}
+
 class Node {
   selector = ''
   query = ''
@@ -53,14 +67,6 @@ class Node {
     const sel = selectorTmpl(this.selector, '.' + this.cls);
     const str = sel + styleStr(this.style, this.important);
     this.css = this.query ? `${this.query} {${str}}` : str;
-  }
-  insertRule(ctx) {
-    const { stylesheet, processedClasses } = ctx;
-    const { cls, css, additionalCss: css_ } = this;
-    if (processedClasses.has(cls)) return;
-    processedClasses.add(cls);
-    if (css) stylesheet.insertRule(css, stylesheet.cssRules.length);
-    if (css_) stylesheet.insertRule(css_, stylesheet.cssRules.length);
   }
 }
 
@@ -170,19 +176,16 @@ export const Adapter = (wrapper) => ({ methods, enumerate=false }) => {
   const style = document.createElement('style');
   document.head.appendChild(style);
 
-  const ctx = {
-    stylesheet: style.sheet,
-    processedClasses: new Set()
-  }
+  const styleSheet = new StyleSheet(style);
 
   const recalculate = () => {
     style.innerText = '';
     for (const node of Object.values(processedNodes)) {
       node.calculate();
-      node.insertRule(ctx);
+      styleSheet.insertNode(node);
     }
   }
 
-  const v = Stack(wrapper.bind(null, ctx), methods);
+  const v = Stack(wrapper.bind(null, styleSheet), methods);
   return { v, recalculate };
 }

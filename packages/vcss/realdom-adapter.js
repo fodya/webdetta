@@ -5,7 +5,7 @@ import { recurrent } from '../realdom/operators.js';
 import { onRemove } from '../realdom/dynamic.js';
 import { Adapter } from './index.js';
 
-const addNode = (ctx, dom, node) => {
+const addNode = (styleSheet, dom, node) => {
   let prevCls = node.cls;
   node.calculate();
 
@@ -15,7 +15,7 @@ const addNode = (ctx, dom, node) => {
     return;
   }
 
-  node.insertRule(ctx);
+  styleSheet.insertNode(node);
   if (prevCls && node.cls != prevCls)
     dom.classList.replace(prevCls, node.cls);
   else

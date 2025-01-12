@@ -23,7 +23,6 @@ export const routerAction = (router, {
   let prevActive;
   router.listen(({ key: route, params }) => {
     const active = isActive();
-    console.log({ route, prevRoute, active, prevActive });
     if (prevRoute && prevRoute != route && endOnRouteChange) {
       end();
       onEnd();
