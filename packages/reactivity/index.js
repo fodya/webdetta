@@ -145,7 +145,7 @@ const proxy = target => {
     const val = r.val();
     return (...a) => {
       const t = target();
-      if (a.length == 0) return (val(), t[key]);
+      if (a.length == 0) return (val(), t?.[key]);
       if (t) t[key] = a[0];
       return val(a[0]);
     }
