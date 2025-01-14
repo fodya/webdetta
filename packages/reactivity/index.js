@@ -136,7 +136,7 @@ const derive = func => {
 }
 const await_ = func => {
   const value = Value();
-  const update = throttle.Td(0, p => Primise.resolve(p).then(value));
+  const update = throttle.Td(0, p => Promise.resolve(p).then(value));
   effect(() => update(func()));
   return value;
 }
