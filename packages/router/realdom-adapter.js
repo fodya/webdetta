@@ -7,20 +7,23 @@ const RouterRealdom = ({
   preloadPages=[]
 }) => {
   const paramVals = {};
-  const paramVal = (key, param) => (paramVals[key] ??= {})[param] ??= r.val();
+  const paramVal = (key, param) => (paramVals[key] ??= {})[param] ??= r.dval();
 
   const currentRoute = r.val();
-  const loadedRoutes = r.val({});
-  const listener = ({ key, value, params }) => {
+  const loadedRoutes = r.val(new Map());
+  const listener = ({ key, value: page, params }) => {
     const loaded = loadedRoutes();
-    console.log(key, params);
     const paramKeys = Object.keys({ ...params, ...(paramVals[key] ?? {}) });
-    for (const param of paramKeys)
+    for (const param of paramKeys) {
+      console.log('param', param, params[param]);
       paramVal(key, param)(params[param]);
+    }
 
-    loaded[key] ??= RouterRealdom.ctx.run(router, () =>
-      value(new Proxy({}, { get: (_, param) => paramVal(key, param) }))
-    );
+    if (!loaded.has(key)) {
+      const proxy = new Proxy({}, { get: (_, param) => paramVal(key, param) });
+      const dom = RouterRealdom.ctx.run(router, () => page(proxy));
+      loaded.set(key, { key, dom });
+    }
 
     loadedRoutes(loaded);
     currentRoute(key);
@@ -29,7 +32,7 @@ const RouterRealdom = ({
   router.attach();
 
   const container = el[':'](
-    el.list(() => Object.entries(loadedRoutes()), ([key, dom]) => {
+    el.list(loadedRoutes, ({ key, dom }) => {
       const isVisible = () => currentRoute() == key;
       return el.append(dom,
         el.style.display(() => isVisible() ? 'flex' : 'none'),

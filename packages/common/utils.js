@@ -66,10 +66,9 @@ throttle.T = (delay, f) => throttle(async function () {
   await sleep(delay);
   return await f.apply(this, arguments);
 });
-throttle.Ti = (delay, f) => throttle(async function () {
-  const res = await f.apply(this, arguments);
-  await sleep(delay);
-  return res;
+throttle.Ti = (delay, f) => throttle(function () {
+  const res = f.apply(this, arguments);
+  return Promise.resolve(res).then(d => sleep(delay).then(() => d));
 });
 throttle.Td = (delay, f) => {
   let t = null, resolve, reject;

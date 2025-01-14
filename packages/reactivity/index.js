@@ -1,6 +1,7 @@
 import { Context } from '../common/context.js';
 import { throttle, objectHasOwn } from '../common/utils.js';
 export const currentHandler = Context();
+export const effectsAbortSignal = Context();
 
 const Handlers = () => {
   let list = new Set();
@@ -64,15 +65,18 @@ const Handlers = () => {
   return { add, trigger };
 }
 
+const SKIP = Symbol('SKIP');
 export const Signal = ({ handlers=Handlers(), get, set }) => {
+  const ctx = { skip: false };
+  set = set.bind(ctx);
   const accessor = (...a) => {
     if (a.length === 0) {
-      const handler = currentHandler();
-      handlers?.add(handler?.func);
+      handlers?.add(currentHandler()?.func);
       return get();
     } else {
+      ctx.skip = false;
       const val = set(...a);
-      handlers?.trigger();
+      if (!ctx.skip) handlers?.trigger();
       return val;
     }
   }
@@ -87,53 +91,76 @@ const Value = val => Signal({
   get: () => val,
   set: v => val = v
 });
-const Reference = (target, key) => Signal({
-  handlers: null,
-  get: () => target()[key],
-  set: v => target()[key] = v
+const DiffValue = val => Signal({
+  handlers: Handlers(),
+  get: () => val,
+  set(v) { this.skip = val === v; return val = v; }
 });
 
-const effect = (func) => {
-  const handler = throttle.sync(() => {
-    const ctx = { func: handler, postponed: new Set() };
-    const res = currentHandler.run(ctx, func, []);
-    for (const func of ctx.postponed) func();
-    return res;
+const withHandler = (func, handlerCtx) =>
+  (...args) => currentHandler.run(handlerCtx, func, ...args);
+
+const effect = func => {
+  let ctx, handler, aborted;
+  const wrappedFunc = withHandler(func, ctx = {
+    postponed: new Set(),
+    func: handler = throttle.sync(() => {
+      if (aborted) return;
+      const res = wrappedFunc();
+      for (const func of ctx.postponed) func();
+      ctx.postponed.clear();
+      return res;
+    })
   });
+  effectsAbortSignal()?.addEventListener('abort', () => aborted = true);
   return handler();
 }
-const diff = (...args) => {
-  const signals = args.slice(0, -1);
-  const func = args.at(-1);
-  const values = [];
-  const changed = () => {
-    let res = false;
-    for (let i = 0, l = signals.length; i < l; i++) {
-      const val = signals[i]();
-      if (val !== values[i]) res = true;
-      values[i] = val;
-    }
-    return res;
+const isolate = func => withHandler(func, null);
+const scope = func => {
+  let controller;
+  const handler = () => {
+    if (controller?.signal?.aborted) return;
+    controller?.abort();
+    controller = new AbortController();
+    return effectsAbortSignal.run(controller.signal, func);
   }
-  r.effect(() => changed() && func());
+  handler.abort = () => controller?.abort();
+  effectsAbortSignal()?.addEventListener('abort', handler.abort);
+  return handler;
 }
+
 const derive = func => {
   const value = Value();
   effect(() => value(func()));
   return value;
 }
-const proxy = func => new Proxy({}, {
-  get: (_, key) => (...a) => {
-    const target = func();
-    return a.length === 0 ? target[key] : (target[key] = a[0]);
+const await_ = func => {
+  const value = Value();
+  const update = throttle.Td(0, p => p.then(value));
+  effect(() => update(func()));
+  return value;
+}
+const proxy = target => {
+  const ref = (key) => {
+    const val = r.derive(() => target()?.[key]);
+    return (...a) => {
+      if (a.length == 0) return val();
+      const t = target();
+      return val(t ? (t[key] = a[0]) : a[0]);
+    }
   }
-});
+  const values = {};
+  const get = (_, key) => values[key] ??= ref(key);
+  return new Proxy({}, { get });
+}
 
 export const r = window.r={
   val: Value,
-  ref: Reference,
-  derive: derive,
-  diff: diff,
+  dval: DiffValue,
+  scope: scope,
+  isolate: isolate,
   effect: effect,
+  derive: derive,
+  await: await_,
   proxy: proxy,
 }

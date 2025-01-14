@@ -2,6 +2,7 @@ import Builder from '../common/builder.js';
 import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent } from './operators.js';
+import { domAppend, domRemove } from './dynamic.js';
 
 const isTextNode = node => {
   const { nodeType } = node;
@@ -25,7 +26,11 @@ Element.append = (node, item) => {
   else if (Array.isArray(item)) for (const d of item) Element.append(node, d);
   else if (Operator.isOperator(item)) Operator.apply(node, item);
   else if (isTextNode(node)) Operator.apply(node, textContent(item));
-  else node.appendChild(Element.from(item));
+  else {
+    const dom = Element.from(item);
+    node.appendChild(dom);
+    domAppend.trigger(dom);
+  }
   return node;
 }
 

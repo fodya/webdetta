@@ -153,8 +153,9 @@ corners.R  = corners.r  = [...corners.tr, ...corners.br];
 const some = (args, r) => {
   for (let i = 0; i < args.length; i++) {
     const av = args[i];
+    if (av == NaN) continue;
     const v = typeof r == 'object' ? r[av] : r(av);
-    if (v) return (args.splice(i, 1)[0], v);
+    if (v) return (args[i] = NaN, v);
   }
   return null;
 }
@@ -298,13 +299,13 @@ export const Methods = cfg => {
     ...def(sides,   _=>'m'+_,  _=>(v) => ({
       [`margin${_}`]: length[v] ?? size(v)
     })),
-    ...def(corners, _=>'r'+_,  _=>(v) => ({
-      [`border${_}Radius`]: size(v)
-    })),
     ...def(sides,   _=>'br'+_, _=>(...a) => ({
       [`border${_}Color`]: some(a, color) ?? 'currentColor',
       [`border${_}Width`]: some(a, size) ?? '1px',
       [`border${_}Style`]: some(a, borderStyle) ?? 'solid'
+    })),
+    ...def(corners, _=>'r'+_,  _=>(v) => ({
+      [`border${_}Radius`]: size(v)
     })),
 
     // outline

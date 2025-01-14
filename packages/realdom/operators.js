@@ -2,7 +2,10 @@ import { kebab } from '../common/dom.js';
 import { err, unwrapFn, templateCallToArray } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
-import { createList, createDynamicFragment, onRemove } from './dynamic.js';
+import {
+  createIf, createList, createDynamicFragment,
+  onOperatorDisable, domAppend, domRemove
+} from './dynamic.js';
 
 const toString = args => {
   let str = '';
@@ -13,26 +16,12 @@ const toString = args => {
 export const recurrent = (func) => {
   let stopped;
   r.effect(() => (!stopped) && func());
-  onRemove(() => { stopped = true; });
+  onOperatorDisable(() => { stopped = true; });
 }
 
 export const textContent = Operator((node, _, args) => r.effect(() => {
   node.textContent = toString(args);
 }));
-
-const ifBuilder = (conditions, finalized=false) => {
-  const get = (_, key) =>
-    finalized && (key == 'elif' || key == 'else') ? err`Cannot get: ${key}`
-    : key == 'elif' ? (cond, ...args) =>
-      ifBuilder([...conditions, { cond, args }], false)
-    : key == 'else' ? (...args) =>
-      ifBuilder([...conditions, { cond: true, args }], true)
-    : null;
-  const op = ref(node => createDynamicFragment(node, () =>
-    conditions.find(d => unwrapFn(d.cond))?.args
-  ));
-  return Operator.extend(op, { get })
-};
 
 const ref = Operator((node, _, args) => {
   for (const func of args) func(node);
@@ -42,19 +31,21 @@ export const operators = {
   ref: ref,
   append: (node, ...args) => Element.append(node, args),
 
-  list: (items, render, keyFn) => Element(':')(ref(node =>
-    createList(node, items, render, keyFn)
-  )),
-  if: (cond, ...args) =>
-    ifBuilder([{ cond, args }], false),
-  dynamicfragment: (func) => ref(node =>
-    createDynamicFragment(node, func)
-  ),
+  if: (cond, ...args) => createIf().elif(cond, args),
+  list: (items, render, keyFn) => createList(items, render, keyFn),
+  dynamicfragment: (func) => createDynamicFragment(func),
+
+  lifecycle: Operator((node, names, args) => {
+    for (const name of names) {
+      if (name == 'append') for (const f of args) domAppend.on(node, f);
+      if (name == 'remove') for (const f of args) domRemove.on(node, f);
+    }
+  }),
 
   attr: Operator((node, names, args) => recurrent(() => {
     const value = toString(args);
     for (const name of names) node.setAttribute(name, value);
-    onRemove(() => {
+    onOperatorDisable(() => {
       for (const name of names) node.removeAttribute(name);
     });
   })),
@@ -63,7 +54,7 @@ export const operators = {
     for (const arg of args) if (typeof arg != 'function') options = arg;
     for (const e of names) for (const f of args)
       if (typeof f == 'function') node.addEventListener(e, f, options);
-    onRemove(() => {
+    onOperatorDisable(() => {
       for (const e of names) for (const f of args)
         if (typeof f == 'function') node.removeEventListener(e, f);
     });
@@ -72,21 +63,24 @@ export const operators = {
     const value = Boolean(unwrapFn(args[0]));
     if (!value) return;
     node.classList.add(...names.map(kebab));
-    onRemove(() => {
+    onOperatorDisable(() => {
       node.classList.remove(...names.map(kebab));
     });
   })),
   style: Operator((node, names, args) => recurrent(() => {
     const value = toString(args);
-    for (const name of names) node.style.setProperty(kebab(name), value);
-    onRemove(() => {
+    for (const name of names) {
+      if (name[0] == '-') node.style.setProperty(kebab(name), value);
+      else node.style[name] = value; // slightly faster
+    }
+    onOperatorDisable(() => {
       for (const name of names) node.style.removeProperty(kebab(name));
     });
   })),
   prop: Operator((node, names, args) => recurrent(() => {
     const value = unwrapFn(args[0]);
     for (const name of names) node[name] = value;
-    onRemove(() => {
+    onOperatorDisable(() => {
       for (const name of names) delete node[name];
     });
   }))

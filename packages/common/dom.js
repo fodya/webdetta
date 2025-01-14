@@ -1,4 +1,9 @@
-export const kebab = s => s.replaceAll(/[A-Z]/g, c => '-' + c.toLowerCase());
+import { toFn } from './utils.js';
+const DEBUG = 0;
+
+const regexAZ = /[A-Z]/g;
+const kebabCache = {};
+export const kebab = s => kebabCache[s] ??= s.replaceAll(regexAZ, c => '-' + c.toLowerCase());
 
 export const copyText = async text => {
   try {
@@ -20,14 +25,42 @@ export const copyText = async text => {
   }
 }
 
-const a = document.createElement("a");
-document.head.appendChild(a);
-a.style = "display: none";
+const dummyDiv = document.createElement('div');
+Object.assign(dummyDiv.style, {
+  position: 'fixed',
+  left: '-99999px',
+  top: '-99999px',
+  visibility: 'hidden',
+  pointerEvents: 'none',
+  ...(DEBUG ? {
+    zIndex: 9999,
+    visibility: 'visible',
+    top: 0,
+    left: 0,
+    background: 'white',
+  } : {})
+});
+
+export const measureText = (text, style={}) => {
+  document.documentElement.append(dummyDiv);
+  const keys = style instanceof CSSStyleDeclaration ? style : Object.keys(style);
+  for (const k of ['width', 'height']) dummyDiv.style[k] = '';
+  for (const k of keys) dummyDiv.style[k] = style[k];
+  dummyDiv.textContent = text;
+  const zoom = +style.zoom || 1;
+  const { scrollHeight: height, scrollWidth: width } = dummyDiv;
+  dummyDiv.remove();
+  return { width, height };
+}
+
+const dummyAnchor = document.createElement("a");
+document.head.append(dummyAnchor);
+dummyAnchor.style = "display: none";
 export const saveBlob = (filename, blob) => {
   const url = window.URL.createObjectURL(blob);
-  a.href = url;
-  a.download = filename;
-  a.click();
+  dummyAnchor.href = url;
+  dummyAnchor.download = filename;
+  dummyAnchor.click();
   window.URL.revokeObjectURL(url);
 };
 
@@ -57,11 +90,25 @@ export const colorToHex = (colorStr) => {
 
 export const forceReflow = elem => { elem.offsetHeight; }
 
-export const setLayoutWidth = (width, body=document.body) => {
+export const setLayoutWidth = ({
+  width,
+  container=document.body,
+  innerWidth=()=>window.innerWidth,
+  innerHeight=()=>window.innerHeight,
+  aspectRatio=null,
+}) => {
+  innerWidth = toFn(innerWidth);
+  width = toFn(width);
   const update = () => {
-    const val = typeof width == 'function' ? width() : width;
-    body.style.zoom = window.innerWidth / val;
+    const ar = innerWidth() / innerHeight();
+    const zoom = innerWidth() / width();
+    container.style.zoom =
+      !aspectRatio ? zoom :
+      ar > aspectRatio ? Math.min(zoom, zoom * aspectRatio / ar) :
+      zoom < 1 || ar < aspectRatio ? zoom :
+      1;
+    container.style.width = width() + 'px';
   }
   window.addEventListener('resize', update);
-  update();
+  window.addEventListener('DOMContentLoaded', update);
 }

@@ -2,7 +2,7 @@ import { el } from '../realdom/index.js';
 import { kebab } from '../common/dom.js';
 import { r } from '../reactivity/index.js';
 import { recurrent } from '../realdom/operators.js';
-import { onRemove } from '../realdom/dynamic.js';
+import { onOperatorDisable } from '../realdom/dynamic.js';
 import { Adapter } from './index.js';
 
 const addNode = (styleSheet, dom, node) => {
@@ -34,7 +34,7 @@ const removeNode = (dom, node) => {
 export default Adapter((ctx, nodes) =>
   el.ref(dom => recurrent(() => {
     for (const node of nodes) addNode(ctx, dom, node);
-    onRemove(() => {
+    onOperatorDisable(() => {
       for (const node of nodes) removeNode(dom, node);
     });
   }))
