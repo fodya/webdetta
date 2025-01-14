@@ -93,15 +93,16 @@ export const forceReflow = elem => { elem.offsetHeight; }
 export const setLayoutWidth = ({
   width,
   container=document.body,
-  innerWidth=()=>window.innerWidth,
-  innerHeight=()=>window.innerHeight,
+  containerWidth=()=>window.outerWidth,
+  containerHeight=()=>window.outerHeight,
   aspectRatio=null,
 }) => {
-  innerWidth = toFn(innerWidth);
+  containerWidth = toFn(containerWidth);
+  containerHeight = toFn(containerHeight);
   width = toFn(width);
   const update = () => {
-    const ar = innerWidth() / innerHeight();
-    const zoom = innerWidth() / width();
+    const ar = containerWidth() / containerHeight();
+    const zoom = containerWidth() / width();
     container.style.zoom =
       !aspectRatio ? zoom :
       ar > aspectRatio ? Math.min(zoom, zoom * aspectRatio / ar) :
