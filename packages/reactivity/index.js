@@ -142,11 +142,12 @@ const await_ = func => {
 }
 const proxy = target => {
   const ref = (key) => {
-    const val = r.derive(() => target()?.[key]);
+    const val = r.val();
     return (...a) => {
-      if (a.length == 0) return val();
       const t = target();
-      return val(t ? (t[key] = a[0]) : a[0]);
+      if (a.length == 0) return (val(), t[key]);
+      if (t) t[key] = a[0];
+      return val(a[0]);
     }
   }
   const values = {};
