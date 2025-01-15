@@ -5,7 +5,7 @@ export const effectsAbortSignal = Context();
 
 const Handlers = () => {
   let list = new Set();
-  const add = func => func && list.add(func);
+  const add = handler => handler && list.add(handler);
   const trigger = throttle.sync(() => {
     const handler = currentHandler();
     if (handler) {
@@ -24,7 +24,7 @@ const Handlers = () => {
       //   console.log(val());
       // });
 
-      handler.postponed.add(trigger);
+      (handler.postponed ??= new Set()).add(trigger);
       return;
     }
 
@@ -71,7 +71,7 @@ export const Signal = ({ handlers=Handlers(), get, set }) => {
   set = set.bind(ctx);
   const accessor = (...a) => {
     if (a.length === 0) {
-      handlers?.add(currentHandler()?.func);
+      handlers?.add(currentHandler());
       return get();
     } else {
       ctx.skip = false;
@@ -101,17 +101,16 @@ const withHandler = (func, handlerCtx) =>
   (...args) => currentHandler.run(handlerCtx, func, ...args);
 
 const effect = func => {
-  let ctx, handler, aborted;
-  const wrappedFunc = withHandler(func, ctx = {
-    postponed: new Set(),
-    func: handler = throttle.sync(() => {
-      if (aborted) return;
-      const res = wrappedFunc();
-      for (const func of ctx.postponed) func();
-      ctx.postponed.clear();
-      return res;
-    })
+  let aborted;
+  const handler = throttle.sync(() => {
+    if (aborted) return;
+    const res = wrappedFunc();
+    for (const func of postponed) func();
+    postponed.clear();
+    return res;
   });
+  const postponed = handler.postponed = new Set();
+  const wrappedFunc = withHandler(func, handler);
   effectsAbortSignal()?.addEventListener('abort', () => aborted = true);
   return handler();
 }
