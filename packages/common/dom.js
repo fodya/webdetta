@@ -93,8 +93,8 @@ export const forceReflow = elem => { elem.offsetHeight; }
 export const setLayoutWidth = ({
   width,
   container=document.body,
-  containerWidth=()=>window.outerWidth,
-  containerHeight=()=>window.outerHeight,
+  containerWidth=()=>window.innerWidth,
+  containerHeight=()=>window.innerHeight,
   aspectRatio=null,
 }) => {
   containerWidth = toFn(containerWidth);
