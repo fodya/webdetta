@@ -40,7 +40,6 @@ Object.assign(dummyDiv.style, {
     background: 'white',
   } : {})
 });
-
 export const measureText = (text, style={}) => {
   document.documentElement.append(dummyDiv);
   const keys = style instanceof CSSStyleDeclaration ? style : Object.keys(style);
@@ -54,9 +53,9 @@ export const measureText = (text, style={}) => {
 }
 
 const dummyAnchor = document.createElement("a");
-document.head.append(dummyAnchor);
 dummyAnchor.style = "display: none";
 export const saveBlob = (filename, blob) => {
+  document.documentElement.append(dummyAnchor);
   const url = window.URL.createObjectURL(blob);
   dummyAnchor.href = url;
   dummyAnchor.download = filename;

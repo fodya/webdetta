@@ -102,6 +102,7 @@ const withHandler = (func, handlerCtx) =>
 
 const effect = func => {
   let aborted;
+  effectsAbortSignal()?.addEventListener('abort', () => aborted = true);
   const handler = throttle.sync(() => {
     if (aborted) return;
     const res = wrappedFunc();
@@ -111,7 +112,6 @@ const effect = func => {
   });
   const postponed = handler.postponed = new Set();
   const wrappedFunc = withHandler(func, handler);
-  effectsAbortSignal()?.addEventListener('abort', () => aborted = true);
   return handler();
 }
 const isolate = func => withHandler(func, null);
