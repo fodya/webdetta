@@ -272,8 +272,8 @@ export const Methods = cfg => {
       return { textDecoration: st + (st != 'none' ? ' underline' : '') };
     },
     ta: (v) => ({ textAlign: textAlign[v] ?? v }),
-    tc: (c) => ({ color: color(c) }),
-    tf: (f) => ({ fontFamily: fontFamily(v) }),
+    tc: (v) => ({ color: color(v) }),
+    tf: (v) => ({ fontFamily: fontFamily(v) }),
     tl: (v) => ({ lineHeight: lineHeight(v) }),
     ts: (v) => ({ fontSize: textSize(v) }),
     tt: (v) => ({ textTransform: textTransform[v] ?? v }),
