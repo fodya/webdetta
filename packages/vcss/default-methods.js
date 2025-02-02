@@ -209,6 +209,7 @@ export const Methods = cfg => {
     textSize=v=>v,
     lineHeight=v=>v,
     shadow=v=>v,
+    fontFamily=v=>v,
     fontWeight=v=>v
   } = resolve;
 
@@ -272,7 +273,7 @@ export const Methods = cfg => {
     },
     ta: (v) => ({ textAlign: textAlign[v] ?? v }),
     tc: (c) => ({ color: color(c) }),
-    tf: (f) => ({ fontFamily: f }),
+    tf: (f) => ({ fontFamily: fontFamily(v) }),
     tl: (v) => ({ lineHeight: lineHeight(v) }),
     ts: (v) => ({ fontSize: textSize(v) }),
     tt: (v) => ({ textTransform: textTransform[v] ?? v }),
