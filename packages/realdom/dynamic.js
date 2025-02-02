@@ -22,15 +22,6 @@ const domHandlers = () => {
 export const domAppend = domHandlers();
 export const domRemove = domHandlers();
 
-const elementAppendAfter = (refNode, node) => {
-  refNode.after(node);
-  domAppend.trigger(node);
-}
-const elementRemove = (node) => {
-  node.remove();
-  domRemove.trigger(node);
-}
-
 const operatorDisableCtx = Context();
 export const onOperatorDisable = (f) => operatorDisableCtx()?.push(f);
 
@@ -63,7 +54,7 @@ export const createList = (
     if (prev.get(k) == prevK && next.get(prevK) == k) return;
     prev.set(k, prevK);
     next.set(prevK, k);
-    elementAppendAfter(elems.get(prevK), elems.get(k));
+    Element.append({ after: elems.get(prevK) }, elems.get(k));
   }
   const disconnect = (k) => {
     const prevK = prev.get(k);
@@ -74,7 +65,7 @@ export const createList = (
     next.delete(k);
     scopes.get(k).abort();
     scopes.delete(k);
-    elementRemove(elems.get(k));
+    Element.remove(elems.get(k));
     elems.delete(k);
   }
 
@@ -136,7 +127,7 @@ const createItems = (func) => {
     const parentNode = root.parentNode;
     let last = root;
     for (const child of children) {
-      elementAppendAfter(last, child);
+      Element.append({ after: last }, child);
       last = child;
     }
     operatorDisableCtx.run(operatorsDisable, () => {
@@ -147,7 +138,7 @@ const createItems = (func) => {
 
   const remove = () => {
     lastValue = null;
-    for (const child of children) elementRemove(child);
+    for (const child of children) Element.remove(child);
     for (const f of operatorsDisable) f();
     children.length = operators.length = operatorsDisable.length = 0;
   }
