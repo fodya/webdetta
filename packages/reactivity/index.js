@@ -114,7 +114,7 @@ const effect = func => {
   const wrappedFunc = withHandler(func, handler);
   return handler();
 }
-const isolate = func => withHandler(func, null);
+const detach = func => withHandler(func, null)();
 const scope = func => {
   let controller;
   const handler = () => {
@@ -158,7 +158,7 @@ export const r = window.r={
   val: Value,
   dval: DiffValue,
   scope: scope,
-  isolate: isolate,
+  detach: detach,
   effect: effect,
   derive: derive,
   await: await_,

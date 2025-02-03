@@ -15,7 +15,6 @@ const RouterRealdom = ({
     const loaded = loadedRoutes();
     const paramKeys = Object.keys({ ...params, ...(paramVals[key] ?? {}) });
     for (const param of paramKeys) {
-      console.log('param', param, params[param]);
       paramVal(key, param)(params[param]);
     }
 

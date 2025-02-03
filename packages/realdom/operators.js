@@ -28,8 +28,9 @@ const ref = Operator((node, _, args) => {
 });
 
 export const operators = {
-  ref: ref,
   append: (node, ...args) => Element.append(node, args),
+  remove: (node) => Element.remove(node),
+  ref: ref,
 
   if: (cond, ...args) => createIf().elif(cond, args),
   list: (items, render, keyFn) => createList(items, render, keyFn),
