@@ -116,9 +116,12 @@ const visibility = {
   c: 'collapse',
 }
 const wordBreak = {
+  n: 'keep-all',
   k: 'keep-all',
   w: 'break-word',
+  bw: 'break-word',
   a: 'break-all',
+  ba: 'break-all',
 }
 const whiteSpace = {
   nw: 'nowrap',
@@ -239,6 +242,18 @@ export const Methods = cfg => {
     col: (...a) => ({
       display: 'flex',
       flexDirection: 'column',
+      alignItems: some(a, flexAlignH),
+      justifyContent: some(a, flexAlignV)
+    }),
+    rowr: (...a) => ({
+      display: 'flex',
+      flexDirection: 'row-reverse',
+      justifyContent: some(a, flexAlignH),
+      alignItems: some(a, flexAlignV)
+    }),
+    colr: (...a) => ({
+      display: 'flex',
+      flexDirection: 'column-reverse',
       alignItems: some(a, flexAlignH),
       justifyContent: some(a, flexAlignV)
     }),
