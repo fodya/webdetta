@@ -38,7 +38,8 @@ export default async ({
   certsPath='',
   certbotEmail='',
   routes='',
-  port=80,
+  httpPort=80,
+  httpsPort=443,
   local=false,
   ssh,
 }) => {
@@ -106,7 +107,8 @@ export default async ({
     ).then(r => r.join('\n'))
   });
   await fileMap(IN('./tmpl/docker-compose.yml'), OUT('./docker-compose.yml'), {
-    $PORT: port,
+    $HTTP_PORT: httpPort,
+    $HTTPS_PORT: httpsPort,
     $LOCAL_CA: local ? 1 : 0,
     $NGINX_SECRETS: certsPath,
     $CERTBOT_EMAIL: certbotEmail,
