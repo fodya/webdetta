@@ -17,5 +17,7 @@ services:
     volumes:
       $VOLUMES
       - $NGINX_SECRETS:/etc/letsencrypt
+    ports:
+      $PORT:80
     restart: unless-stopped
     network_mode: host

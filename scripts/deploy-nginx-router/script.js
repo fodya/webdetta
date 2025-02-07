@@ -35,11 +35,12 @@ function splitString(str, delimeter, brackets) {
 }
 
 export default async ({
-  certsPath,
-  certbotEmail,
-  routes,
+  certsPath='',
+  certbotEmail='',
+  routes='',
+  port=80,
+  local=false,
   ssh,
-  local
 }) => {
   const output = await tmpDir();
   const IN = p => path.join(import.meta.dirname, p);
@@ -105,6 +106,7 @@ export default async ({
     ).then(r => r.join('\n'))
   });
   await fileMap(IN('./tmpl/docker-compose.yml'), OUT('./docker-compose.yml'), {
+    $PORT: port,
     $LOCAL_CA: local ? 1 : 0,
     $NGINX_SECRETS: certsPath,
     $CERTBOT_EMAIL: certbotEmail,
