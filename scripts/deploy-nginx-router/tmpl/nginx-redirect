@@ -1,0 +1,5 @@
+location $PARAMS /$PATH {
+  $SETTINGS
+
+  return 301 $TARGET_URL$request_uri;
+}
