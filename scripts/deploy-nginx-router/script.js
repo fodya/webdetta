@@ -54,7 +54,7 @@ export default async ({
   const $VOLUMES = [];
   routes = splitString(routes.replaceAll(';', '\n'), '\n', '{}').map(line => {
     if (!(line = line.trim())) return;
-    
+
     const args = splitString(line, ' ', '{}');
     if (args.length < 2 || args.length > 4) throw new Error(
       `Invalid route: ${line}.\n`
@@ -103,14 +103,14 @@ export default async ({
   for (const { type, modifiers, route, target, settings } of routes) {
     const url = toURL(route);
     const domain = url.host;
-    const pathname = trimSlash(url.href.replace(url.origin, ''));
+    const pathname = url.href.replace(url.origin, '').replace(/^$/, '/');
     if (!domain) throw new Error(`Invalid route: ${route}`);
     const targetUrl = toURL(target);
 
     const locations = $SERVERS[domain] ??= [];
     if (type == 'proxy') {
       locations.push(await fileSubst(IN(`./tmpl/nginx-proxy`), {
-        $PATH: pathname,
+        $PATH: trimSlash(pathname),
         $PROXY_URL: trimSlash(targetUrl.toString()),
         $SETTINGS: settings.join('\n')
       }));

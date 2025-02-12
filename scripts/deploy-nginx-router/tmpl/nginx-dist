@@ -1,4 +1,4 @@
-location $PARAMS /$PATH {
+location $PARAMS $PATH {
   alias /var/www/$DIST/;
   index index.html;
 
