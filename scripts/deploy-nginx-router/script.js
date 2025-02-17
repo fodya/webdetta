@@ -12,12 +12,13 @@ const fileSubst = async (file, env) => {
 }
 const fileMap = async (fileIn, fileOut, env) =>
   await fs.writeFile(fileOut, await fileSubst(fileIn, env));
-const toURL = (str) => {
+const toURL = str => {
   if (str.startsWith('/')) return null;
   try { return new URL(str); } catch (e) {};
   try { return new URL('https://' + str); } catch (e) {};
 }
-const trimSlash = (str) => str.replace(/(^\/)|(\/$)/g, '');
+const trimSlash = str => str.replace(/(^\/)|(\/$)/g, '');
+const normRegex = str => str + (str.endsWith('$') ? '$' : '');
 
 function splitByFirst(str, delimeter) {
   const index = str.indexOf(delimeter);
@@ -110,7 +111,7 @@ export default async ({
     const locations = $SERVERS[domain] ??= [];
     if (type == 'proxy') {
       locations.push(await fileSubst(IN(`./tmpl/nginx-proxy`), {
-        $PATH: trimSlash(pathname),
+        $PATH: normRegex(trimSlash(pathname)),
         $PROXY_URL: trimSlash(targetUrl.toString()),
         $SETTINGS: settings.join('\n')
       }));
@@ -133,7 +134,7 @@ export default async ({
     if (type == 'redirect') {
       const dist = crypto.createHash('md5').update(target).digest('hex');
       locations.push(await fileSubst(IN(`./tmpl/nginx-redirect`), {
-        $PATH: pathname,
+        $PATH: normRegex(pathname),
         $PARAMS: modifiers,
         $TARGET_URL: trimSlash(targetUrl.toString()),
         $SETTINGS: settings.join('\n')
