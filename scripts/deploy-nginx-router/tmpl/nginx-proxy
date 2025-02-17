@@ -2,7 +2,7 @@ location /$PATH {
   if ($request_uri !~ /$) {
     return 301 $request_uri/;
   }
-  rewrite ^/$PATH(/.*)$ $1 break;
+  
   proxy_pass $PROXY_URL$uri$is_args$args;
   proxy_redirect off;
   proxy_no_cache 1;
