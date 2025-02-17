@@ -18,7 +18,7 @@ const toURL = str => {
   try { return new URL('https://' + str); } catch (e) {};
 }
 const trimSlash = str => str.replace(/(^\/)|(\/$)/g, '');
-const normRegex = str => str + (str.endsWith('$') ? '$' : '');
+const normRegex = str => str + (str.endsWith('$') ? '' : '$');
 
 function splitByFirst(str, delimeter) {
   const index = str.indexOf(delimeter);
