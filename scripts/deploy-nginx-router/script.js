@@ -103,7 +103,7 @@ export default async ({
   for (const { type, modifiers, route, target, settings } of routes) {
     const url = toURL(route);
     const domain = url.host;
-    const pathname = url.href.replace(url.origin, '').replace(/^$/, '/');
+    const pathname = url.href.replace(url.origin, '');
     if (!domain) throw new Error(`Invalid route: ${route}`);
     const targetUrl = toURL(target);
 

@@ -1,5 +1,9 @@
-location ~ ^/$PATH/(.*) {
-  proxy_pass $PROXY_URL/$1$is_args$args;
+location /$PATH {
+  if ($request_uri !~ /$) {
+    return 301 $request_uri/;
+  }
+  rewrite ^/$PATH(/.*)$ $1 break;
+  proxy_pass $PROXY_URL$uri$is_args$args;
   proxy_redirect off;
   proxy_no_cache 1;
   proxy_cache_bypass 1;
@@ -14,8 +18,4 @@ location ~ ^/$PATH/(.*) {
   proxy_read_timeout 86400;
 
   $SETTINGS
-}
-
-location ~ ^/$PATH {
-  rewrite /$PATH /$PATH/;
 }
