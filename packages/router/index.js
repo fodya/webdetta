@@ -25,7 +25,7 @@ export const PathnameRouter = (routes, { prefix='' }={}) => {
     },
     set: ({ url, replace }) => {
       url = prefix + '/' + url.replace(/^\//, '');
-      window.history[replace ? 'replaceState' : 'pushState']({}, null, url);
+      window.history[replace ? 'replaceState' : 'pushState'](null, null, url);
       window.dispatchEvent(new CustomEvent(':router:'));
     },
   });
