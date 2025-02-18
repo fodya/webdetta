@@ -111,7 +111,7 @@ export default async ({
     const locations = $SERVERS[domain] ??= [];
     if (type == 'proxy') {
       locations.push(await fileSubst(IN(`./tmpl/nginx-proxy`), {
-        $PATH: normRegex(trimSlash(pathname)),
+        $PATH: trimSlash(pathname),
         $PROXY_URL: trimSlash(targetUrl.toString()),
         $SETTINGS: settings.join('\n')
       }));
@@ -134,7 +134,7 @@ export default async ({
     if (type == 'redirect') {
       const dist = crypto.createHash('md5').update(target).digest('hex');
       locations.push(await fileSubst(IN(`./tmpl/nginx-redirect`), {
-        $PATH: normRegex(pathname),
+        $PATH: pathname,
         $PARAMS: modifiers,
         $TARGET_URL: trimSlash(targetUrl.toString()),
         $SETTINGS: settings.join('\n')

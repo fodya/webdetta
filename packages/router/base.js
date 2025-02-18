@@ -34,7 +34,7 @@ export const makePath = (routepath, params) => {
   return path.join('/');
 };
 
-export const href = (routepath, params={}) => (
+export const routeHref = (routepath, params={}) => (
   '/' + makePath(routepath, params) +
   '?' + new URLSearchParams(Object.fromEntries(
     Object.entries(params).filter(([k, v]) => v !== undefined && v !== null)
@@ -85,17 +85,18 @@ const Router = (routes, driver) => {
   const detach = () => driver.detach(update);
 
   const go = v => driver.go(v);
+  const href = (key, params={}) => routeHref(routes[key].path, params);
   const navigate = (key, params={}) =>
-    driver.set({ url: href(routes[key].path, params), replace: false });
+    driver.set({ url: href(key, params), replace: false });
   const replace = (key, params={}) =>
-    driver.set({ url: href(routes[key].path, params), replace: true });
+    driver.set({ url: href(key, params), replace: true });
 
   const current = () => currentRoute(Object.values(routes), driver.get());
   const action = (options) => routerAction(self, options);
 
   let self; return self = {
     attach, detach, listen,
-    routes, current,
+    routes, current, href,
     go, navigate, replace,
     action
   };
