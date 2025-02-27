@@ -154,7 +154,7 @@ const proxy = target => {
   return new Proxy({}, { get });
 }
 
-export const r = window.r={
+export const r = {
   val: Value,
   dval: DiffValue,
   scope: scope,
