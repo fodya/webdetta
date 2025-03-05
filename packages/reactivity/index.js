@@ -1,4 +1,5 @@
 import { Context } from '../common/context.js';
+import { debug } from '../common/debug.js';
 import { throttle, objectHasOwn } from '../common/utils.js';
 export const currentHandler = Context();
 export const effectsAbortSignal = Context();
@@ -97,32 +98,28 @@ const DiffValue = val => Signal({
   set(v) { this.skip = val === v; return val = v; }
 });
 
-const withHandler = (func, handlerCtx) =>
-  (...args) => currentHandler.run(handlerCtx, func, ...args);
-
 const effect = func => {
   let aborted;
   effectsAbortSignal()?.addEventListener('abort', () => aborted = true);
-  const handler = throttle.sync(() => {
+  const handler = debug.linkOriginalFunction(func, throttle.sync(() => {
     if (aborted) return;
-    const res = wrappedFunc();
+    const res = currentHandler.run(handler, func);
     for (const func of postponed) func();
     postponed.clear();
     return res;
-  });
+  }));
   const postponed = handler.postponed = new Set();
-  const wrappedFunc = withHandler(func, handler);
   return handler();
 }
-const detach = func => withHandler(func, null)();
+const detach = func => currentHandler.run(null, func);
 const scope = func => {
   let controller;
-  const handler = () => {
+  const handler = debug.linkOriginalFunction(func, () => {
     if (controller?.signal?.aborted) return;
     controller?.abort();
     controller = new AbortController();
     return effectsAbortSignal.run(controller.signal, func);
-  }
+  });
   handler.abort = () => controller?.abort();
   effectsAbortSignal()?.addEventListener('abort', handler.abort);
   return handler;

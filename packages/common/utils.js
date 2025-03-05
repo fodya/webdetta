@@ -1,3 +1,5 @@
+import { debug } from './debug.js';
+
 const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
 export const isPromise = d => d == Promise.resolve(d);
@@ -14,24 +16,27 @@ export const err = (...args) => {
   );
 };
 
-export const catchErrors = (f, handler=catchErrors.handler) => function() {
-  try {
-    const res = f.apply(this, arguments);
-    return isPromise(res) ? res.catch(handler) : res;
+export const catchErrors = (f, handler=catchErrors.handler) => {
+  const wrapped = function() {
+    try {
+      const res = f.apply(this, arguments);
+      return isPromise(res) ? res.catch(handler) : res;
+    }
+    catch (e) {
+      handler(e);
+    }
   }
-  catch (e) {
-    handler(e);
-  }
+  return debug.linkOriginalFunction(f, wrapped);
 }
 catchErrors.handler = e => console.error(e);
 
 export const once = (f) => {
   let called;
-  return function () {
+  return debug.linkOriginalFunction(f, function () {
     if (called) return;
     called = true;
     return f.apply(this, arguments);
-  }
+  });
 }
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
@@ -47,7 +52,7 @@ export const throttle = (f) => {
       .finally(() => (promise = null));
   }
   throttled.isLocked = () => !!promise;
-  return throttled;
+  return debug.linkOriginalFunction(f, throttled);
 }
 throttle.sync = f => {
   let locked = false;
@@ -60,7 +65,7 @@ throttle.sync = f => {
     return res;
   };
   throttled.isLocked = () => locked;
-  return throttled;
+  return debug.linkOriginalFunction(f, throttled);
 }
 throttle.T = (delay, f) => throttle(async function () {
   await sleep(delay);
@@ -86,7 +91,7 @@ throttle.Td = (delay, f) => {
     });
   }
   throttled.isLocked = () => t !== null;
-  return throttled;
+  return debug.linkOriginalFunction(f, throttled);
 }
 
 export const isTemplateCall = args =>

@@ -1,3 +1,5 @@
+import { debug } from './debug.js';
+
 export const Context = (initialValue) => {
   let value = initialValue;
   const context = () => value;
@@ -8,8 +10,8 @@ export const Context = (initialValue) => {
     catch (e) { value = prev; throw e; }
     value = prev; return res;
   }
-  context.bind = (data, func) => function (...args) {
+  context.bind = (data, func) => debug.linkOriginalFunction(func, function (...args) {
     return run.call(this, data, func, ...args)
-  };
+  });
   return context;
 };
