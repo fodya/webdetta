@@ -1,15 +1,17 @@
+let debugEnabled = false;
+const DEBUG = Symbol('DEBUG');
+
 const linkOriginalFunction = (func, wrapped) => {
-  const entry = wrapped[debug.symbol] ??= {};
-  entry.originalFunction = func[debug.symbol]?.original ?? func;
+  if (!debugEnabled) return wrapped;
+
+  const entry = wrapped[DEBUG] ??= {};
+  entry.originalFunction = func[DEBUG]?.original ?? func;
   (entry.functionWrappers ??= []).push(func);
 
   return wrapped;
 }
 
 export const debug = {
-  symbol: Symbol('DEBUG'),
-  enable: () => {
-    debug.linkOriginalFunction = linkOriginalFunction;
-  },
-  linkOriginalFunction: (f, wrapped) => f, // noop
+  enable: () => (debugEnabled = true),
+  linkOriginalFunction
 }
