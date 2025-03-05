@@ -11,5 +11,5 @@ export const debug = {
   enable: () => {
     debug.linkOriginalFunction = linkOriginalFunction;
   },
-  linkOriginalFunction: (f, wrapper) => f, // noop
+  linkOriginalFunction: (f, wrapped) => f, // noop
 }
