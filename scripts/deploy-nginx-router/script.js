@@ -110,6 +110,9 @@ export default async ({
 
     const locations = $SERVERS[domain] ??= [];
     if (type == 'proxy') {
+      if (!settings.find(d => d.startsWith('rewrite')) && !pathname.endsWith('$')) {
+        settings.unshift(`rewrite ^/${trimSlash(pathname)}(/.*)?$ $1 break;`);
+      }
       locations.push(await fileSubst(IN(`./tmpl/nginx-proxy`), {
         $PATH: trimSlash(pathname),
         $PROXY_URL: trimSlash(targetUrl.toString()),

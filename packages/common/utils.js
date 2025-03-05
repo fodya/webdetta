@@ -81,7 +81,9 @@ throttle.Td = (delay, f) => {
         t = null;
         resolve(f.apply(this, arguments));
       }, delay);
-    }).catch(e => e);
+    }).catch(e => {
+      if (e) console.error(e);
+    });
   }
   throttled.isLocked = () => t !== null;
   return throttled;

@@ -112,3 +112,6 @@ export const setLayoutWidth = ({
   window.addEventListener('resize', update);
   window.addEventListener('DOMContentLoaded', update);
 }
+
+export const L = new Promise(r => window.addEventListener('load', r));
+export const DCL = new Promise(r => window.addEventListener('DOMContentLoaded', r));
