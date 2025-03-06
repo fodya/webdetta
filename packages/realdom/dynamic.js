@@ -94,7 +94,7 @@ export const createList = (
     let prevK = lRoot;
     let i = 0;
     for (const [k, v] of entries) {
-      if (!elems.has(k)) connect(k, () => renderItem(v, i, items));
+      if (!elems.has(k)) connect(k, () => renderItem(v, i, items, k));
       move(prevK, k);
       prevK = k;
       i++;
