@@ -53,9 +53,9 @@ export const createList = (
   const move = (prevK, k) => {
     const nextK = next.get(prevK);
     if (prev.get(k) === prevK && nextK === k) return;
-    prev.set(nextK, k);
     prev.set(k, prevK);
     next.set(prevK, k);
+    prev.set(nextK, k);
     next.set(k, nextK);
     Element.append({ after: elems.get(prevK) }, elems.get(k));
   }
