@@ -51,9 +51,12 @@ export const createList = (
     elems.set(k, scope());
   }
   const move = (prevK, k) => {
-    if (prev.get(k) == prevK && next.get(prevK) == k) return;
+    const nextK = next.get(prevK);
+    if (prev.get(k) === prevK && nextK === k) return;
+    prev.set(nextK, k);
     prev.set(k, prevK);
     next.set(prevK, k);
+    next.set(k, nextK);
     Element.append({ after: elems.get(prevK) }, elems.get(k));
   }
   const disconnect = (k) => {
