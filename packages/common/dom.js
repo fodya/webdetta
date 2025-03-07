@@ -124,5 +124,9 @@ export const setLayoutWidth = ({
   window.addEventListener('DOMContentLoaded', update);
 }
 
+export const isEventInside = (event, target) => {
+  return event.composedPath().includes(target);
+}
+
 export const L = new Promise(r => window.addEventListener('load', r));
 export const DCL = new Promise(r => window.addEventListener('DOMContentLoaded', r));
