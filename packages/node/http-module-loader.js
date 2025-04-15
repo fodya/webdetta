@@ -2,7 +2,6 @@ import { register } from "node:module";
 register(import.meta.url, { parentURL: import.meta.url });
 
 export async function resolve(specifier, context, defaultResolve) {
-  const { parentURL=null } = context;
   return (
     !['/', './', '../'].some(c => specifier.startsWith(c))
     ? defaultResolve(specifier, { parentURL: import.meta.url })

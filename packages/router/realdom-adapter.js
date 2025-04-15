@@ -3,8 +3,7 @@ import { r } from '../reactivity/index.js';
 import { Context } from '../common/context.js';
 
 const RouterRealdom = ({
-  router,
-  preloadPages=[]
+  router
 }) => {
   const paramVals = {};
   const paramVal = (key, param) => (paramVals[key] ??= {})[param] ??= r.dval();

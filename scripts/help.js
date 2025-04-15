@@ -10,7 +10,7 @@ export default program => {
 
   program.command('help')
     .argument('[command]')
-    .action(function (...a) {
+    .action(function () {
       if (this.args[0]) {
         const cmd = this.parent.commands.find(c => c._name == this.args[0]);
         if (!cmd) console.error('Unknown command: ', this.args[0]);

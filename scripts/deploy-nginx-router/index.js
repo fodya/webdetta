@@ -1,6 +1,3 @@
-import subprocess from '../../packages/subprocess/index.js';
-const dir = import.meta.dirname;
-
 import script from './script.js';
 export default program => program.command('deploy-nginx-router')
   .description('Deploys an nginx router.')
@@ -9,18 +6,19 @@ export default program => program.command('deploy-nginx-router')
   .option('--ports <ports>', ['Newline-separated list of ports.',
     '  format: <host_port> <container_port>'
   ].join('\n'), (v, acc='') => (acc += '\n' + v))
+  .option('--volumes <volumes>', ['Newline-separated list of volumes.',
+    '  format: <host_path> <container_path>'
+  ].join('\n'), (v, acc='') => (acc += '\n' + v))
   .requiredOption('--certs-path <path>', 'Directory where SSL certificates will be stored')
   .requiredOption('--certbot-email <email>', 'Email to be used with certbot')
   .requiredOption('--ssh <string>', 'SSH connection string user@host:port')
   .requiredOption('--routes <routes>', ['Newline-separated list of routes.',
-    '  Route format:',
-    '    [modifiers] hostname:port      directory|proxy_url { nginx_conf_directives }',
     '  Example:',
-    '    0.0.0.0:9876                   /var/www/something',
-    '    0.0.0.0:1234                   http://127.0.0.1:8000/some-proxy',
-    '    = domain.com/                  /var/www/landing',
-    '    ~*^ app.domain.com             /var/www/app',
-    '    api.domain.com                 http://127.0.0.1:1000/api {',
+    '    0.0.0.0:9876                   dist:/var/www/something',
+    '    0.0.0.0:1234                   proxy:http://127.0.0.1:8000/',
+    '    = domain.com/                  dist:/var/www/landing',
+    '    app.domain.com/                dist:/var/www/app',
+    '    ~* api.domain.com/(.*)$        redirect:http://127.0.0.1:1000/api {',
     '      proxy_set_header X-Some-Header "Test";',
     '      proxy_cache my_cache;',
     '    }',

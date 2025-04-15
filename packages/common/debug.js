@@ -13,6 +13,5 @@ const linkOriginalFunction = (func, wrapped) => {
 
 export const debug = {
   enable: () => (debugEnabled = true),
-  isEnabled: () => debugEnabled,
   linkOriginalFunction
 }

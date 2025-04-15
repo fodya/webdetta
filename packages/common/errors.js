@@ -1,12 +1,12 @@
 import jsenv from './jsenv.js';
 
 const handleUncaughtClient = ({ exception, rejection }={}) => {
-  window.addEventListener('error', exception ?? ((msg, url, num) => {
+  globalThis.window.addEventListener('error', exception ?? ((msg, url, num) => {
     console.log('Uncaught exception:', msg + ';' + url + ';' + num);
     return true;
   }));
 
-  window.addEventListener('unhandledrejection', rejection ?? ((e) => {
+  globalThis.window.addEventListener('unhandledrejection', rejection ?? ((e) => {
     console.log('Unhandled rejection:', e.reason);
     return true;
   }));

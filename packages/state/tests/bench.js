@@ -2,7 +2,7 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/state/state.bench.js
 
-import { run, bench, group, baseline } from 'mitata';
+import { run, bench } from 'mitata';
 import { State } from '../fs.js';
 import { tmpFile, cleanup } from '../temp.js';
 
@@ -24,4 +24,3 @@ for (let name in b)
   console.log(name.padEnd(10, '.') + '.' + b[name].toFixed(0).padStart(10, '.') + ' op/s');
 
 await cleanup();
-

@@ -55,7 +55,6 @@ const Handlers = () => {
   return { add, trigger };
 }
 
-const SKIP = Symbol('SKIP');
 export const Signal = ({ handlers=Handlers(), get, set }) => {
   const ctx = { skip: false };
   set = set.bind(ctx);

@@ -915,7 +915,6 @@ function applyRemoveStyle(vnode, rm) {
         return;
     }
     if (!reflowForced) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         vnode.elm.offsetLeft;
         reflowForced = true;
     }
@@ -980,4 +979,3 @@ export const patch = init([
     fragments: true,
   },
 });
-

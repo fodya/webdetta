@@ -71,17 +71,17 @@ const Function_ = awaitResult => ({
   Client: NestedSdkEntry((func) => {
     const { args, body, isAsync } = parseFn(func);
     return {
-      client: (handlerId) => localFunction(
+      client: (_handlerId) => localFunction(
         new (isAsync ? AsyncFunction : Function)(...args, body)
       ),
       server: (handlerId) => remoteFunction(handlerId, args, awaitResult),
     };
   }),
   Server: NestedSdkEntry((func) => {
-    const { args, body } = parseFn(func);
+    const { args } = parseFn(func);
     return {
       client: (handlerId) => remoteFunction(handlerId, args, awaitResult),
-      server: (handlerId) => localFunction(func)
+      server: (_handlerId) => localFunction(func)
     };
   })
 });

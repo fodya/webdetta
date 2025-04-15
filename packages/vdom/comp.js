@@ -1,5 +1,5 @@
 import { operator, hook } from './operators.js';
-import { Fragment, Element, append, attach } from './vdom.js';
+import { Fragment, append, attach } from './vdom.js';
 import { Builder } from '../common/builder.js';
 
 const CompData = (ctx) => ({

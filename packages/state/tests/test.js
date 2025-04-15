@@ -2,7 +2,7 @@
 // (c) 2015­-2023 Michael Lazarev
 // Source: https://github.com/frameorc/frameorc/blob/github/src/state/state.test.js
 
-import { expect, test, beforeAll, afterAll } from "bun:test";
+import { expect, test, afterAll } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { tmpFile, cleanup } from '../temp.js';
 import { State } from "../fs.js";
@@ -45,4 +45,3 @@ test("race", async () => {
   await new Promise(ok => setTimeout(ok, 10));
   expect(JSON.parse(await readFile(path))).toEqual(DATA2);
 });
-

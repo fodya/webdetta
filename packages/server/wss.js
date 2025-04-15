@@ -19,7 +19,7 @@ const WS = ({ server, pulse=60_000 }) => {
   const route = route_(false);
   const routeRaw = route_(true);
 
-  wss.on('connection', (ws, req) => {
+  wss.on('connection', (ws, _req) => {
     ws.isAlive = true;
     ws.on('error', console.error);
     ws.on('pong', heartbeat);
@@ -32,14 +32,14 @@ const WS = ({ server, pulse=60_000 }) => {
       ws.ping();
     });
   }, pulse);
-  
+
   wss.on('error', e => console.error(e));
   wss.on('close', () => clearInterval(interval));
-  
+
   server.on('upgrade', (req, socket, head) => {
     const route = routes.find(r => !!r.regex.exec(req.url));
     if (!route) return socket.destroy();
-    
+
     if (route.raw) {
       socket.on('error', e => console.error(e));
       route.handler(req, socket, head);
@@ -50,7 +50,7 @@ const WS = ({ server, pulse=60_000 }) => {
       });
     }
   });
-  
+
   return Object.assign(wss, { route, routeRaw });
 }
 

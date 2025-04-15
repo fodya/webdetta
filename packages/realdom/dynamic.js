@@ -1,6 +1,6 @@
 import { Context } from '../common/context.js';
-import { unwrapFn, throttle } from '../common/utils.js';
-import { r, effectsAbortSignal } from '../reactivity/index.js';
+import { unwrapFn } from '../common/utils.js';
+import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import { recurrent } from './operators.js';
 

@@ -82,7 +82,7 @@ export function RpcClient(url, pulse=60_000) {
       isOpen(undefined); // connecting...
       ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
-      ws.onopen = async (e) => {
+      ws.onopen = async (_e) => {
         // the strange order of calls in the next three lines guarantees that
         // the preflight RPC calls happening in isOpen will go before any
         // standard calls
@@ -122,8 +122,8 @@ export function RpcClient(url, pulse=60_000) {
     onError: lastError.on,
     connect,
     close: () => (ws?.close(), closePromise),
-    cast: (target, ...args) => connect().then((ws) => cast(target, ...args)),
-    call: (target, ...args) => connect().then((ws) => call(target, ...args)),
+    cast: (target, ...args) => connect().then((_ws) => cast(target, ...args)),
+    call: (target, ...args) => connect().then((_ws) => call(target, ...args)),
   };
 
   return instance;

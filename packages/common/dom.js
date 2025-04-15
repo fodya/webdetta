@@ -46,7 +46,7 @@ export const measureText = (text, style={}) => {
   for (const k of ['width', 'height']) dummyDiv.style[k] = '';
   for (const k of keys) dummyDiv.style[k] = style[k];
   dummyDiv.textContent = text;
-  const zoom = +style.zoom || 1;
+  // const zoom = +style.zoom || 1;
   const { scrollHeight: height, scrollWidth: width } = dummyDiv;
   dummyDiv.remove();
   return { width, height };
@@ -56,11 +56,11 @@ const dummyAnchor = document.createElement("a");
 dummyAnchor.style = "display: none";
 export const saveBlob = (filename, blob) => {
   document.documentElement.append(dummyAnchor);
-  const url = window.URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
   dummyAnchor.href = url;
   dummyAnchor.download = filename;
   dummyAnchor.click();
-  window.URL.revokeObjectURL(url);
+  URL.revokeObjectURL(url);
 };
 
 export const blobToDatauri = blob => new Promise((resolve, reject) => {

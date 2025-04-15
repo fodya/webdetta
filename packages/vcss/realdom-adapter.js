@@ -1,6 +1,5 @@
 import { el } from '../realdom/index.js';
 import { kebab } from '../common/dom.js';
-import { r } from '../reactivity/index.js';
 import { recurrent } from '../realdom/operators.js';
 import { onOperatorDisable } from '../realdom/dynamic.js';
 import { Adapter } from './index.js';

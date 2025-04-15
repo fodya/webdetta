@@ -1,6 +1,6 @@
 import { parseSdkDefinition } from './defs.js';
 import { SdkInstance } from './instance.js';
-import { parseFn, obj2code } from './common.js';
+import { obj2code } from './common.js';
 
 export const SdkServer = (methods) => {
   const clientEntries = [];

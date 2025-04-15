@@ -14,14 +14,14 @@ const argsToString = args => unfoldToString(templateCallToArray(args));
 
 export const operator = f => Builder((_, ...args) => f(...args));
 export const key = (...args) =>
-  operator((el, ctx) => el.key = el.data.key = argsToString(args));
-export const on = Builder((tasks, el, ctx) => {
+  operator((el) => el.key = el.data.key = argsToString(args));
+export const on = Builder((tasks, el) => {
   const evts = el.data.on ??= {};
   for (const {names, args} of tasks)
     for (const name of names)
      (evts[name] ??= []).push(...args);
 });
-export const hook = Builder((tasks, el, ctx) => {
+export const hook = Builder((tasks, el) => {
   const hooks = el.data.hook ??= {};
   for (const {names, args} of tasks) {
     const handlers = args.map(f => catchErrors(f, console.error));
@@ -31,7 +31,7 @@ export const hook = Builder((tasks, el, ctx) => {
     }
   }
 });
-export const cls = Builder((tasks, el, ctx) => {
+export const cls = Builder((tasks, el) => {
   const classes = el.data.classes ??= new Set();
   for (const { names, args } of tasks) {
     if (!args.length || args.some(x => unwrap(x))) {
@@ -41,7 +41,7 @@ export const cls = Builder((tasks, el, ctx) => {
     }
   }
 });
-export const prop = Builder((tasks, el, ctx) => {
+export const prop = Builder((tasks, el) => {
   const props = el.data.props ??= {};
   for (const {names, args} of tasks)
     for (const name of names)
@@ -50,13 +50,13 @@ export const prop = Builder((tasks, el, ctx) => {
         : args.length === 1  ? unwrap(args[0])
                              : args.map(unwrap);
 });
-export const style = Builder((tasks, el, ctx) => {
+export const style = Builder((tasks, el) => {
   const styles = el.data.style ??= {};
   for (const {names, args} of tasks)
     for (const name of names)
       styles[kebab(name)] = argsToString(args);
 });
-export const attr = Builder((tasks, el, ctx) => {
+export const attr = Builder((tasks, el) => {
   const attrs = el.data.attrs ??= {};
   for (const {names, args} of tasks)
     for (const name of names)

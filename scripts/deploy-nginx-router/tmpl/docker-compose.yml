@@ -1,4 +1,4 @@
-name: nginx-router
+name: $CONTAINER_NAME
 services:
   nginx:
     build: .

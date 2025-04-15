@@ -3,7 +3,7 @@ import { RpcServer } from '../rpc/server.js';
 import FunctionParser from 'parse-function';
 
 const parser = FunctionParser();
-parser.use((self) => (node, result) => {
+parser.use((_) => (node, result) => {
   let params = node.params;
   if (node.type == 'ObjectExpression') params = node.properties[0].params;
   if (!Array.isArray(params)) return;
@@ -27,7 +27,7 @@ export const parseFn = val => {
 
 export const obj2code = (obj, vars=[], pad='  ') => {
   if (typeof obj == 'function') {
-    const { args, body, isAsync, value, params } = parseFn(obj);
+    const { args, body, isAsync, value } = parseFn(obj);
     const hasCurly = value.includes('{'+body+'}');
     return [isAsync ? 'async ' : '',
       `function (${args.join(',')}) {`,

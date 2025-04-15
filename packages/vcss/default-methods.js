@@ -153,12 +153,13 @@ corners.B  = corners.b  = [...corners.bl, ...corners.br];
 corners.L  = corners.l  = [...corners.tl, ...corners.bl];
 corners.R  = corners.r  = [...corners.tr, ...corners.br];
 
+const skip = Symbol('skip');
 const some = (args, r) => {
   for (let i = 0; i < args.length; i++) {
     const av = args[i];
-    if (av == NaN) continue;
+    if (av === skip) continue;
     const v = typeof r == 'object' ? r[av] : r(av);
-    if (v) return (args[i] = NaN, v);
+    if (v) return (args[i] = skip, v);
   }
   return null;
 }
@@ -197,7 +198,6 @@ const gridTrack = (size, str) => {
 
 const resolver = (cfg) => {
   const resolve = {};
-  const { unit=[8,'px'] } = cfg;
   for (const [k, r] of Object.entries(cfg))
     resolve[k] = typeof r == 'function' ? r : v => r[v] ?? v;
   resolve.size = v => isNaN(+v) ? v : +v * cfg.unit[0] + cfg.unit[1];
@@ -293,7 +293,6 @@ export const Methods = cfg => {
     ts: (v) => ({ fontSize: textSize(v) }),
     tt: (v) => ({ textTransform: textTransform[v] ?? v }),
     tw: (v) => ({ fontWeight: fontWeight(v) }),
-    tlc: (n) => ({ WebkitLineClamp: n, lineClamp: n }),
     tov: (v) => ({ textOverflow: v }),
     tws: (v) => ({ whiteSpace: whiteSpace[v] ?? v }),
     twb: (v) => ({ wordBreak: wordBreak[v] ?? v }),
@@ -303,6 +302,7 @@ export const Methods = cfg => {
       textShadow: a.map(v => color(v) ?? size(v) ?? v).join(' ')
     }),
     tlc: (v, inline=true) => ({
+      lineClamp: v,
       WebkitLineClamp: v,
       WebkitBoxOrient: 'vertical',
       display: inline ? '-webkit-inline-box' : '-webkit-box'

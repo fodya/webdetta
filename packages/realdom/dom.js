@@ -1,5 +1,4 @@
 import Builder from '../common/builder.js';
-import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent } from './operators.js';
 import { domAppend, domRemove } from './dynamic.js';

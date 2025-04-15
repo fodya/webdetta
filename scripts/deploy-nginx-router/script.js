@@ -18,7 +18,7 @@ const toURL = str => {
   try { return new URL('https://' + str); } catch (e) {};
 }
 const trimSlash = str => str.replace(/(^\/)|(\/$)/g, '');
-const normRegex = str => str + (str.endsWith('$') ? '' : '$');
+// const normRegex = str => str + (str.endsWith('$') ? '' : '$');
 
 function splitByFirst(str, delimeter) {
   const index = str.indexOf(delimeter);
@@ -43,16 +43,34 @@ export default async ({
   certsPath='',
   certbotEmail='',
   routes='',
+  volumes='',
   ports="80 80\n443 443",
   local=false,
   ssh,
 }) => {
+
+
   const output = await tmpDir();
   const IN = p => path.join(import.meta.dirname, p);
   const OUT = p => path.join(output, p);
 
+  ports = ports.replaceAll(';', '\n').split('\n')
+    .map(d => d.trim()).filter(d => d)
+    .map(d => d.split(/\s+/)).map(d => ({
+      host: d[0],
+      container: d[1]
+    }));
+
+  volumes = volumes.replaceAll(';', '\n').split('\n')
+    .map(d => d.trim()).filter(d => d)
+    .map(d => d.split(/\s+/)).map(d => ({
+      host: d[0],
+      container: d[1]
+    }));
+
   const $SERVERS = {};
-  const $VOLUMES = [];
+  const $VOLUMES = [...volumes];
+
   routes = splitString(routes.replaceAll(';', '\n'), '\n', '{}').map(line => {
     if (!(line = line.trim())) return;
 
@@ -79,17 +97,13 @@ export default async ({
       );
     }
     settings = settings.replace(/^\{/, '').replace(/\}$/, '')
-      .split(';').map(d => d.trim()).filter(d => d).map(d => d + ';');
+      .split('\n')
+      .map(d => d.trim())
+      .filter(d => d)
+      .map(d => d + ([...'{}'].some(b => d.endsWith(b)) ? '' : ';'));
 
-    return { type, modifiers, route, target, settings };
+    return { modifiers, route, type, target, settings };
   }).filter(d => d);
-
-  ports = ports.replaceAll(';', '\n').split('\n')
-    .map(d => d.trim()).filter(d => d)
-    .map(d => d.split(/\s+/)).map(d => ({
-      host: d[0],
-      container: d[1]
-    }));
 
   const network = ports.length == 0
     ? 'network_mode: host\n'
@@ -104,17 +118,20 @@ export default async ({
   for (const { type, modifiers, route, target, settings } of routes) {
     const url = toURL(route);
     const domain = url.host;
-    const pathname = url.href.replace(url.origin, '');
+    const pathname = '/' + route.replace('://', '').split('/').slice(1).join('/');
     if (!domain) throw new Error(`Invalid route: ${route}`);
     const targetUrl = toURL(target);
 
     const locations = $SERVERS[domain] ??= [];
     if (type == 'proxy') {
-      if (!settings.find(d => d.startsWith('rewrite')) && !pathname.endsWith('$')) {
+      const $PATH = trimSlash(pathname);
+      if ($PATH.length > 0 &&
+        !settings.find(d => d.startsWith('rewrite')) && !pathname.endsWith('$')
+      ) {
         settings.unshift(`rewrite ^/${trimSlash(pathname)}(/.*)?$ $1 break;`);
       }
       locations.push(await fileSubst(IN(`./tmpl/nginx-proxy`), {
-        $PATH: trimSlash(pathname),
+        $PATH: $PATH,
         $PROXY_URL: trimSlash(targetUrl.toString()),
         $SETTINGS: settings.join('\n')
       }));
@@ -122,7 +139,10 @@ export default async ({
 
     if (type == 'dist') {
       const dist = crypto.createHash('md5').update(target).digest('hex');
-      $VOLUMES.push(`- ${target}:/var/www/${dist}/`);
+      $VOLUMES.push({
+        host: target,
+        container: `/var/www/${dist}/`
+      });
       locations.push(await fileSubst(IN(`./tmpl/nginx-dist`), {
         $PATH: pathname,
         $PARAMS: modifiers,
@@ -135,7 +155,6 @@ export default async ({
     }
 
     if (type == 'redirect') {
-      const dist = crypto.createHash('md5').update(target).digest('hex');
       locations.push(await fileSubst(IN(`./tmpl/nginx-redirect`), {
         $PATH: pathname,
         $PARAMS: modifiers,
@@ -144,6 +163,10 @@ export default async ({
       }));
     }
   }
+
+  console.log('volumes:');
+  console.table($VOLUMES);
+  console.log();
 
   await fs.copyFile(IN('./Dockerfile'), OUT('./Dockerfile'));
   await fileMap(IN('./tmpl/nginx.conf'), OUT('./nginx.conf'), {
@@ -161,7 +184,9 @@ export default async ({
     $LOCAL_CA: local ? 1 : 0,
     $NGINX_SECRETS: certsPath,
     $CERTBOT_EMAIL: certbotEmail,
-    $VOLUMES: $VOLUMES.flatMap(d => d.split('\n')).join('\n      ')
+    $VOLUMES: $VOLUMES
+      .map(d => `- ${d.host}:${d.container}`)
+      .join('\n      ')
   });
   await fileMap(IN('./Dockerfile'), OUT('./Dockerfile'), {});
 

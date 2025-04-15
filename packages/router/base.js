@@ -37,7 +37,7 @@ export const makePath = (routepath, params) => {
 export const routeHref = (routepath, params={}) => (
   '/' + makePath(routepath, params) +
   '?' + new URLSearchParams(Object.fromEntries(
-    Object.entries(params).filter(([k, v]) => v !== undefined && v !== null)
+    Object.entries(params).filter(([_, v]) => v !== undefined && v !== null)
   ))
 ).replace(/\?$/, '');
 

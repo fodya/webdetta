@@ -21,16 +21,26 @@ const unwrap = obj => (
 );
 
 class StyleSheet {
-  processedClasses = new Set();
+  processedNodes = new Map();
   constructor(style) {
-    this.stylesheet = style.sheet;
+    this.style = style;
   }
   insertNode(node) {
     const { cls, css, additionalCss: css_ } = node;
-    if (this.processedClasses.has(cls)) return;
-    this.processedClasses.add(cls);
-    if (css) this.stylesheet.insertRule(css, this.stylesheet.cssRules.length);
-    if (css_) this.stylesheet.insertRule(css_, this.stylesheet.cssRules.length);
+    if (this.processedNodes.has(cls)) return;
+    const stylesheet = this.style.sheet;
+    this.processedNodes.set(cls, node);
+    if (css) stylesheet.insertRule(css, stylesheet.cssRules.length);
+    if (css_) stylesheet.insertRule(css_, stylesheet.cssRules.length);
+  }
+  recalculate() {
+    this.style.innerText = '';
+    const nodes = [...this.processedNodes.values()];
+    this.processedNodes.clear();
+    for (const node of nodes) {
+      node.calculate();
+      this.insertNode(node);
+    }
   }
 }
 
@@ -125,7 +135,7 @@ const operators = {
       };
     }));
   },
-  Animation: (param, keyframes) => [new Node(function(esc) {
+  Animation: (param, keyframes) => [new Node(function() {
     const str = Object.entries(keyframes).map(([ident, nodes]) => {
       nodes = unwrap(nodes);
       for (const node of nodes) node.calculate();
@@ -172,20 +182,13 @@ const Stack = (wrap, methods) => {
   return stack([], []);
 }
 
-export const Adapter = (wrapper) => ({ methods, enumerate=false }) => {
+export const Adapter = (wrapper) => ({ methods }) => {
   const style = document.createElement('style');
   document.head.appendChild(style);
 
   const styleSheet = new StyleSheet(style);
-
-  const recalculate = () => {
-    style.innerText = '';
-    for (const node of Object.values(processedNodes)) {
-      node.calculate();
-      styleSheet.insertNode(node);
-    }
-  }
-
+  const recalculate = styleSheet.recalculate;
   const v = Stack(wrapper.bind(null, styleSheet), methods);
+
   return { v, recalculate };
 }

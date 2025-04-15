@@ -1,5 +1,5 @@
 import { kebab } from '../common/dom.js';
-import { err, unwrapFn, templateCallToArray } from '../common/utils.js';
+import { unwrapFn, templateCallToArray } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import {

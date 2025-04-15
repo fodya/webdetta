@@ -33,7 +33,7 @@ export const processMethodArgs = args =>
   ? String.raw(...args).match(/\S+/g) ?? []
   : args.flatMap(unwrapFn);
 
-const joinStyle = (sep, v1, v2) => v1 && v2 ? v1 + sep + v2 : v1 ?? v2;
+// const joinStyle = (sep, v1, v2) => v1 && v2 ? v1 + sep + v2 : v1 ?? v2;
 export const combinedStyle = nodes => {
   const res = {};
   for (const node of nodes) {

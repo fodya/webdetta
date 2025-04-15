@@ -1,7 +1,6 @@
 import { catchErrors } from '../common/utils.js';
 import { Api } from '../sdk/common.js';
 import { SdkServer } from '../sdk/server.js';
-import bytes from 'bytes';
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
