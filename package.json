@@ -22,8 +22,7 @@
     "./realdom/*": "./packages/realdom/*.js",
     "./reactivity/*": "./packages/reactivity/*.js",
     "./webcomp/*": "./packages/webcomp/*.js",
-    "./telegram/*": "./packages/telegram/*.js",
-    "./node/*": "./packages/node/*.js"
+    "./telegram/*": "./packages/telegram/*.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.25.8",
