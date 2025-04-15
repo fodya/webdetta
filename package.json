@@ -1,6 +1,6 @@
 {
   "name": "webdetta",
-  "version": "0.1.128",
+  "version": "0.1.127",
   "author": "Fedot Kriutchenko <fodyadev@gmail.com>",
   "description": "",
   "license": "MIT",
@@ -22,7 +22,8 @@
     "./realdom/*": "./packages/realdom/*.js",
     "./reactivity/*": "./packages/reactivity/*.js",
     "./webcomp/*": "./packages/webcomp/*.js",
-    "./telegram/*": "./packages/telegram/*.js"
+    "./telegram/*": "./packages/telegram/*.js",
+    "./config/*": "./packages/config/*.js"
   },
   "dependencies": {
     "@babel/preset-env": "^7.25.8",
