@@ -16,6 +16,10 @@ export const err = (...args) => {
   );
 };
 
+export const routeByArgsCount = (...funcs) => function () {
+  return funcs[arguments.length - 1].apply(this, arguments);
+}
+
 export const catchErrors = (f, handler=catchErrors.handler) => {
   const wrapped = function() {
     try {
@@ -94,6 +98,20 @@ throttle.Td = (delay, f) => {
   return debug.linkOriginalFunction(f, throttled);
 }
 
+export const cached = routeByArgsCount(
+  (f) => cached(String, f),
+  (keyFn, f) => {
+    const wrapped = function (...args) {
+      const key = keyFn(...args);
+      let result = map.get(key);
+      if (result) return result;
+      map.set(key, result = func.apply(this, args));
+      return result;
+    }
+    return debug.linkOriginalFunction(f, wrapped);
+  }
+)
+
 export const isTemplateCall = args =>
   Array.isArray(args[0]) && objectHasOwn(args[0], 'raw');
 
@@ -120,28 +138,24 @@ export const textToBase64 = text => {
 
 export const objectHasOwn = (obj, key) =>
   Object.prototype.hasOwnProperty.call(obj, key);
-export const objectMap = (...args) => {
-  if (args.length == 1) {
-    const [func] = args;
+export const objectMap = routeByArgsCount(
+  (func) => {
     return (obj) => objectMap(obj, func);
-  }
-  if (args.length == 2) {
-    const [obj, func] = args;
+  },
+  (obj, func) => {
     const res = {};
     for (const [k, v] of Object.entries(obj)) res[k] = func(v, k, obj);
     return res;
   }
-}
-export const objectPick = (...args) => {
-  if (args.length == 1) {
-    const [keys] = args;
+);
+export const objectPick = routeByArgsCount(
+  (keys) => {
     return (obj) => objectPick(obj, keys);
-  }
-  if (args.length == 2) {
-    const [obj, keys] = args;
+  },
+  (obj, keys) => {
     return Object.fromEntries(keys.map(k => [k, obj[k]]));
   }
-}
+);
 
 export const S = (...args) =>
   String.raw(...args).match(/\S+/g) ?? [];

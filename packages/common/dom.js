@@ -1,9 +1,10 @@
-import { toFn } from './utils.js';
+import { toFn, objectPick, S, cached } from './utils.js';
 const DEBUG = 0;
 
 const regexAZ = /[A-Z]/g;
-const kebabCache = {};
-export const kebab = s => kebabCache[s] ??= s.replaceAll(regexAZ, c => '-' + c.toLowerCase());
+export const kebab = cached(s =>
+  s.replaceAll(regexAZ, c => '-' + c.toLowerCase())
+);
 
 export const copyText = async text => {
   try {
@@ -50,6 +51,22 @@ export const measureText = (text, style={}) => {
   const { scrollHeight: height, scrollWidth: width } = dummyDiv;
   dummyDiv.remove();
   return { width, height };
+}
+export const autogrowInput = ({
+  element,
+  text,
+  multiline,
+}) => {
+  const keys = S`
+    letter-spacing padding margin font font-family word-break white-space
+    display perspective-origin transform-origin
+  `;
+  keys.push(multiline ? 'width' : 'height');
+  const style = objectPick(getComputedStyle(element), keys);
+  const measurement = measureText(text + (multiline ? '.' : ''), style);
+  if (multiline) element.style.height = measurement.height + 'px';
+  else element.style.width = measurement.width + 'px';
+  element.style.overflow = 'hidden';
 }
 
 const dummyAnchor = document.createElement("a");
