@@ -1,5 +1,5 @@
 import { toFn, objectPick, S, cached } from './utils.js';
-const DEBUG = 0;
+import { debug } from './debug.js';
 
 const regexAZ = /[A-Z]/g;
 export const kebab = cached(s =>
@@ -33,7 +33,7 @@ Object.assign(dummyDiv.style, {
   top: '-99999px',
   visibility: 'hidden',
   pointerEvents: 'none',
-  ...(DEBUG ? {
+  ...(debug.enabled ? {
     zIndex: 9999,
     visibility: 'visible',
     top: 0,
@@ -56,6 +56,7 @@ export const autogrowInput = ({
   element,
   text,
   multiline,
+  whiteSpace='pre-wrap'
 }) => {
   const keys = S`
     letter-spacing padding margin font font-family word-break white-space
@@ -63,6 +64,7 @@ export const autogrowInput = ({
   `;
   keys.push(multiline ? 'width' : 'height');
   const style = objectPick(getComputedStyle(element), keys);
+  style.whiteSpace = whiteSpace;
   const measurement = measureText(text + (multiline ? '.' : ''), style);
   if (multiline) element.style.height = measurement.height + 'px';
   else element.style.width = measurement.width + 'px';

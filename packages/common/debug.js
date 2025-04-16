@@ -1,8 +1,8 @@
-let debugEnabled = false;
+let enabled = false;
 const DEBUG = Symbol('DEBUG');
 
 const linkOriginalFunction = (func, wrapped) => {
-  if (!debugEnabled) return wrapped;
+  if (!enabled) return wrapped;
 
   const entry = wrapped[DEBUG] ??= {};
   entry.originalFunction = func[DEBUG]?.original ?? func;
@@ -12,6 +12,7 @@ const linkOriginalFunction = (func, wrapped) => {
 }
 
 export const debug = {
-  enable: () => (debugEnabled = true),
+  enabled: enabled,
+  enable: () => (debug.enabled = enabled = true),
   linkOriginalFunction
 }
