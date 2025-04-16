@@ -40,6 +40,7 @@ function splitString(str, delimeter, brackets) {
 }
 
 export default async ({
+  name='',
   certsPath='',
   certbotEmail='',
   routes='',
@@ -196,6 +197,7 @@ export default async ({
   console.log('-', OUT('nginx.conf'));
   try {
     await subprocess(...S`npx webdetta deploy
+      --name ${name}
       --file ${OUT('docker-compose.yml')}
       --ssh ${ssh}
     `);

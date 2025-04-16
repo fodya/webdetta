@@ -25,5 +25,5 @@ docker compose \
   --file "$FILE" \
   ${DIR:+ --project-directory "$DIR"} \
   ${NAME:+ -p "$NAME"} \
-  up --build --detach &&
+  up --build --detach --force-recreate &&
 docker ps
