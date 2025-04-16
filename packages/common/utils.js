@@ -98,19 +98,16 @@ throttle.Td = (delay, f) => {
   return debug.linkOriginalFunction(f, throttled);
 }
 
-export const cached = routeByArgsCount(
-  (f) => cached(String, f),
-  (keyFn, f) => {
-    const wrapped = function (...args) {
-      const key = keyFn(...args);
-      let result = map.get(key);
-      if (result) return result;
-      map.set(key, result = func.apply(this, args));
-      return result;
-    }
-    return debug.linkOriginalFunction(f, wrapped);
+export const cached = (f, keyFn=String, map=new Map()) => {
+  const wrapped = function (...args) {
+    const key = keyFn(...args);
+    let result = map.get(key);
+    if (result) return result;
+    map.set(key, result = f.apply(this, args));
+    return result;
   }
-)
+  return debug.linkOriginalFunction(f, wrapped);
+}
 
 export const isTemplateCall = args =>
   Array.isArray(args[0]) && objectHasOwn(args[0], 'raw');
