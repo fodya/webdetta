@@ -1,0 +1,8 @@
+server {
+  listen $ADDRESS;
+  server_name _;
+  root /var/www/;
+  
+  $CONFIG
+  $LOCATIONS
+}

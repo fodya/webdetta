@@ -18,7 +18,8 @@ const toURL = str => {
   try { return new URL('https://' + str); } catch (e) {};
 }
 const trimSlash = str => str.replace(/(^\/)|(\/$)/g, '');
-// const normRegex = str => str + (str.endsWith('$') ? '' : '$');
+
+const ipAddressRegex = /(^\s*((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$)/;
 
 function splitByFirst(str, delimeter) {
   const index = str.indexOf(delimeter);
@@ -49,8 +50,6 @@ export default async ({
   local=false,
   ssh,
 }) => {
-
-
   const output = await tmpDir();
   const IN = p => path.join(import.meta.dirname, p);
   const OUT = p => path.join(output, p);
@@ -117,13 +116,12 @@ export default async ({
   console.table(routes);
   console.log();
   for (const { type, modifiers, route, target, settings } of routes) {
-    const url = toURL(route);
-    const domain = url.host;
+    const host = toURL(route)?.host;
     const pathname = '/' + route.replace('://', '').split('/').slice(1).join('/');
-    if (!domain) throw new Error(`Invalid route: ${route}`);
+    if (!host) throw new Error(`Invalid route: ${route}`);
     const targetUrl = toURL(target);
 
-    const locations = $SERVERS[domain] ??= [];
+    const locations = $SERVERS[host] ??= [];
     if (type == 'proxy') {
       const $PATH = trimSlash(pathname);
       if ($PATH.length > 0 &&
@@ -169,25 +167,43 @@ export default async ({
   console.table($VOLUMES);
   console.log();
 
+  const $SERVER_CONFIG = await fs.readFile(IN('./tmpl/nginx-server-config'));
   await fs.copyFile(IN('./Dockerfile'), OUT('./Dockerfile'));
   await fileMap(IN('./tmpl/nginx.conf'), OUT('./nginx.conf'), {
     $SERVERS: await Promise.all(
-      Object.entries($SERVERS).map(([$DOMAIN, $LOCATIONS]) =>
-        fileSubst(IN('./tmpl/nginx-server'), {
-          $DOMAIN,
+      Object.entries($SERVERS).map(async ([HOST, $LOCATIONS]) => {
+        const url = toURL(HOST);
+        const isIp = ipAddressRegex.test(url.hostname);
+        if (isIp) return await fileSubst(IN('./tmpl/nginx-server-address'), {
+          $ADDRESS: url.host,
+          $CONFIG: $SERVER_CONFIG,
           $LOCATIONS: $LOCATIONS.flatMap(d => d.split('\n')).join('\n  ')
-        })
-      )
+        });
+        if (url.port) return await fileSubst(IN('./tmpl/nginx-server-domain'), {
+          $ADDRESS: `0.0.0.0:${url.port}`,
+          $DOMAIN: url.hostname,
+          $CONFIG: $SERVER_CONFIG,
+          $LOCATIONS: $LOCATIONS.flatMap(d => d.split('\n')).join('\n  ')
+        });
+        return await fileSubst(IN('./tmpl/nginx-server-domain-ssl'), {
+          $DOMAIN: url.hostname,
+          $CONFIG: $SERVER_CONFIG,
+          $LOCATIONS: $LOCATIONS.flatMap(d => d.split('\n')).join('\n  ')
+        });
+      })
     ).then(r => r.join('\n'))
   });
   await fileMap(IN('./tmpl/docker-compose.yml'), OUT('./docker-compose.yml'), {
+    $CONTAINER_NAME: name,
     $NETWORK: network,
     $LOCAL_CA: local ? 1 : 0,
     $NGINX_SECRETS: certsPath,
     $CERTBOT_EMAIL: certbotEmail,
-    $VOLUMES: $VOLUMES
-      .map(d => `- ${d.host}:${d.container}`)
-      .join('\n      ')
+    $VOLUMES: $VOLUMES.flatMap(d => [
+      `- type: bind`,
+      `  source: '${d.host}'`,
+      `  target: '${d.container}'`
+    ]).join('\n      ')
   });
   await fileMap(IN('./Dockerfile'), OUT('./Dockerfile'), {});
 
@@ -195,6 +211,7 @@ export default async ({
   console.log('-', OUT('docker-compose.yml'));
   console.log('-', OUT('Dockerfile'));
   console.log('-', OUT('nginx.conf'));
+
   try {
     await subprocess(...S`npx webdetta deploy
       --name ${name}
