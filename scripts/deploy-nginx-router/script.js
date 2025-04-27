@@ -46,7 +46,7 @@ export default async ({
   certbotEmail='',
   routes='',
   volumes='',
-  ports="80 80\n443 443",
+  ports='',
   local=false,
   ssh,
 }) => {
