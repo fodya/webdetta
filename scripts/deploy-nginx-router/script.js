@@ -15,7 +15,7 @@ const fileMap = async (fileIn, fileOut, env) =>
 const toURL = str => {
   if (str.startsWith('/')) return null;
   try { return new URL(str); } catch (e) {};
-  try { return new URL('https://' + str); } catch (e) {};
+  try { return new URL('http://' + str); } catch (e) {};
 }
 const trimSlash = str => str.replace(/(^\/)|(\/$)/g, '');
 
