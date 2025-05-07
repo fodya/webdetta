@@ -282,9 +282,13 @@ export const Methods = cfg => {
     mxh: (v) => ({ maxHeight: length[v] ?? size(v) }),
 
     // text
-    td: (v) => {
-      const st = borderStyle[v] ?? v;
-      return { textDecoration: st + (st != 'none' ? ' underline' : '') };
+    td: (...a) => {
+      const type = some(a, borderStyle);
+      const thickness = some(a, size);
+      return {
+        textDecoration: type + (type != 'none' ? ' underline' : ''),
+        textDecorationThickness: thickness
+      };
     },
     ta: (v) => ({ textAlign: textAlign[v] ?? v }),
     tc: (v) => ({ color: color(v) }),
