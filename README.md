@@ -36,7 +36,7 @@ Lightweight DOM wrapper designed for building Single Page Applications.\
 Works best in combination with the `webdetta/reactivity` library.
 
 \- `webdetta/router`\
-Single Page Application history and hash router library.
+History and hash router library for Single Page Applications.
 
 \- `webdetta/rpc`\
 Remote Procedure Call library for realtime APIs.\
