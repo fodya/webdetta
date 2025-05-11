@@ -33,7 +33,7 @@ Reactive variables and effects library. Inspired by SolidJS.
 
 \- `webdetta/realdom`\
 Lightweight DOM wrapper designed for building Single Page Applications.\
-Works best in combination with the `webdetta/reactivity` library.
+Works best in combination with the `webdetta/reactivity` module.
 
 \- `webdetta/router`\
 History and hash router library for Single Page Applications.
