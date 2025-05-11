@@ -17,7 +17,7 @@ I’ve been polishing and refining these ideas, applying them in practice and pr
 <br>
 
 The library is in active development and is being improved day by day.\
-Every function in each published module has been used in dozens real-world production projects.
+Every function in each published module has been used in dozens of real-world production projects.
 
 
 ## Modules list
