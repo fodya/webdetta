@@ -3,7 +3,10 @@ import crypto from 'crypto';
 import path from 'path';
 import subprocess from '../../packages/subprocess/index.js';
 import { S } from '../../packages/common/utils.js';
-import { tmpDir } from "../../packages/common/fs.js";
+import { tmpdir } from "os";
+
+const tmpDir = (prefix='tmp') =>
+  fs.mkdtemp(path.join(tmpdir(), prefix + '-'));
 
 const fileSubst = async (file, env) => {
   let str = (await fs.readFile(file)).toString('utf8');
