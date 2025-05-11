@@ -52,7 +52,7 @@ ExpressJS wrapper for easier server creation.
 State persistency for client and server.
 
 \- `webdetta/subprocess`\
-child_process syntax sugar — spawns OS processes as async functions.
+child_process syntax sugar — spawns OS processes as promises, allowing for cleaner code.
 
 \- `webdetta/vcss`\
 Virtual CSS library for generating UI styles at runtime.
