@@ -1,5 +1,5 @@
 import { kebab } from '../common/dom.js';
-import { isTemplateCall, unwrapFn } from '../common/utils.js';
+import { isTemplateCall, unwrapFn, err } from '../common/utils.js';
 
 export const ID = (() => {
   const store = {}, indexes = {};
@@ -16,10 +16,11 @@ export const escape = str => {
   for (const v of str) res += chars[v] ?? v;
   return CSS.escape(res);
 }
-export const selectorTmpl = (sel='', val='') => (
-  typeof sel == 'function' ? sel(val)
-  : sel.includes('&') ? sel.replaceAll('&', val)
-  : val + sel
+export const processNestedSelector = (sel='', parentSel='') => (
+  !sel ? parentSel
+  : typeof sel == 'function' ? sel(parentSel)
+  : sel.includes('&') ? sel.replaceAll('&', parentSel)
+  : err`Invalid selector: "${sel}"`
 );
 export const splitSelector = str => [str];
 export const styleStr = (style, important) => `{${

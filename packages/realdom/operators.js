@@ -27,7 +27,14 @@ const ref = Operator((node, _, args) => {
   for (const func of args) func(node);
 });
 
+const parse = (...args) => {
+  const div = document.createElement('div');
+  div.innerHTML = toString(args);
+  return Array.from(div.children);
+}
+
 export const operators = {
+  parse: parse,
   append: (node, ...args) => Element.append(node, args),
   remove: (node) => Element.remove(node),
   ref: ref,

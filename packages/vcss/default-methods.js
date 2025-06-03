@@ -294,7 +294,7 @@ export const Methods = cfg => {
     tc: (v) => ({ color: color(v) }),
     tf: (v) => ({ fontFamily: fontFamily(v) }),
     tl: (v) => ({ lineHeight: lineHeight(v) }),
-    ts: (v) => ({ fontSize: textSize(v) }),
+    ts: (v) => ({ fontSize: textSize(v) ?? size(v) ?? v }),
     tt: (v) => ({ textTransform: textTransform[v] ?? v }),
     tw: (v) => ({ fontWeight: fontWeight(v) }),
     tov: (v) => ({ textOverflow: v }),

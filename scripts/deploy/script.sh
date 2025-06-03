@@ -21,9 +21,11 @@ ssh $SSH bash <<eof
 eof
 
 export DOCKER_HOST="ssh://$SSH"
+
 docker compose \
   --file "$FILE" \
   ${DIR:+ --project-directory "$DIR"} \
   ${NAME:+ -p "$NAME"} \
-  up --build --detach --force-recreate &&
+  up --build --detach --force-recreate
+
 docker ps

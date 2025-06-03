@@ -26,6 +26,7 @@ Element.append = (
   item // Node
 ) => {
   if (item === undefined || item === null) {}
+  else if (Array.isArray(node)) for (const d of node) Element.append(d, item);
   else if (Array.isArray(item)) for (const d of item) Element.append(node, d);
   else if (Operator.isOperator(item)) Operator.apply(node, item);
   else if (isTextNode(node)) Operator.apply(node, textContent(item));

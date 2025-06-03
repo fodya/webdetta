@@ -1,6 +1,6 @@
 import { kebab } from '../common/dom.js';
 import { unwrapFn } from '../common/utils.js';
-import { splitSelector, styleStr, processMethodArgs, selectorTmpl, escape, combinedStyle, ID } from './common.js';
+import { splitSelector, styleStr, processMethodArgs, processNestedSelector, escape, combinedStyle, ID } from './common.js';
 
 const NODES = Symbol('VCSS_NODES');
 export const inspect = obj => {
@@ -74,7 +74,7 @@ class Node {
       (this.important ? 'ǃ' : '')
     );
 
-    const sel = selectorTmpl(this.selector, '.' + this.cls);
+    const sel = processNestedSelector(this.selector, '.' + this.cls);
     const str = sel + styleStr(this.style, this.important);
     this.css = this.query ? `${this.query} {${str}}` : str;
   }
@@ -105,7 +105,7 @@ const operators = {
     return splitSelector(selStr).flatMap(selStr =>
       nodes.map(node => node.fork(function() {
         this.selector = node.selector
-          ? selectorTmpl(selStr, node.selector)
+          ? processNestedSelector(selStr, node.selector)
           : selStr;
       }))
     );
