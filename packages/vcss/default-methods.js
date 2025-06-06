@@ -99,6 +99,10 @@ const textTransform = {
   l: 'lowercase',
   c: 'capitalize'
 }
+const textOverflow = {
+  e: "ellipsis",
+  c: "clip"
+}
 const userSelect = {
   ...truthy('auto'),
   ...falsy('none'),
@@ -297,7 +301,7 @@ export const Methods = cfg => {
     ts: (v) => ({ fontSize: textSize(v) ?? size(v) ?? v }),
     tt: (v) => ({ textTransform: textTransform[v] ?? v }),
     tw: (v) => ({ fontWeight: fontWeight(v) }),
-    tov: (v) => ({ textOverflow: v }),
+    tov: (v) => ({ textOverflow: textOverflow[v] ?? v }),
     tws: (v) => ({ whiteSpace: whiteSpace[v] ?? v }),
     twb: (v) => ({ wordBreak: wordBreak[v] ?? v }),
     tlg: (v) => ({ letterSpacing: size(v) }),
