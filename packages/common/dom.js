@@ -125,6 +125,7 @@ export const setLayoutWidth = ({
   containerWidth=()=>window.innerWidth,
   containerHeight=()=>window.innerHeight,
   aspectRatio=null,
+  method="zoom"
 }) => {
   containerWidth = toFn(containerWidth);
   containerHeight = toFn(containerHeight);
@@ -132,12 +133,20 @@ export const setLayoutWidth = ({
   const update = () => {
     const ar = containerWidth() / containerHeight();
     const zoom = containerWidth() / width();
-    container.style.zoom =
+    const zoomValue =
       !aspectRatio ? zoom :
       ar > aspectRatio ? Math.min(zoom, zoom * aspectRatio / ar) :
       zoom < 1 || ar < aspectRatio ? zoom :
       1;
+    
     container.style.width = width() + 'px';
+    if (method == 'zoom') {
+      container.style.zoom = zoomValue;
+    }
+    if (method == 'scale') {
+      container.style.transform = `scale(${zoomValue})`;
+      container.style.transformOrigin = `0 0`;
+    }
   }
   window.addEventListener('resize', update);
   window.addEventListener('DOMContentLoaded', update);
