@@ -16,8 +16,11 @@ export const err = (...args) => {
   );
 };
 
+export const S = (...args) =>
+  String.raw(...args).match(/\S+/g) ?? [];
+
 export const routeByArgsCount = (...funcs) => function () {
-  return funcs[arguments.length - 1].apply(this, arguments);
+  return funcs[arguments.length].apply(this, arguments);
 }
 
 export const catchErrors = (f, handler=catchErrors.handler) => {
@@ -125,6 +128,7 @@ export const templateCallToArray = args => {
 export const objectHasOwn = (obj, key) =>
   Object.prototype.hasOwnProperty.call(obj, key);
 export const objectMap = routeByArgsCount(
+  null,
   (func) => {
     return (obj) => objectMap(obj, func);
   },
@@ -135,6 +139,7 @@ export const objectMap = routeByArgsCount(
   }
 );
 export const objectPick = routeByArgsCount(
+  null,
   (keys) => {
     return (obj) => objectPick(obj, keys);
   },
@@ -155,6 +160,3 @@ export const traverseObject = (obj, func) => {
   }
   run(obj);
 }
-
-export const S = (...args) =>
-  String.raw(...args).match(/\S+/g) ?? [];
