@@ -142,6 +142,19 @@ export const objectPick = routeByArgsCount(
     return Object.fromEntries(keys.map(k => [k, obj[k]]));
   }
 );
+export const traverseObject = (obj, func) => {
+  const run = (value, keys=[]) => {
+    if (typeof value == 'object' && value != null) {
+      for (const [key, val] of Object.entries(value)) {
+        run(val, [...keys, key]);
+      }
+    }
+    else if (typeof value == 'function') {
+      func(keys, value);
+    }
+  }
+  run(obj);
+}
 
 export const S = (...args) =>
   String.raw(...args).match(/\S+/g) ?? [];
