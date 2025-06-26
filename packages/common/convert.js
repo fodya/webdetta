@@ -16,7 +16,7 @@ export const datauriToJson = (datauri) => {
   const mimeType = part1.split(';')[0].split(':')[1];
   return { mimeType, content };
 }
-export const json64ToDatauri = ({ mimeType, content }) =>
+export const jsonToDatauri = ({ mimeType, content }) =>
   `data:${mimeType};base64,${content}`;
 
 // data URI <-> blob
@@ -58,6 +58,10 @@ export const fileToJson = async (file) => {
   result.mimeType = mimeType;
   result.content = content;
   return result;
+}
+export const jsonToFile = async ({ name, mimeType, content, ...options }) => {
+  const datauri = jsonToDatauri({ mimeType, content });
+  return await datauriToFile(datauri, name, options);
 }
 
 // formdata <-> json
