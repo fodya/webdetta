@@ -122,17 +122,6 @@ export const templateCallToArray = args => {
   return result;
 }
 
-export const base64ToText = base64 => {
-  const str = atob(base64);
-  const bytes = Uint8Array.from(str, m => m.codePointAt(0));
-  return new TextDecoder().decode(bytes);
-}
-export const textToBase64 = text => {
-  const bytes = new TextEncoder().encode(text);
-  const str = Array.from(bytes, b => String.fromCodePoint(b)).join("");
-  return btoa(str);
-}
-
 export const objectHasOwn = (obj, key) =>
   Object.prototype.hasOwnProperty.call(obj, key);
 export const objectMap = routeByArgsCount(

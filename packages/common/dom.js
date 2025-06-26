@@ -82,27 +82,6 @@ export const saveBlob = (filename, blob) => {
   URL.revokeObjectURL(url);
 };
 
-export const blobToDatauri = blob => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.readAsDataURL(blob);
-  reader.onload = () => resolve(reader.result);
-  reader.onerror = reject;
-});
-export const fileToDatauri = blobToDatauri;
-
-export const datauriToBlob = datauri => fetch(datauri).then(res => res.blob());
-
-export const jsonToFormdata = (json, formData=new FormData(), parentKey='') => {
-  const isObject = json && typeof json === 'object' && !(json instanceof File);
-  const isArray = Array.isArray(json);
-  if (isObject) for (const key of Object.keys(json)) {
-    const fullKey = parentKey ? `${parentKey}[${key}]` : key;
-    jsonToFormdata(json[key], formData, isArray ? parentKey : fullKey);
-  }
-  else formData.append(parentKey, json);
-  return formData;
-}
-
 export const importAsset = (tagName, attrs) => new Promise((resolve) => {
   const el = document.createElement(tagName);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
