@@ -19,10 +19,6 @@ export const err = (...args) => {
 export const S = (...args) =>
   String.raw(...args).match(/\S+/g) ?? [];
 
-export const routeByArgsCount = (...funcs) => function () {
-  return funcs[arguments.length].apply(this, arguments);
-}
-
 export const catchErrors = (f, handler=catchErrors.handler) => {
   const wrapped = function() {
     try {
