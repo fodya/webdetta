@@ -124,7 +124,7 @@ export const templateCallToArray = args => {
 export const jitter = {
   full: delay => Math.random() * delay,
   equal: delay => delay / 2 + Math.random() * delay / 2,
-  decorrelated: delay => Math.min(Math.random() * delay * 3, delay * 3)
+  decorrelated: (_delay, prevDelay) => Math.random() * prevDelay * 3
 }
 export const backoff = async ({
   retries,
@@ -151,16 +151,17 @@ export const backoff = async ({
     err`invalid "delay" argument`
   );
 
-  let lastError;
+  let lastError, prevDelayMs;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       return await func();
     } catch (error) {
       lastError = error;
       let delayMs = delayFn(attempt);
-      if (jitterFn) delayMs = jitterFn(delayMs);
+      if (jitterFn) delayMs = jitterFn(delayMs, prevDelayMs);
       if (minDelay) delayMs = Math.max(minDelay, delayMs);
       if (maxDelay) delayMs = Math.min(maxDelay, delayMs);
+      prevDelayMs = delayMs;
       await sleep(delayMs);
     }
   }
