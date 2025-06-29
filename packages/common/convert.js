@@ -1,4 +1,8 @@
-// text <-> base 64
+/////////////
+// S Y N C //
+/////////////
+
+// // text <-> base 64
 export const textToBase64 = text => {
   const bytes = new TextEncoder().encode(text);
   const str = Array.from(bytes, b => String.fromCodePoint(b)).join("");
@@ -18,6 +22,32 @@ export const datauriToJson = (datauri) => {
 }
 export const jsonToDatauri = ({ mimeType, content }) =>
   `data:${mimeType};base64,${content}`;
+
+// formdata <-> json
+export const formdataToJson = (formData) => {
+  return Object.fromEntries(
+    Array.from(formData.keys()).map(key => [
+      key,
+      formData.getAll(key).length > 1
+        ? formData.getAll(key)
+        : formData.get(key)
+    ])
+  );
+}
+export const jsonToFormdata = (json, formData = new FormData(), parentKey = '') => {
+  const isObject = json && typeof json === 'object' && !(json instanceof File);
+  const isArray = Array.isArray(json);
+  if (isObject) for (const key of Object.keys(json)) {
+    const fullKey = parentKey ? `${parentKey}[${key}]` : key;
+    jsonToFormdata(json[key], formData, isArray ? parentKey : fullKey);
+  }
+  else formData.append(parentKey, json);
+  return formData;
+}
+
+///////////////
+// A S Y N C //
+///////////////
 
 // data URI <-> blob
 export const datauriToBlob = async (datauri) => {
@@ -62,26 +92,4 @@ export const fileToJson = async (file) => {
 export const jsonToFile = async ({ name, mimeType, content, ...options }) => {
   const datauri = jsonToDatauri({ mimeType, content });
   return await datauriToFile(datauri, name, options);
-}
-
-// formdata <-> json
-export const formdataToJson = (formData) => {
-  return Object.fromEntries(
-    Array.from(formData.keys()).map(key => [
-      key,
-      formData.getAll(key).length > 1
-      ? formData.getAll(key)
-      : formData.get(key)
-    ])
-  );
-}
-export const jsonToFormdata = (json, formData=new FormData(), parentKey = '') => {
-  const isObject = json && typeof json === 'object' && !(json instanceof File);
-  const isArray = Array.isArray(json);
-  if (isObject) for (const key of Object.keys(json)) {
-    const fullKey = parentKey ? `${parentKey}[${key}]` : key;
-    jsonToFormdata(json[key], formData, isArray ? parentKey : fullKey);
-  }
-  else formData.append(parentKey, json);
-  return formData;
 }

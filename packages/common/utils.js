@@ -121,6 +121,54 @@ export const templateCallToArray = args => {
   return result;
 }
 
+export const jitter = {
+  full: delay => Math.random() * delay,
+  equal: delay => delay / 2 + Math.random() * delay / 2,
+  decorrelated: delay => Math.min(Math.random() * delay * 3, delay * 3)
+}
+export const backoff = async ({
+  retries,
+  delay,
+  minDelay,
+  maxDelay,
+  jitter: _jitter
+}, func) => {
+  retries = (
+    typeof retries == 'number' ? retries :
+      err`invalid "retries" argument`
+  );
+
+  const jitterFn = (
+    _jitter == false || _jitter == null ? null :
+      typeof _jitter == 'function' ? _jitter :
+        _jitter in jitter ? jitter[_jitter] :
+          err`invalid "jitter" argument`
+  );
+
+  const delayFn = (
+    typeof delay == 'function' ? delay :
+      typeof delay == 'object' ? attempt => delay.base * Math.pow(delay.factor, attempt) :
+        err`invalid "delay" argument`
+  );
+
+  let lastError;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await func();
+    } catch (error) {
+      lastError = error;
+      let delayMs = delayFn(attempt);
+      if (jitterFn) delayMs = jitterFn(delayMs);
+      if (minDelay) delayMs = Math.max(minDelay, delayMs);
+      if (maxDelay) delayMs = Math.min(maxDelay, delayMs);
+      await sleep(delayMs);
+    }
+  }
+  throw lastError;
+}
+
+//
+
 export const isObject = value => {
   return typeof value == 'object' && value !== null;
 }
