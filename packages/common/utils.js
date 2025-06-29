@@ -131,7 +131,8 @@ export const backoff = async ({
   delay,
   minDelay,
   maxDelay,
-  jitter: _jitter
+  jitter: _jitter,
+  onError=console.error
 }, func) => {
   retries = (
     typeof retries == 'number' ? retries :
@@ -156,13 +157,12 @@ export const backoff = async ({
     try {
       return await func();
     } catch (error) {
-      lastError = error;
+      onError(lastError = error);
       let delayMs = delayFn(attempt);
       if (jitterFn) delayMs = jitterFn(delayMs, prevDelayMs);
       if (minDelay) delayMs = Math.max(minDelay, delayMs);
       if (maxDelay) delayMs = Math.min(maxDelay, delayMs);
-      prevDelayMs = delayMs;
-      await sleep(delayMs);
+      await sleep(prevDelayMs = delayMs);
     }
   }
   throw lastError;
