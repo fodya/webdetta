@@ -135,20 +135,20 @@ export const backoff = async ({
 }, func) => {
   retries = (
     typeof retries == 'number' ? retries :
-      err`invalid "retries" argument`
+    err`invalid "retries" argument`
   );
 
   const jitterFn = (
     _jitter == false || _jitter == null ? null :
-      typeof _jitter == 'function' ? _jitter :
-        _jitter in jitter ? jitter[_jitter] :
-          err`invalid "jitter" argument`
+    typeof _jitter == 'function' ? _jitter :
+    _jitter in jitter ? jitter[_jitter] :
+    err`invalid "jitter" argument`
   );
 
   const delayFn = (
     typeof delay == 'function' ? delay :
-      typeof delay == 'object' ? attempt => delay.base * Math.pow(delay.factor, attempt) :
-        err`invalid "delay" argument`
+    typeof delay == 'object' ? attempt => delay.base * Math.pow(delay.factor, attempt) :
+    err`invalid "delay" argument`
   );
 
   let lastError;
