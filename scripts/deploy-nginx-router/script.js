@@ -43,6 +43,13 @@ function splitString(str, delimeter, brackets) {
   return res;
 }
 
+const routeToPathname = route => {
+  const pathname = route.replace('://', '').split('/').slice(1).join('/');
+  if (pathname.startsWith('^')) return pathname.replace('^', '^/');
+  if (pathname.startsWith('@')) return pathname;
+  return '/' + pathname;
+}
+
 export default async ({
   name='',
   certsPath='',
@@ -120,11 +127,12 @@ export default async ({
   console.log();
   for (const { type, modifiers, route, target, settings } of routes) {
     const host = toURL(route)?.host;
-    const pathname = '/' + route.replace('://', '').split('/').slice(1).join('/');
+    const pathname = routeToPathname(route);
+
     if (!host) throw new Error(`Invalid route: ${route}`);
     const targetUrl = toURL(target);
-
     const locations = $SERVERS[host] ??= [];
+
     if (type == 'proxy') {
       const $PATH = trimSlash(pathname);
       if ($PATH.length > 0 &&
@@ -150,7 +158,7 @@ export default async ({
         $PARAMS: modifiers,
         $TRY_FILES: modifiers == '='
           ? '/index.html'
-          : '$uri $uri/ /index.html',
+          : '$uri $uri/',
         $DIST: dist,
         $SETTINGS: settings.join('\n')
       }));

@@ -4,5 +4,5 @@ location $PARAMS $PATH {
 
   $SETTINGS
 
-  try_files $TRY_FILES =404;
+  try_files $TRY_FILES /index.html =404;
 }

@@ -84,7 +84,9 @@ export const fileToJson = async (file) => {
     result[key] = val;
   }
 
-  const { mimeType, content } = datauriToJson(await fileToDatauri(file));
+  const datauri = await fileToDatauri(file);
+  console.log({file, datauri});
+  const { mimeType, content } = datauriToJson(datauri);
   result.mimeType = mimeType;
   result.content = content;
   return result;

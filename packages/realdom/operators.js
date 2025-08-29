@@ -3,7 +3,7 @@ import { unwrapFn, templateCallToArray } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
 import {
-  createIf, createList, createDynamicFragment,
+  createIf, createList, createSlot,
   onOperatorDisable, domAppend, domRemove
 } from './dynamic.js';
 
@@ -41,7 +41,7 @@ export const operators = {
 
   if: (cond, ...args) => createIf().elif(cond, args),
   list: (items, render, keyFn) => createList(items, render, keyFn),
-  dynamicfragment: (func) => createDynamicFragment(func),
+  slot: (func) => createSlot(func),
 
   lifecycle: Operator((node, names, args) => {
     for (const name of names) {

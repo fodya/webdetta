@@ -109,8 +109,9 @@ export const createList = (
   return root;
 }
 
-const createItems = (func) => {
-  const root = document.createTextNode('');
+export const createSlot = (content) => {
+  const node = document.createTextNode('');
+  const attached = r.val(false);
 
   const children = [], operators = [], operatorsDisable = [];
   const setItems = items => {
@@ -127,8 +128,8 @@ const createItems = (func) => {
   }
 
   const append = () => {
-    const parentNode = root.parentNode;
-    let last = root;
+    const parentNode = node.parentNode;
+    let last = node;
     for (const child of children) {
       Element.append({ after: last }, child);
       last = child;
@@ -139,36 +140,37 @@ const createItems = (func) => {
     });
   }
 
+  let lastContent;
   const remove = () => {
-    lastValue = null;
+    lastContent = null;
     for (const child of children) Element.remove(child);
     for (const f of operatorsDisable) f();
     children.length = operators.length = operatorsDisable.length = 0;
   }
 
-  const attached = r.val(false);
-  let lastValue;
   recurrent(() => {
-    const newValue = func();
+    const newContent = content();
     if (!attached()) { remove(); return; }
-    if (lastValue == newValue) return;
+    if (lastContent == newContent) return;
     remove();
-    setItems(lastValue = newValue);
+    setItems(lastContent = newContent);
     append();
   });
 
-  domAppend.on(root, () => !attached() && attached(true));
-  domRemove.on(root, () => attached() && attached(false));
-  return root;
-}
+  domAppend.on(node, () => !attached() && attached(true));
+  domRemove.on(node, () => attached() && attached(false));
 
-export const createDynamicFragment = func => createItems(r.scope(func));
+  return node;
+}
 
 export const createIf = () => {
   const conditions = r.val([]);
-  const node = createItems(() =>
+  const content = r.val(null);
+  const node = createSlot(content);
+  
+  r.effect(() => content(
     conditions().find(d => unwrapFn(d.cond))?.args
-  );
+  ));
 
   node.elif = (cond, ...args) => {
     const list = conditions();
