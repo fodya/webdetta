@@ -4,18 +4,6 @@ The library contains a list of 100+ useful functions that accelerated and simpli
 
 <br>
 
-> **Backstory:**\
-The creation of this library was inspired by the frameorc project — a collaborative effort that began in 2015 during a scientific and practical conference in which I participated. \
-\
-Over the course of more than eight years, we — Michael Lazarev, Anton Baranov, Daniil Terlyakhin, Elnur Yusifov and Fedot Kriutchenko — worked together, exchanging ideas.\
-The goal was to develop a methodology that would allow a single developer to operate at the speed and efficiency of a multi-person team.\
-Some of these ideas were eventually published to the [frameorc GitHub](https://github.com/frameorc/frameorc).\
-\
-In recent years,\
-I’ve been polishing and refining these ideas, applying them in practice and preserving the results, in the form of this library.
-
-<br>
-
 The library is in active development and is being improved day by day.\
 Every function in each published module has been used in dozens of real-world production projects.
 
@@ -124,3 +112,19 @@ Server-side module for authorizing Telegram Mini Apps users.
 
 \> `webdetta/telegram/tma`\
 Client-side syntax sugar for the [Telegram Web App](https://telegram.org/js/telegram-web-app.js) library.
+
+---
+
+<br>
+
+> **Backstory:**\
+The creation of this library was inspired by the frameorc project — a collaborative effort that began in 2015 during a scientific and practical conference in which I participated. \
+\
+Over the course of several years, we — Michael Lazarev, Anton Baranov, Daniil Terlyakhin, Elnur Yusifov and Fedot Kriutchenko — worked together, exchanging ideas.\
+The goal was to develop a methodology that would allow a single developer to operate at the speed and efficiency of a multi-person team.\
+Some of these ideas were eventually published to the [frameorc GitHub](https://github.com/frameorc/frameorc).\
+\
+In recent years,\
+I’ve been polishing and refining these ideas, applying them in practice and preserving the results, in the form of this library.
+
+<br>
