@@ -62,9 +62,9 @@ throttle.sync = f => {
   const throttled = function() {
     if (locked) return;
     locked = true;
-    let res; try { res = f.apply(this, arguments); }
-    catch (err) { locked = false; throw err; }
-    locked = false;
+    let res;
+    try { res = f.apply(this, arguments); }
+    finally { locked = false; }
     return res;
   };
   throttled.isLocked = () => locked;
