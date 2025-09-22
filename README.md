@@ -30,12 +30,6 @@ History and hash router library for Single Page Applications.
 Remote Procedure Call library for realtime APIs.\
 Uses msgpackr for encoding and WebSockets as a transport layer.
 
-\> `webdetta/sdk` _Deprecated, will be rewritten soon._\
-Code generation tool for exposing server-defined functions to the client.
-
-\> `webdetta/server` _Deprecated, will be removed soon._\
-ExpressJS wrapper for easier server creation.
-
 \> `webdetta/state` _Unfinished, more functions will be added._\
 State persistency for client and server.
 
