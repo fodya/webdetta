@@ -1,5 +1,5 @@
 ## Webdetta — web application building blocks
-Developed by Fedot Kriutchenko.\
+
 The library contains a list of 100+ useful functions that accelerated and simplified my work on the last 30+ web-development projects.
 
 <br>
@@ -29,9 +29,6 @@ History and hash router library for Single Page Applications.
 \> `webdetta/rpc`\
 Remote Procedure Call library for realtime APIs.\
 Uses msgpackr for encoding and WebSockets as a transport layer.
-
-\> `webdetta/state` _Unfinished, more functions will be added._\
-State persistency for client and server.
 
 \> `webdetta/subprocess`\
 child_process syntax sugar — spawns OS processes as promises, allowing for cleaner code.
@@ -110,6 +107,8 @@ Client-side syntax sugar for the [Telegram Web App](https://telegram.org/js/tele
 ---
 
 <br>
+
+Developed by Fedot Kriutchenko.\
 
 > **Backstory:**\
 The creation of this library was inspired by the frameorc project — a collaborative effort that began in 2015 during a scientific and practical conference in which I participated. \

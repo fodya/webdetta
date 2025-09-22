@@ -12,7 +12,6 @@
     "./i18n/*": "./packages/i18n/*.js",
     "./router/*": "./packages/router/*.js",
     "./rpc/*": "./packages/rpc/*.js",
-    "./state/*": "./packages/state/*.js",
     "./subprocess/*": "./packages/subprocess/*.js",
     "./vcss/*": "./packages/vcss/*.js",
     "./vdom/*": "./packages/vdom/*.js",
