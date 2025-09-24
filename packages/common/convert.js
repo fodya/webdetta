@@ -46,7 +46,7 @@ export const jsonToFormdata = (json, formData = new FormData(), parentKey = '') 
 }
 
 // file -> chunks (generator)
-export const blobToChunks = function * (file, chunkSize=256*1024) {
+export const blobToChunks = function* (file, chunkSize=256*1024) {
   let offset = 0;
   while (offset < file.size) {
     yield file.slice(offset, offset + chunkSize);
