@@ -1,5 +1,4 @@
 import { toFn, objectPick, S, cached } from './utils.js';
-import { debug } from './debug.js';
 
 const regexAZ = /[A-Z]/g;
 export const kebab = cached(s =>
@@ -32,14 +31,7 @@ Object.assign(dummyDiv.style, {
   left: '-99999px',
   top: '-99999px',
   visibility: 'hidden',
-  pointerEvents: 'none',
-  ...(debug.enabled ? {
-    zIndex: 9999,
-    visibility: 'visible',
-    top: 0,
-    left: 0,
-    background: 'white',
-  } : {})
+  pointerEvents: 'none'
 });
 export const measureText = (text, style={}) => {
   document.documentElement.append(dummyDiv);

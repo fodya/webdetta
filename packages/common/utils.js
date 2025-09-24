@@ -1,5 +1,3 @@
-import { debug } from './debug.js';
-
 const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
 export const isPromise = d => d == Promise.resolve(d);
@@ -20,7 +18,7 @@ export const S = (...args) =>
   String.raw(...args).match(/\S+/g) ?? [];
 
 export const catchErrors = (f, handler=catchErrors.handler) => {
-  const wrapped = function() {
+  return function() {
     try {
       const res = f.apply(this, arguments);
       return isPromise(res) ? res.catch(handler) : res;
@@ -29,17 +27,16 @@ export const catchErrors = (f, handler=catchErrors.handler) => {
       handler(e);
     }
   }
-  return debug.linkOriginalFunction(f, wrapped);
 }
 catchErrors.handler = e => console.error(e);
 
 export const once = (f) => {
   let called;
-  return debug.linkOriginalFunction(f, function () {
+  return function () {
     if (called) return;
     called = true;
     return f.apply(this, arguments);
-  });
+  }
 }
 
 export const sleep = t => new Promise(r => setTimeout(r, t));
@@ -55,20 +52,18 @@ export const throttle = (f) => {
       .finally(() => (promise = null));
   }
   throttled.isLocked = () => !!promise;
-  return debug.linkOriginalFunction(f, throttled);
+  return throttled;
 }
 throttle.sync = f => {
   let locked = false;
   const throttled = function() {
     if (locked) return;
     locked = true;
-    let res;
-    try { res = f.apply(this, arguments); }
+    try { return f.apply(this, arguments); }
     finally { locked = false; }
-    return res;
   };
   throttled.isLocked = () => locked;
-  return debug.linkOriginalFunction(f, throttled);
+  return throttled;
 }
 throttle.T = (delay, f) => throttle(async function () {
   await sleep(delay);
@@ -94,18 +89,17 @@ throttle.Td = (delay, f) => {
     });
   }
   throttled.isLocked = () => t !== null;
-  return debug.linkOriginalFunction(f, throttled);
+  return throttled;
 }
 
 export const cached = (f, keyFn=String, map=new Map()) => {
-  const wrapped = function (...args) {
+  return function (...args) {
     const key = keyFn(...args);
     let result = map.get(key);
     if (result) return result;
     map.set(key, result = f.apply(this, args));
     return result;
   }
-  return debug.linkOriginalFunction(f, wrapped);
 }
 
 export const isTemplateCall = args =>

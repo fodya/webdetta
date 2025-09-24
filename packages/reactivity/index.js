@@ -1,57 +1,59 @@
 import { Context } from '../common/context.js';
-import { debug } from '../common/debug.js';
 import { throttle, objectHasOwn } from '../common/utils.js';
 export const effectsAbortSignal = Context();
 
-const currentOperation = Context();
-const performOperation = (func, repeated) => {
+const currentEffect = Context();
+
+const performEffect = (func, repeated) => {
   let aborted;
   effectsAbortSignal()?.addEventListener('abort', () => aborted = true);
 
-  const handler = throttle.sync(debug.linkOriginalFunction(func, () => {
+  const handler = throttle.sync(() => {
     if (aborted) return;
-    const res = currentOperation.run(operation, func);
-    const { postponedCalls } = operation;
+
+    const res = currentEffect.run(effectCtx, func);
+    const { postponedCalls } = effectCtx;
     if (postponedCalls) {
       for (const func of postponedCalls) func();
       postponedCalls.clear();
     }
     return res;
-  }));
+  });
 
-  const operation = {
+  const effectCtx = {
     handler: repeated ? handler : null,
     postponedCalls: null, // new Set()
   }
 
   return handler();
 }
-const effect = func => performOperation(func, true);
-const detach = func => performOperation(func, false);
+
+const effect = func => performEffect(func, true);
+const detach = func => performEffect(func, false);
 
 const Handlers = () => {
   let list = new Set();
   const add = handler => list.add(handler);
+
   const trigger = throttle.sync(() => {
-    const operation = currentOperation();
-    if (operation) { // See [Postponed side-effects of an operation]
-      (operation.postponedCalls ??= new Set()).add(trigger);
+    const effectCtx = currentEffect();
+    if (effectCtx) { // See [Deferred side-effects of an effect]
+      (effectCtx.postponedCalls ??= new Set()).add(trigger);
       return;
     }
 
     const currList = list;
-    list = new Set(); // See [Keeping track of Signal's handlers]
+    list = new Set(); // See [Lifecycle of an effect]
 
     for (const func of currList) {
       if (func.isLocked()) {
-        // the `func` decorated with `throttle.sync` is already running,
-        // calling it will have no effect, just resubscribe it instead.
         add(func);
       } else {
         func();
       }
     }
   });
+
   return { add, trigger };
 }
 
@@ -60,8 +62,8 @@ export const Signal = ({ handlers=Handlers(), get, set }) => {
   set = set.bind(ctx);
   const accessor = (...a) => {
     if (a.length === 0) {
-      const operation = currentOperation();
-      if (operation?.handler) handlers?.add(operation.handler);
+      const effectCtx = currentEffect();
+      if (effectCtx?.handler) handlers?.add(effectCtx.handler);
       return get();
     } else {
       ctx.skip = false;
@@ -89,12 +91,12 @@ const DiffValue = val => Signal({
 
 const scope = func => {
   let controller;
-  const handler = debug.linkOriginalFunction(func, () => {
+  const handler = () => {
     if (controller?.signal?.aborted) return;
     controller?.abort();
     controller = new AbortController();
     return effectsAbortSignal.run(controller.signal, func);
-  });
+  }
   handler.abort = () => controller?.abort();
   effectsAbortSignal()?.addEventListener('abort', handler.abort);
   return handler;
@@ -113,7 +115,7 @@ const await_ = func => {
 }
 const proxy = target => {
   const ref = (key) => {
-    const val = r.val();
+    const val = Value();
     return (...a) => {
       const t = target();
       if (a.length == 0) return (val(), t?.[key]);
@@ -138,19 +140,20 @@ export const r = {
 }
 
 //
-// ### Postponed side-effects of an operation]
+// ### Deferred side-effects of an effect
 //
-// Inside an operation, all side-effects (`Signal.set` calls) are postponed.
-// Signals values will be set upon current operation finish.
+// Side-effect calls are postponed until the current `effect` completes.
+// This prevents intermediate state from propagating to other `effect`s,
+// ensuring that dependent computations are executed with a consistent, finished state.
 //
 // Example:
-// Calling val(1) in `handler1` triggers `handler2`,
-// but `handler2` will print 3, not 1.
 //
 // const val = r.val(0);
 // r.effect(function handler1() {
 //   if (val() == 0) { val(1); val(2); val(3); }
 // });
+//
+// Prints only "3", skipping intermediate values "1" and "2"
 // r.effect(function handler2() {
 //   console.log(val());
 // });
@@ -158,17 +161,18 @@ export const r = {
 
 
 //
-// ### Keeping track of Signal's handlers
+// ### Lifecycle of an effect
 //
 // Clear all handlers upon a `Signal.set` call.
 // Handlers will subscribe again upon an effect call.
 // Unreachable handlers will not resubscribe.
 //
 // Example:
-// The handler will print 0, then 1, but 2 and 3 will be ignored.
-// - condition `stop` causes an early return
-// - an early return prevents the handler from resubscribing to `val` signal
-// - thus, setting `stop = true` stops `handler` from ever being called again
+// Prints 0 and 1. Stops after `stop = true`, so 2 and 3 are ignored.
+//
+// Notice:
+// `val(3)` is ignored even after `stop = false` because
+// the `handler` never resubscribed to `val` updates.
 //
 // const val = r.val(0);
 // let stop;

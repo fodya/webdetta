@@ -59,8 +59,8 @@ Implements expressive, chainable syntax using the builder pattern.
 \> `webdetta/common/context`\
 A flexible way of handling scoped variables.
 
-\> `webdetta/common/debug`\
-Library debugging module.
+\> `webdetta/common/context-async`\
+Async context with the same simple api as `webdetta/common/context`.
 
 \> `webdetta/common/dom`\
 DOM-specific functions.
@@ -79,10 +79,6 @@ General-purpose utilities for throttling, memoization, error handling, data form
 ### Configuration modules
 
 These modules do not export anything, so just import the module itself for it to take effect.
-
-\> `webdetta/config/enable-debug`\
-Enables webdetta library debugging/inspection features.\
-Must not be used in production.
 
 \> `webdetta/config/enable-http-modules`\
 Enables NodeJS http(s) imports.
