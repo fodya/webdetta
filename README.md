@@ -104,7 +104,7 @@ Client-side syntax sugar for the [Telegram Web App](https://telegram.org/js/tele
 
 <br>
 
-Developed by Fedot Kriutchenko.\
+Developed by Fedot Kriutchenko.
 
 > **Backstory:**\
 The creation of this library was inspired by the frameorc project — a collaborative effort that began in 2015 during a scientific and practical conference in which I participated. \
