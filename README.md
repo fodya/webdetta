@@ -60,7 +60,7 @@ Implements expressive, chainable syntax using the builder pattern.
 A flexible way of handling scoped variables.
 
 \> `webdetta/common/context-async`\
-Async context with the same simple api as `webdetta/common/context`.
+Async context with the same simple api as webdetta/common/context.
 
 \> `webdetta/common/dom`\
 DOM-specific functions.
