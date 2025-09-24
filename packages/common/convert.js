@@ -45,6 +45,17 @@ export const jsonToFormdata = (json, formData = new FormData(), parentKey = '') 
   return formData;
 }
 
+// file -> chunks (generator)
+export const blobToChunks = function * (file, chunkSize=256*1024) {
+  let offset = 0;
+  while (offset < file.size) {
+    yield file.slice(offset, offset + chunkSize);
+    offset += chunkSize;
+  }
+}
+
+export const fileToChunks = blobToChunks;
+
 ///////////////
 // A S Y N C //
 ///////////////
@@ -85,7 +96,6 @@ export const fileToJson = async (file) => {
   }
 
   const datauri = await fileToDatauri(file);
-  console.log({file, datauri});
   const { mimeType, content } = datauriToJson(datauri);
   result.mimeType = mimeType;
   result.content = content;
