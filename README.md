@@ -43,6 +43,8 @@ Snabbdom-based Virtual DOM library.
 Functions for creating [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components).\
 Useful for integrating existing web apps with third-party teams that don't use our libraries.
 
+\> `webdetta/templater` A simple and extensible template engine.
+
 ---
 
 ### Common modules

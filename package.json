@@ -19,7 +19,8 @@
     "./reactivity/*": "./packages/reactivity/*.js",
     "./webcomp/*": "./packages/webcomp/*.js",
     "./telegram/*": "./packages/telegram/*.js",
-    "./config/*": "./packages/config/*.js"
+    "./config/*": "./packages/config/*.js",
+    "./templater/*": "./packages/templater/*.js"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0-beta2",
