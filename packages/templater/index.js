@@ -1,45 +1,61 @@
-const Node = (operator, args) => ({ operator, args });
+const Node = (operator, args) => ({ operator, args, nested: 0 });
 
+const OP_REGEX = /[a-zA-Z_]/;
 const parse = (str, config) => {
   const { operator, open, close, separator } = config;
 
-  let buf = '', node = Node(null, []);
+  const root = Node(null, []);
   const parents = new WeakMap();
+  let buf = '', op = null, node = root;
 
   const strip = (suffix) => buf.slice(0, -suffix.length);
-  const push = (arg) => node.args.push(arg);
+  const pushArg = (arg) => node.args.push(arg);
+  const pushNode = (operator) => {
+    const parent = node;
+    node = Node(operator, [])
+    parent.args.push(node);
+    parents.set(node, parent);
+  }
 
   for (const c of str) {
     buf += c;
+
     if (buf.endsWith(operator)) {
-      push(strip(operator));
-      const parent = node;
-      node = Node(null, [])
-      parent.args.push(node);
-      parents.set(node, parent);
-      buf = '';
+      pushArg(strip(operator));
+      op = '';
+      continue;
     }
-    else if (buf.endsWith(open)) {
-      node.operator = strip(open);
-      buf = '';
+
+    if (buf.endsWith(open)) {
+      if (op != null) { pushNode(op); buf = ''; continue; }
+      else node.nested++;
     }
-    else if (buf.endsWith(separator)) {
-      push(strip(separator));
-      buf = '';
+    if (buf.endsWith(separator)) {
+      if (node.nested == 0 && node != root) {
+        pushArg(strip(separator));
+        buf = ''; continue;
+      }
     }
-    else if (buf.endsWith(close)) {
-      push(strip(close));
-      node = parents.get(node);
-      buf = '';
+    if (buf.endsWith(close)) {
+      if (node.nested-- == 0 && node != root) {
+        pushArg(strip(close));
+        node = parents.get(node);
+      } else {
+        pushArg(buf);
+      }
+      buf = ''; continue;
     }
+
+    if (!OP_REGEX.test(c)) op = null;
+    if (op != null) op += c;
   }
 
-  push(buf);
+  pushArg(buf);
 
-  return node;
+  return root;
 }
 
-const flattenCtx = (ctx, prefix='', res={}) => {
+const flattenCtx = (ctx, prefix = '', res = {}) => {
   for (const [key, val] of Object.entries(ctx)) {
     if (val && typeof val === 'object' && !Array.isArray(val)) {
       flattenCtx(val, prefix + key + '.', res);
