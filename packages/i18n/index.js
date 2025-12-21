@@ -1,4 +1,10 @@
-export const I18N = (fallbackLang, translations) => {
+export const I18N = ({
+  fallbackLang,
+  translations,
+  onNotFound = (key) => {
+    throw new Error(`Translation not found for key: ${key}.`);
+  }
+}) => {
   let lang;
 
   const definition = (key, lang) => {
@@ -13,7 +19,7 @@ export const I18N = (fallbackLang, translations) => {
     if (args.length == 0) throw new Error('Arguments must not be empty.');
     const key = args[0];
     const def = definition(key, lang) ?? definition(key, fallbackLang);
-    if (!def) throw new Error(`Translation not found for key: ${key}.`);
+    if (!def) return onNotFound(key);
 
     return args.length == 1
       ? def

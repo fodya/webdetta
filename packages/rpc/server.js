@@ -6,7 +6,7 @@ import { Proto } from "./proto.js";
 
 const EMPTY = new Uint8Array(0);
 
-export function RpcServer({ PULSE = 60_000 } = {}) {
+export function RpcServer({ PULSE = 60_000, binaryType = "arraybuffer" } = {}) {
   function upgrade(socket) {
     // If the client does not send anything within the 2*PULSE interval,
     // the socket will be closed. The client logic makes sure that at least
@@ -23,7 +23,7 @@ export function RpcServer({ PULSE = 60_000 } = {}) {
       }
     }
 
-    function send(data) {
+    function sendMessage(data) {
       try {
         kick();
         socket.send(data);
@@ -36,7 +36,18 @@ export function RpcServer({ PULSE = 60_000 } = {}) {
 
     let closePromiseResolve,
         closePromise = new Promise(ok => closePromiseResolve = ok);
-    const { process, cast, call, abort } = Proto(send, () => upgrade.methods);
+    const { process, cast, call, abort } = Proto({
+      getMethods: () => upgrade.methods,
+      sendMessage,
+      encodeMessage: (obj) => {
+        // Default to JSON encoding - can be overridden if msgpack is needed
+        return new TextEncoder().encode(JSON.stringify(obj));
+      },
+      decodeMessage: (data) => {
+        // Default to JSON decoding - can be overridden if msgpack is needed
+        return JSON.parse(new TextDecoder().decode(new Uint8Array(data)));
+      }
+    });
     const instance = {
       close() {
         socket.close();
@@ -47,7 +58,7 @@ export function RpcServer({ PULSE = 60_000 } = {}) {
       onClose: undefined,
     };
 
-    socket.binaryType = "arraybuffer";
+    socket.binaryType = binaryType;
     let handlers = {
       close(e) {
         clearTimeout(to);
@@ -65,7 +76,7 @@ export function RpcServer({ PULSE = 60_000 } = {}) {
         if (data?.byteLength > 0) {
           process(instance, data);
         } else {
-          send(EMPTY); // PONG RESPONSE
+          sendMessage(EMPTY); // PONG RESPONSE
         }
       },
     };

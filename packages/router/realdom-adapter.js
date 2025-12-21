@@ -1,6 +1,6 @@
 import { el } from '../realdom/index.js';
 import { r } from '../reactivity/index.js';
-import { Context } from '../common/context.js';
+import { Context } from '../context/sync.js';
 
 const RouterRealdom = ({
   router
@@ -19,7 +19,9 @@ const RouterRealdom = ({
 
     if (!loaded.has(key)) {
       const proxy = new Proxy({}, { get: (_, param) => paramVal(key, param) });
-      const dom = RouterRealdom.ctx.run(router, () => page(proxy));
+      const dom = RouterRealdom.ctx.run(router, () => {
+        return page(proxy);
+      });
       loaded.set(key, { key, dom });
     }
 
@@ -33,7 +35,7 @@ const RouterRealdom = ({
     el.list(loadedRoutes, ({ key, dom }) => {
       const isVisible = () => currentRoute() == key;
       return el.append(dom,
-        el.style.display(() => isVisible() ? 'flex' : 'none'),
+        el.if(() => !isVisible(), el.style.display`none`),
       );
     })
   );

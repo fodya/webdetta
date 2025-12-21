@@ -5,27 +5,22 @@
   "description": "",
   "license": "MIT",
   "type": "module",
-  "bin": "./scripts/index.js",
   "exports": {
     "./*": "./packages/*/index.js",
-    "./common/*": "./packages/common/*.js",
+    "./builder": "./packages/builder/index.js",
+    "./context/*": "./packages/context/*.js",
+    "./convert/*": "./packages/convert/*.js",
     "./i18n/*": "./packages/i18n/*.js",
+    "./reactivity/*": "./packages/reactivity/*.js",
+    "./realcss/*": "./packages/realcss/*.js",
+    "./realdom/*": "./packages/realdom/*.js",
     "./router/*": "./packages/router/*.js",
     "./rpc/*": "./packages/rpc/*.js",
     "./subprocess/*": "./packages/subprocess/*.js",
-    "./vcss/*": "./packages/vcss/*.js",
-    "./vdom/*": "./packages/vdom/*.js",
-    "./realdom/*": "./packages/realdom/*.js",
-    "./reactivity/*": "./packages/reactivity/*.js",
+    "./templater/*": "./packages/templater/*.js",
     "./webcomp/*": "./packages/webcomp/*.js",
-    "./telegram/*": "./packages/telegram/*.js",
-    "./config/*": "./packages/config/*.js",
-    "./templater/*": "./packages/templater/*.js"
-  },
-  "dependencies": {
-    "@msgpack/msgpack": "^3.0.0-beta2",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0"
+    "./common/*": "./packages/common/*.js",
+    "./config/*": "./packages/config/*.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",

@@ -1,6 +1,7 @@
 import { operators } from './operators.js';
 import { Element } from './dom.js';
 import { kebab } from '../common/dom.js';
+import { Context } from '../context/sync.js';
 
 const NS = {
   svg: 'http://www.w3.org/2000/svg',
@@ -19,3 +20,4 @@ const elNS = ns => {
   });
 }
 export const el = elNS('');
+export { Context };

@@ -1,4 +1,5 @@
-import { toFn, objectPick, S, cached } from './utils.js';
+import { toFn, S, cached } from './utils.js';
+import { objectPick } from './object.js';
 
 const regexAZ = /[A-Z]/g;
 export const kebab = cached(s =>

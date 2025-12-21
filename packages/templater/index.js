@@ -1,45 +1,47 @@
-const Node = (operator, args) => ({ operator, args, nested: 0 });
+const Node = (operator, args, parent) => ({ operator, args, nested: 0, parent });
 
 const OP_REGEX = /[a-zA-Z_]/;
 const parse = (str, config) => {
-  const { operator, open, close, separator } = config;
+  const { operatorSymbol, openBracket, closeBracket, argumentsSeparator } = config;
 
-  const root = Node(null, []);
-  const parents = new WeakMap();
+  const root = Node(null, [], null);
   let buf = '', op = null, node = root;
 
   const strip = (suffix) => buf.slice(0, -suffix.length);
   const pushArg = (arg) => node.args.push(arg);
   const pushNode = (operator) => {
     const parent = node;
-    node = Node(operator, [])
-    parent.args.push(node);
-    parents.set(node, parent);
+    const child = Node(operator, [], parent);
+    parent.args.push(child);
+    node = child;
   }
 
-  for (const c of str) {
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
     buf += c;
-
-    if (buf.endsWith(operator)) {
-      pushArg(strip(operator));
+    
+    if (c == operatorSymbol) {
+      const nextC = str[i + 1];
+      if (nextC == operatorSymbol) continue;
+      pushArg(strip(operatorSymbol));
       op = '';
       continue;
     }
 
-    if (buf.endsWith(open)) {
+    if (buf.endsWith(openBracket)) {
       if (op != null) { pushNode(op); buf = ''; continue; }
       else node.nested++;
     }
-    if (buf.endsWith(separator)) {
+    if (buf.endsWith(argumentsSeparator)) {
       if (node.nested == 0 && node != root) {
-        pushArg(strip(separator));
+        pushArg(strip(argumentsSeparator));
         buf = ''; continue;
       }
     }
-    if (buf.endsWith(close)) {
+    if (buf.endsWith(closeBracket)) {
       if (node.nested-- == 0 && node != root) {
-        pushArg(strip(close));
-        node = parents.get(node);
+        pushArg(strip(closeBracket));
+        node = node.parent;
       } else {
         pushArg(buf);
       }
@@ -66,22 +68,43 @@ const flattenCtx = (ctx, prefix = '', res = {}) => {
   return res;
 }
 
-const TemplateEngine = (config) => {
+const Templater = (config) => {
   const operators = {};
 
-  const register = (name, func) => { operators[name] = func; }
-
+  const _renderArray = (args, ctx) => {
+    let res = '';
+    let sep = false;
+    for (const arg of args) {
+      if (typeof arg == 'string') {
+        res += (sep ? config.argumentsSeparator : '') + arg;
+        sep = true;
+      } else {
+        res += _render(arg, ctx);
+        sep = false;
+      }
+    }
+    return res;
+  }
   const _render = (node, ctx) => {
     if (typeof node == 'string') return node;
-    if (Array.isArray(node)) return node.map(item => _render(item, ctx)).join('');
+
     ctx = flattenCtx(ctx);
-    if (node.operator != null) return operators[node.operator](ctx, node.args, _render);
-    return _render(node.args, ctx);
+    if (Array.isArray(node)) return _renderArray(node, ctx);
+    
+    if (node.operator != null) {
+      const operator = operators[node.operator];
+      if (!operator) throw new Error(`Unknown operator: ${node.operator}`);
+      return operator(ctx, node.args, _render);
+    }
+
+    return _renderArray(node.args, ctx);
   }
 
-  const render = (str, ctx) => _render(parse(str, config), ctx);
-
-  return { register, render };
+  const res = {};
+  res.register = (name, func) => { operators[name] = func; }
+  res.parse = (str) => parse(str, config);
+  res.render = (str, ctx) => _render(res.parse(str), ctx);
+  return res;
 }
 
-export default TemplateEngine;
+export { Templater };

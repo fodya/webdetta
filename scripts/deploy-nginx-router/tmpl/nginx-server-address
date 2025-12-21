@@ -1,7 +1,0 @@
-server {
-  listen $ADDRESS;
-  root /var/www/;
-
-  $CONFIG
-  $LOCATIONS
-}

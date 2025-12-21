@@ -1,8 +1,6 @@
-import { Context } from '../common/context.js';
 import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
-import { recurrent } from './operators.js';
 
 const domHandlers = () => {
   const map = new WeakMap();
@@ -16,23 +14,30 @@ const domHandlers = () => {
     if (!list) return;
     for (const f of list) f();
   }
-  return { on, trigger };
+  return [on, trigger];
 }
 
-export const domAppend = domHandlers();
-export const domRemove = domHandlers();
-
-const operatorDisableCtx = Context();
-export const onOperatorDisable = (f) => operatorDisableCtx()?.push(f);
+export const [onDomAppend, domAppendTrigger] = domHandlers();
+export const [onDomRemove, domRemoveTrigger] = domHandlers();
 
 const isFragment = node => node.nodeType === 11;
 
+const initializeLazyElements = (list) => {
+  if (list) for (let i = 0; i < list.length; i++) {
+    // unwrap lazy elements:
+    // el.if(condition, () => someLazyContent()) => rendered content
+    const item = list[i];
+    if (Element.isLazyElement(item)) list[i] = unwrapFn(item);
+  }
+}
+
 const lRoot = Symbol();
-const defaultKeyFn = (d, i) => (
-  typeof d == 'number' || typeof d == 'string'
-  ? d
-  : d?.key ?? d?.id
-) ?? i;
+const defaultKeyFn = (d, i) => {
+  if (typeof d == 'number' || typeof d == 'string') return d;
+  if (d?.key != null) return d.key;
+  if (d?.id != null) return d.id;
+  return i;
+};
 export const createList = (
   itemsFn,
   renderItem,
@@ -41,14 +46,17 @@ export const createList = (
   const root = document.createTextNode('');
 
   const elems = new Map([[lRoot, root]]);
-  const scopes = new Map();
+  const aborts = new Map();
   const prev = new Map();
   const next = new Map();
 
   const connect = (k, func) => {
-    const scope = r.scope(func);
-    scopes.set(k, scope);
-    elems.set(k, scope());
+    let dom;
+    const controller = r.detach(() => {
+      dom = func();
+    });
+    aborts.set(k, controller.abort.bind(controller));
+    elems.set(k, dom);
   }
   const move = (prevK, k) => {
     const nextK = next.get(prevK);
@@ -57,7 +65,7 @@ export const createList = (
     next.set(prevK, k);
     prev.set(nextK, k);
     next.set(k, nextK);
-    Element.append({ after: elems.get(prevK) }, elems.get(k));
+    Element.append(elems.get(prevK), elems.get(k), 'after');
   }
   const disconnect = (k) => {
     const prevK = prev.get(k);
@@ -66,20 +74,20 @@ export const createList = (
     next.set(prevK, nextK);
     prev.delete(k);
     next.delete(k);
-    scopes.get(k).abort();
-    scopes.delete(k);
+    aborts.get(k)();
+    aborts.delete(k);
     Element.remove(elems.get(k));
     elems.delete(k);
   }
 
-  const attached = r.val(false);
-  recurrent(() => {
-    const items = unwrapFn(itemsFn);
+  const attached = r.dval(false);
+  r.effect(() => {
     if (!attached()) {
       for (const k of elems.keys()) if (k != lRoot) disconnect(k);
       return;
     }
-
+    
+    const items = unwrapFn(itemsFn);
     const entries = new Map(
       Array.isArray(items)
       ? items.map((d, i, a) => [keyFn(d, i, a), d])
@@ -103,62 +111,58 @@ export const createList = (
       i++;
     }
   });
-  domAppend.on(root, () => !attached() && attached(true));
-  domRemove.on(root, () => attached() && attached(false));
+  onDomAppend(root, () => attached(true));
+  onDomRemove(root, () => attached(false));
 
   return root;
 }
 
 export const createSlot = (content) => {
   const node = document.createTextNode('');
-  const attached = r.val(false);
+  const attached = r.dval(false);
 
-  const children = [], operators = [], operatorsDisable = [];
-  const setItems = items => {
-    children.length = operators.length = operatorsDisable.length = 0;
+  let abort = null;
+
+  const append = (items) => {
     if (!items) return;
-    for (const item of [items].flat(Infinity)) {
-      if (Operator.isOperator(item)) {
-        operators.push(item);
-      } else {
-        const node = Element.from(item);
-        children.push(...(isFragment(node) ? node.childNodes : [node]))
+    const controller = r.detach(() => {
+      const parentNode = node.parentNode;
+      let last = node;
+      for (const item of [items].flat(Infinity)) {
+        if (Operator.isOperator(item)) Operator.apply(parentNode, item);
+        else {
+          const node = Element.from(item);
+          const nodes = isFragment(node) ? node.childNodes : [node];
+          for (const child of nodes) {
+            Element.append(last, child, 'after');
+            last = child;
+          }
+          Operator.onCleanup(() => {
+            for (const child of nodes) Element.remove(child);
+          });
+        }
       }
-    }
-  }
-
-  const append = () => {
-    const parentNode = node.parentNode;
-    let last = node;
-    for (const child of children) {
-      Element.append({ after: last }, child);
-      last = child;
-    }
-    operatorDisableCtx.run(operatorsDisable, () => {
-      for (const item of operators) Operator.apply(parentNode, item);
-      operators.length = 0;
     });
+    abort = controller.abort.bind(controller);
   }
 
-  let lastContent;
+  let currentContent;
   const remove = () => {
-    lastContent = null;
-    for (const child of children) Element.remove(child);
-    for (const f of operatorsDisable) f();
-    children.length = operators.length = operatorsDisable.length = 0;
+    currentContent = null;
+    abort?.(Operator.CLEANUP);
+    abort = null;
   }
 
-  recurrent(() => {
-    const newContent = content();
+  r.effect(() => {
     if (!attached()) { remove(); return; }
-    if (lastContent == newContent) return;
+    const newContent = content();
+    if (currentContent == newContent) return;
     remove();
-    setItems(lastContent = newContent);
-    append();
+    append(currentContent = newContent);
   });
 
-  domAppend.on(node, () => !attached() && attached(true));
-  domRemove.on(node, () => attached() && attached(false));
+  onDomAppend(node, () => attached(true));
+  onDomRemove(node, () => attached(false));
 
   return node;
 }
@@ -168,9 +172,11 @@ export const createIf = () => {
   const content = r.val(null);
   const node = createSlot(content);
   
-  r.effect(() => content(
-    conditions().find(d => unwrapFn(d.cond))?.args
-  ));
+  r.effect(() => {
+    const list = conditions().find(d => unwrapFn(d.cond))?.args;
+    initializeLazyElements(list);
+    content(list);
+  });
 
   node.elif = (cond, ...args) => {
     const list = conditions();

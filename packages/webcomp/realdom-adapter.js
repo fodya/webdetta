@@ -1,4 +1,4 @@
-import Builder from '../common/builder.js';
+import { Builder } from '../builder/index.js';
 import { el, Component } from '../realdom/index.js';
 import { WebComponent as WebComponent_ } from './index.js';
 

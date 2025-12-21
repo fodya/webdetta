@@ -1,8 +1,0 @@
-location $PARAMS $PATH {
-  alias /var/www/$DIST/;
-  index index.html;
-
-  $SETTINGS
-
-  try_files $TRY_FILES /index.html =404;
-}

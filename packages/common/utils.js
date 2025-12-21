@@ -1,3 +1,6 @@
+import { err } from './errors.js';
+import { objectHasOwn } from './object.js';
+
 const AsyncFunction = (async () => {}).constructor;
 export const isAsync = f => f instanceof AsyncFunction;
 export const isPromise = d => d == Promise.resolve(d);
@@ -6,29 +9,8 @@ export const callFn = d => typeof d == 'function' ? d() : d;
 export const unwrapFn = d => typeof d == 'function' ? unwrapFn(d()) : d;
 export const toFn = d => typeof d == 'function' ? d : () => d;
 
-export const err = (...args) => {
-  throw (
-    isTemplateCall(args)
-    ? new Error(String.raw(...args))
-    : new Error(...args)
-  );
-};
-
 export const S = (...args) =>
   String.raw(...args).match(/\S+/g) ?? [];
-
-export const catchErrors = (f, handler=catchErrors.handler) => {
-  return function() {
-    try {
-      const res = f.apply(this, arguments);
-      return isPromise(res) ? res.catch(handler) : res;
-    }
-    catch (e) {
-      handler(e);
-    }
-  }
-}
-catchErrors.handler = e => console.error(e);
 
 export const once = (f) => {
   let called;
@@ -160,60 +142,4 @@ export const backoff = async ({
     }
   }
   throw lastError;
-}
-
-//
-
-export const isObject = value => {
-  return typeof value == 'object' && value !== null;
-}
-export const isPlainObject = value => {
-  if (value == null) return false;
-  const proto = Object.getPrototypeOf(value);
-  const proto2 = proto && Object.getPrototypeOf(proto);
-  return proto && !proto2;
-}
-
-export const objectHasOwn = (obj, key) =>
-  Object.prototype.hasOwnProperty.call(obj, key);
-
-export const objectEntriesDeep = function* (obj) {
-  const run = function* (value, keys = []) {
-    if (typeof value == 'object' && value != null) {
-      for (const [key, val] of Object.entries(value)) {
-        yield* run(val, [...keys, key]);
-      }
-    }
-    else {
-      yield [keys, value];
-    }
-  }
-  yield* run(obj);
-}
-
-export const objectMap = (obj, func) => {
-  const res = Array.isArray(obj) ? [] : {};
-  for (const [key, val] of Object.entries(obj)) {
-    res[key] = func(val, key, obj);
-  }
-  return res;
-}
-export const objectMapper = (func) => (obj) => objectMap(obj, func);
-
-const objectMapDeep_ = (obj, func, keys, root) => {
-  if (!isObject(obj)) return func(obj, keys, root);
-  const res = Array.isArray(obj) ? [] : {};
-  for (const [key, val] of Object.entries(obj)) {
-    res[key] = objectMapDeep_(val, func, [...keys, key], root);
-  }
-  return res;
-}
-export const objectMapDeep = (obj, func) => objectMapDeep_(obj, func, [], obj);
-export const objectMapperDeep = (func) => (obj) => objectMapDeep(obj, func);
-
-export const objectPick = (obj, keys) => {
-  return Object.fromEntries(keys.map(k => [k, obj[k]]));
-}
-export const objectPicker = (keys) => {
-  return (obj) => objectPick(obj, keys);
 }

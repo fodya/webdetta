@@ -27,7 +27,7 @@ const Emitter = v => {
   accessor.on = h => handlers.add(h);
   return accessor;
 }
-export function RpcClient(url, pulse=60_000) {
+export function RpcClient(url, { pulse = 60_000, binaryType = "arraybuffer" } = {}) {
   // `pulse` is the minimum throughput. The default is one frame per minute.
   // 2 minutes without communication will close the socket.
 
@@ -56,14 +56,25 @@ export function RpcClient(url, pulse=60_000) {
     }
   }
 
-  function send(data) {
+  function sendMessage(data) {
     if (ws.readyState === WebSocket.OPEN) {
       kick();
       ws.send(data);
       lastSent(data);
     }
   }
-  const { process, cast, call, abort } = Proto(send, () => instance.methods);
+  const { process, cast, call, abort } = Proto({
+    getMethods: () => instance.methods,
+    sendMessage,
+    encodeMessage: (obj) => {
+      // Default to JSON encoding - can be overridden if msgpack is needed
+      return new TextEncoder().encode(JSON.stringify(obj));
+    },
+    decodeMessage: (data) => {
+      // Default to JSON decoding - can be overridden if msgpack is needed
+      return JSON.parse(new TextDecoder().decode(new Uint8Array(data)));
+    }
+  });
 
   function handleClosing(ws, e) {
     // take care to avoid race conditions with stale websockets
@@ -81,7 +92,7 @@ export function RpcClient(url, pulse=60_000) {
     return connPromise ??= new Promise((resolve, reject) => {
       isOpen(undefined); // connecting...
       ws = new WebSocket(url);
-      ws.binaryType = "arraybuffer";
+      ws.binaryType = binaryType;
       ws.onopen = async (_e) => {
         // the strange order of calls in the next three lines guarantees that
         // the preflight RPC calls happening in isOpen will go before any

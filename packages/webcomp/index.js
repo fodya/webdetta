@@ -1,11 +1,13 @@
 import { Signal } from '../reactivity/index.js';
-import { objectPick, S } from '../common/utils.js';
+import { throttle } from '../common/utils.js';
 
 export const WebComponent = (name, options, func) => {
-  const { attrs={}, shadow } = options;
-
+  const shadow = options.shadow ?? { mode: 'open' };
+  const attrsParsers = options.attrs;
+  const attrsList = Object.keys(attrsParsers);
+ 
   const domConstructor = class extends HTMLElement {
-    static observedAttributes = Object.keys(attrs)
+    static observedAttributes = attrsList;
     constructor() {
       super();
       if (shadow) this.attachShadow(shadow);
@@ -16,44 +18,49 @@ export const WebComponent = (name, options, func) => {
     disconnectedCallback() {
       this.instance.disconnect();
     }
-    attributeChangedCallback(name, oldValue, newValue) {
-      this.instance.attrs[name](attrs[name](newValue), false);
-    }
+    attributeChangedCallback = throttle.sync((name, oldValue, newValue) => {
+      const parsed = attrsParsers[name](newValue);
+      this.instance.attrs[name](parsed);
+    })
   };
   globalThis.customElements.define(name, domConstructor);
 
-  const result = (...args) => {
-    const dom = document.createElement(name);
-    const onConnect = new Set();
-    const onDisconnect = new Set();
-    const instance = {
-      dom,
-      onConnect: h => onConnect.add(h),
-      onDisconnect: h => onDisconnect.add(h),
-      connect: () => { for (const h of onConnect) h(); },
-      disconnect: () => { for (const h of onDisconnect) h(); },
-      attrs: Object.fromEntries(Object.keys(attrs).map(k => {
-        let v;
-        return [k, Signal({
-          handlers: new Set(),
-          get: () => v,
-          set: (vv, setAttr=true) => {
-            v = vv;
-            if (setAttr) dom.setAttribute(k, v);
-            return v;
-          }
-        })];
-      }))
-    };
-    Object.defineProperty(dom, 'instance', {
-      value: instance,
-      writable: false,
-      configurable: false
-    });
-    const ctx = objectPick(instance, S`dom onConnect onDisconnect attrs`);
-    const res = func.apply(ctx, args);
-    if (res) (dom.shadowRoot ?? dom).appendChild(res);
-    return dom;
-  };
-  return Object.assign(result, { domConstructor });
+  const result = (...args) => createInstance(name, domConstructor, func, args);
+  result.domConstructor = domConstructor;
+
+  return result;
 }
+
+const createInstance = (name, domConstructor, func, args) => {
+  const dom = document.createElement(name);
+  let onConnect = null, onDisconnect = null;
+
+  const attrs = {};
+  for (const key of domConstructor.observedAttributes) {
+    let value;
+    attrs[key] = Signal({
+      handlers: new Set(),
+      get: () => value,
+      set: (vv) => value = vv,
+    });
+  }
+
+  const instance = {
+    dom,
+    attrs,
+    onConnect: h => (onConnect ??= new Set()).add(h),
+    onDisconnect: h => (onDisconnect ??= new Set()).add(h),
+    connect: () => { onConnect?.forEach(h => h()); },
+    disconnect: () => { onDisconnect?.forEach(h => h()); },
+  };
+  Object.defineProperty(dom, 'instance', {
+    value: instance,
+    writable: false,
+    configurable: false
+  });
+
+  const res = func.apply(instance, args);
+  if (res) (dom.shadowRoot ?? dom).appendChild(res);
+
+  return dom;
+};
