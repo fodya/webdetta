@@ -1,6 +1,6 @@
 ﻿import { AsyncLocalStorage } from 'node:async_hooks';
 
-const AsyncContext = (initialValue) => {
+export const AsyncContext = (initialValue) => {
   const asyncVar = new AsyncLocalStorage();
 
   const context = () => {
@@ -17,5 +17,3 @@ const AsyncContext = (initialValue) => {
 
   return context;
 };
-
-export default AsyncContext;
