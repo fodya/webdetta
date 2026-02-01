@@ -1,7 +1,6 @@
 ## Webdetta — web application building blocks
 
-The library contains a list of 100+ useful functions that accelerated and simplified my work on the last 30+ web-development projects.
-
+The library contains a list of useful functions that accelerated and simplified my work.
 <br>
 
 The purpose of this project:
