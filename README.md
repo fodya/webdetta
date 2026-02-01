@@ -8,8 +8,6 @@ The purpose of this project:
 - provide a curated list of tools that work well together
 - eleminate dependency hell — simply use webdetta for most common needs
 
-Every function in this library is used in dozens of real-world production projects.
-
 ## Modules list
 
 ### Core modules
