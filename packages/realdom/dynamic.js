@@ -198,10 +198,9 @@ export const createDynamic = (argFn, renderFn) => {
   const content = r.val();
   r.effect(() => {
     const arg = argFn();
-    let result; r.detach(() => {
-      result = renderFn(arg);
+    r.detach(() => {
+      content(renderFn(arg));
     });
-    return result;
   });
   return createSlot(content);
 }
