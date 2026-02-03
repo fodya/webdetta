@@ -2,7 +2,7 @@ import { kebab } from '../common/dom.js';
 import { unwrapFn, templateCallToArray } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator } from './dom.js';
-import { createIf, createList, createSlot, onDomAppend, onDomRemove } from './dynamic.js';
+import { createDynamic, createIf, createList, createSlot, onDomAppend, onDomRemove } from './dynamic.js';
 
 const toString = args => {
   let str = '';
@@ -33,6 +33,7 @@ export const operators = {
   if: (cond, ...args) => createIf().elif(cond, args),
   list: (items, render, keyFn) => createList(items, render, keyFn),
   slot: (func) => createSlot(func),
+  dynamic: (argFn, renderFn) => createDynamic(argFn, renderFn),
 
   lifecycle: Operator((node, names, args) => {
     for (const name of names) {
