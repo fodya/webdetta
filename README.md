@@ -1,13 +1,5 @@
 ## Webdetta — web application building blocks
 
-The library contains a list of useful functions that accelerated and simplified my work.
-<br>
-
-The purpose of this project:
-- never write the same repetitive code again, when starting a new project
-- provide a curated list of tools that work well together
-- eleminate dependency hell — simply use webdetta for most common needs
-
 ## Modules list
 
 ### Core modules
