@@ -19,7 +19,7 @@ const parse = (str, config) => {
   for (let i = 0; i < str.length; i++) {
     const c = str[i];
     buf += c;
-    
+
     if (c == operatorSymbol) {
       const nextC = str[i + 1];
       if (nextC == operatorSymbol) continue;
@@ -42,16 +42,17 @@ const parse = (str, config) => {
       if (node.nested-- == 0 && node != root) {
         pushArg(strip(closeBracket));
         node = node.parent;
-      } else {
-        pushArg(buf);
+        buf = ''; continue;
       }
-      buf = ''; continue;
+      if (op != null) {
+        pushArg(buf);
+        buf = ''; continue;
+      }
     }
 
     if (!OP_REGEX.test(c)) op = null;
     if (op != null) op += c;
   }
-
   pushArg(buf);
 
   return root;
@@ -90,7 +91,7 @@ const Templater = (config) => {
 
     ctx = flattenCtx(ctx);
     if (Array.isArray(node)) return _renderArray(node, ctx);
-    
+
     if (node.operator != null) {
       const operator = operators[node.operator];
       if (!operator) throw new Error(`Unknown operator: ${node.operator}`);
