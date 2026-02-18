@@ -4,7 +4,7 @@ register(import.meta.url, { parentURL: import.meta.url });
 export async function resolve(specifier, context, defaultResolve) {
   return (
     !['/', './', '../'].some(c => specifier.startsWith(c))
-    ? defaultResolve(specifier, { parentURL: import.meta.url })
+    ? defaultResolve(specifier, context)
     : defaultResolve(specifier, context, defaultResolve)
   );
 }
