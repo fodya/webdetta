@@ -196,9 +196,11 @@ export const createIf = () => {
 
 export const createDynamic = (argFn, renderFn) => {
   const content = r.val();
+  let controller;
   r.effect(() => {
     const arg = argFn();
-    r.detach(() => {
+    controller?.abort();
+    controller = r.detach(() => {
       content(renderFn(arg));
     });
   });
