@@ -29,7 +29,9 @@ export class Effect {
   }
   abort(reason) {
     this.#aborted ||= reason !== Effect.RUN;
-    this.childEffects?.forEach(child => child.abort(reason));
+    this.childEffects?.forEach(child => {
+      if (child.handler) child.abort(reason);
+    });
     this.#abortHandlers?.forEach(func => func(reason));
     if (this.#aborted) {
       this.#parentEffect?.childEffects?.delete(this);
