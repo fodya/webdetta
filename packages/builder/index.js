@@ -5,12 +5,15 @@
 import { objectHasOwn } from '../common/object.js';
 
 export const Builder = (effect, tasks=[], names=[]) => {
-  const call = (...args) => args[0] === Builder.symbol
-    ? (args[0] = tasks, effect(...args))
-    : Builder(effect, [...tasks, { names, args }], []);
-  const get = (_, k) => typeof k === 'symbol'
-    ? effect[k]
-    : Builder(effect, tasks, [...names, k]);
+  const call = (...args) => {
+    if (args[0] === Builder.symbol) return (args[0] = tasks, effect(...args));
+    return Builder(effect, [...tasks, { names, args }], []);
+  }
+  const get = (_, k) => {
+    if (k === '__$$compiled') return tasks => Builder(effect, tasks, []);
+    if (typeof k === 'symbol') return effect[k];
+    return Builder(effect, tasks, [...names, k]);
+  }
   call[Builder.symbol] = true;
   return new Proxy(call, { get })
 }
