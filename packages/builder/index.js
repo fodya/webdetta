@@ -10,7 +10,6 @@ export const Builder = (effect, tasks=[], names=[]) => {
     return Builder(effect, [...tasks, { names, args }], []);
   }
   const get = (_, k) => {
-    if (k === '__$$compiled') return tasks => Builder(effect, tasks, []);
     if (typeof k === 'symbol') return effect[k];
     return Builder(effect, tasks, [...names, k]);
   }
