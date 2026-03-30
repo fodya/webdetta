@@ -51,7 +51,7 @@ Element.isLazyElement = item => typeof item == 'function' && !Operator.isOperato
 export const Operator = (...funcs) => Builder((tasks, node) => {
   for (const {names, args} of tasks)
     for (const func of funcs)
-  func(node, names, args);
+      func(node, names, args);
 });
 Operator.isOperator = Builder.isBuilder;
 Operator.apply = (node, operator) => Builder.launch(operator, node);
