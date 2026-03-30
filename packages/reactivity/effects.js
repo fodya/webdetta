@@ -1,49 +1,58 @@
-﻿import { throttle } from '../common/utils.js';
-import { Context } from '../context/sync.js';
+﻿import { Context } from '../context/sync.js';
 
 export const currentEffect = Context();
 
 export class Effect {
-  static RUN = Symbol('Effect.RUN');
+  parent = null;
   func = null;
-  handler = null;
-  #parentEffect = null;
-  childEffects = null; // new Set()
-  postponedCalls = null; // new Set()
-  #abortHandlers = null; // new Set()
-  #aborted = false;
-  constructor(parentEffect, func, reactive) {
-    this.#parentEffect = parentEffect;
+  reactive = false;
+  children = null; // new Set()
+  postponed = null; // new Set()
+  oncleanup = null; // new Set()
+  destroyed = false;
+  constructor(parent, func, reactive) {
+    this.parent = parent;
     this.func = func;
-    if (reactive) this.handler = throttle.sync(this.run.bind(this));
+    this.reactive = reactive;
   }
   run() {
-    this.abort(Effect.RUN);
-    if (this.#aborted) return;
-    if (this.#parentEffect) {
-      (this.#parentEffect.childEffects ??= new Set()).add(this);
+    if (this.destroyed) return;
+    this.cleanup();
+    if (this.parent) {
+      (this.parent.children ??= new Set()).add(this);
     }
     currentEffect.run(this, this.func);
-    this.postponedCalls?.forEach(func => func());
-    this.postponedCalls?.clear();
+    this.postponed?.forEach(func => func());
+    this.postponed?.clear();
   }
-  abort(reason) {
-    this.#aborted ||= reason !== Effect.RUN;
-    this.childEffects?.forEach(child => {
-      if (child.handler) child.abort(reason);
-    });
-    this.#abortHandlers?.forEach(func => func(reason));
-    if (this.#aborted) {
-      this.#parentEffect?.childEffects?.delete(this);
-      this.#abortHandlers?.clear();
-    }
+  afterRun(func) {
+    this.postponed ??= new Set();
+    this.postponed.add(func);
   }
-  get aborted() {
-    return this.#aborted;
+
+  cleanup() {
+    this.oncleanup?.forEach(func => func());
+    this.oncleanup?.clear();
   }
-  onAbort(func) {
-    (this.#abortHandlers ??= new Set()).add(func);
+
+  destroy() {
+    this.cleanup();
+    this.destroyed = true;
+    this.oncleanup = null;
+    this.postponed = null;
+    this.children?.forEach(child => child.destroy());
+    this.parent?.children?.delete(this);
   }
+}
+
+export const onCleanup = handler => {
+  const effect = currentEffect();
+  (effect.oncleanup ??= new Set()).add(handler);
+}
+
+export const scheduleAfterRun = handler => {
+  const effect = currentEffect();
+  (effect.postponed ??= new Set()).add(handler);
 }
 
 const createEffect = (func, reactive) => {
@@ -52,8 +61,5 @@ const createEffect = (func, reactive) => {
   effect.run();
   return effect;
 }
-
 export const effect = func => createEffect(func, true);
 export const detach = func => createEffect(func, false);
-
-export const onAbort = handler => currentEffect()?.onAbort(handler);

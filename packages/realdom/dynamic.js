@@ -34,8 +34,10 @@ const initializeLazyElements = (list) => {
 const lRoot = Symbol();
 const defaultKeyFn = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
-  if (d?.key != null) return d.key;
-  if (d?.id != null) return d.id;
+  if (d) {
+    if ('key' in d) return d.key;
+    if ('id' in d) return d.id;
+  }
   return i;
 };
 export const createList = (
@@ -45,8 +47,8 @@ export const createList = (
 ) => {
   const root = document.createTextNode('');
 
-  const elems = new Map([[lRoot, root]]);
-  const aborts = new Map();
+  const elements = new Map([[lRoot, root]]);
+  const controllers = new Map();
   const prev = new Map();
   const next = new Map();
 
@@ -55,8 +57,8 @@ export const createList = (
     const controller = r.detach(() => {
       dom = func();
     });
-    aborts.set(k, controller.abort.bind(controller));
-    elems.set(k, dom);
+    controllers.set(k, controller);
+    elements.set(k, dom);
   }
   const move = (prevK, k) => {
     const nextK = next.get(prevK);
@@ -65,7 +67,7 @@ export const createList = (
     next.set(prevK, k);
     prev.set(nextK, k);
     next.set(k, nextK);
-    Element.append(elems.get(prevK), elems.get(k), 'after');
+    Element.append(elements.get(prevK), elements.get(k), 'after');
   }
   const disconnect = (k) => {
     const prevK = prev.get(k);
@@ -74,16 +76,16 @@ export const createList = (
     next.set(prevK, nextK);
     prev.delete(k);
     next.delete(k);
-    aborts.get(k)();
-    aborts.delete(k);
-    Element.remove(elems.get(k));
-    elems.delete(k);
+    controllers.get(k).destroy();
+    controllers.delete(k);
+    Element.remove(elements.get(k));
+    elements.delete(k);
   }
 
   const attached = r.dval(false);
   r.effect(() => {
     if (!attached()) {
-      for (const k of elems.keys()) if (k != lRoot) disconnect(k);
+      for (const k of elements.keys()) if (k != lRoot) disconnect(k);
       return;
     }
     
@@ -98,14 +100,14 @@ export const createList = (
       : null
     );
 
-    for (const k of elems.keys())
+    for (const k of elements.keys())
       if (k != lRoot && !entries.has(k))
         disconnect(k);
 
     let prevK = lRoot;
     let i = 0;
     for (const [k, v] of entries) {
-      if (!elems.has(k)) connect(k, () => renderItem(v, i, items, k));
+      if (!elements.has(k)) connect(k, () => renderItem(v, i, items, k));
       move(prevK, k);
       prevK = k;
       i++;
@@ -121,11 +123,11 @@ export const createSlot = (content) => {
   const node = document.createTextNode('');
   const attached = r.dval(false);
 
-  let abort = null;
+  let controller = null;
 
   const append = (items) => {
     if (!items) return;
-    const controller = r.detach(() => {
+    controller = r.detach(() => {
       const parentNode = node.parentNode;
       let last = node;
       for (const item of [items].flat(Infinity)) {
@@ -137,20 +139,19 @@ export const createSlot = (content) => {
             Element.append(last, child, 'after');
             last = child;
           }
-          Operator.onCleanup(() => {
+          r.onCleanup(() => {
             for (const child of nodes) Element.remove(child);
           });
         }
       }
     });
-    abort = controller.abort.bind(controller);
   }
 
   let currentContent;
   const remove = () => {
     currentContent = null;
-    abort?.(Operator.CLEANUP);
-    abort = null;
+    controller?.destroy();
+    controller = null;
   }
 
   r.effect(() => {

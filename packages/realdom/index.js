@@ -1,4 +1,4 @@
-import { operators } from './operators.js';
+import * as operators from './operators.js';
 import { Element } from './dom.js';
 import { kebab } from '../common/dom.js';
 import { Context } from '../context/sync.js';

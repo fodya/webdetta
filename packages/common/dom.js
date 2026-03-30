@@ -1,4 +1,4 @@
-import { toFn, S, cached } from './utils.js';
+import { S, cached } from './utils.js';
 import { objectPick } from './object.js';
 
 const regexAZ = /[A-Z]/g;
@@ -91,37 +91,31 @@ export const colorToHex = (colorStr) => {
 
 export const forceReflow = elem => { elem.offsetHeight; }
 
-export const setLayoutWidth = ({
+export const constrainedZoomValue = ({
+  containerWidth,
+  containerHeight,
   width,
-  container=document.body,
-  containerWidth=()=>window.innerWidth,
-  containerHeight=()=>window.innerHeight,
-  aspectRatio=null,
-  method="zoom"
+  height,
+  aspectRatio,
 }) => {
-  containerWidth = toFn(containerWidth);
-  containerHeight = toFn(containerHeight);
-  width = toFn(width);
-  const update = () => {
-    const ar = containerWidth() / containerHeight();
-    const zoom = containerWidth() / width();
-    const zoomValue =
-      !aspectRatio ? zoom :
-      ar > aspectRatio ? Math.min(zoom, zoom * aspectRatio / ar) :
-      zoom < 1 || ar < aspectRatio ? zoom :
-      1;
-    
-    container.style.width = width() + 'px';
-    if (method == 'zoom') {
-      container.style.zoom = zoomValue;
-    }
-    if (method == 'scale') {
-      container.style.transform = `scale(${zoomValue})`;
-      container.style.transformOrigin = `0 0`;
-    }
+  const containerAspectRatio = containerWidth / containerHeight;
+  const containerZoom = Math.min(...[
+    width > 0 ? containerWidth / width : null,
+    height > 0 ? containerHeight / height : null
+  ].filter(Boolean));
+
+  if (!Number.isFinite(containerZoom)) return 1;
+  if (!aspectRatio) return containerZoom;
+  
+  if (containerAspectRatio > aspectRatio) {
+    const heightConstrainedZoom = containerZoom * aspectRatio / containerAspectRatio;
+    return Math.min(containerZoom, heightConstrainedZoom);
   }
-  window.addEventListener('resize', update);
-  window.addEventListener('DOMContentLoaded', update);
+  if (containerZoom < 1 || containerAspectRatio < aspectRatio) {
+    return containerZoom;
+  }
+
+  return 1;
 }
 
 export const isEventInside = (event, target) => {

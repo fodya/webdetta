@@ -1,6 +1,6 @@
 ﻿import { throttle } from '../common/utils.js';
 import { objectHasOwn } from '../common/object.js';
-import { currentEffect } from './effects.js';
+import { currentEffect, scheduleAfterRun } from './effects.js';
 
 export const SignalHandlers = () => {
   let list = null;
@@ -11,18 +11,18 @@ export const SignalHandlers = () => {
   const trigger = throttle.sync(() => {
     const effect = currentEffect();
     if (effect) { // Defer side-effects
-      effect.postponedCalls ??= new Set();
-      effect.postponedCalls.add(trigger);
+      scheduleAfterRun(trigger);
       return;
     }
 
+    if (!list) return;
     const currList = list;
     list = null; // Remove all handlers
 
-    if (currList) for (const func of currList) {
+    for (const func of currList) {
       if (func.isLocked?.()) { // If `func` is already running, add it to the list
         add(func);
-      } else { // The `func` will add itself to the list only if it calls signal()
+      } else { // Otherwise `func` will add itself to the list only if it calls signal()
         func();
       }
     }
@@ -37,7 +37,7 @@ export const Signal = ({ handlers=SignalHandlers(), get, set }) => {
   const accessor = (...args) => {
     if (args.length === 0) {
       const effect = currentEffect();
-      if (effect?.handler) add?.(effect.handler);
+      if (effect?.reactive) add?.(effect.run.bind(effect));
       return get();
     } else {
       ctx.silentUpdate = false;

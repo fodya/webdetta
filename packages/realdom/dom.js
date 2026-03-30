@@ -2,7 +2,6 @@ import { Builder } from '../builder/index.js';
 import { templateCallToArray } from '../common/utils.js';
 import { textContent } from './operators.js';
 import { domAppendTrigger, domRemoveTrigger } from './dynamic.js';
-import { r } from '../reactivity/index.js';
 
 const isTextNode = node => {
   const { nodeType } = node;
@@ -58,8 +57,4 @@ Operator.isOperator = Builder.isBuilder;
 Operator.apply = (node, operator) => Builder.launch(operator, node);
 Operator.extend = (operator, { get }) => new Proxy(operator, {
   get: (_, key) => get(_, key) ?? operator[key]
-});
-Operator.CLEANUP = Symbol('Operator.CLEANUP');
-Operator.onCleanup = (func) => r.onAbort(reason => {
-  if (reason === Operator.CLEANUP) func(reason);
 });
