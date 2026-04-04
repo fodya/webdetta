@@ -49,7 +49,7 @@ export const attr = Operator((node, names, args) => r.effect(() => {
   });
 }));
 
-export const on = Operator((node, names, args) => {
+export const on = Operator((node, names, args) => r.effect(() => {
   let options;
   for (const arg of args) if (typeof arg != 'function') options = arg;
   for (const e of names) for (const f of args) {
@@ -61,7 +61,7 @@ export const on = Operator((node, names, args) => {
       if (typeof f == 'function') node.removeEventListener(e, f);
     }
   });
-});
+}));
 
 const class_ = Operator((node, names, args) => r.effect(() => {
   const value = Boolean(unwrapFn(args[0]));
