@@ -200,7 +200,7 @@ export const createDynamic = (argFn, renderFn) => {
   let controller;
   r.effect(() => {
     const arg = argFn();
-    controller?.abort();
+    controller?.destroy();
     controller = r.detach(() => {
       content(renderFn(arg));
     });
