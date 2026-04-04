@@ -1,6 +1,5 @@
 import { el } from '../realdom/index.js';
 import { kebab } from '../common/dom.js';
-import { Operator } from '../realdom/dom.js';
 import { r } from '../reactivity/index.js';
 import { Adapter } from './index.js';
 
@@ -33,7 +32,7 @@ const removeNode = (dom, node) => {
 export default Adapter((ctx, nodes) =>
   el.ref(dom => r.effect(() => {
     for (const node of nodes) addNode(ctx, dom, node);
-    Operator.onCleanup(() => {
+    r.onCleanup(() => {
       for (const node of nodes) removeNode(dom, node);
     });
   }))

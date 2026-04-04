@@ -27,8 +27,8 @@ export const parse = (...args) => {
 export const append = (node, ...args) => Element.append(node, args);
 export const remove = (node) => Element.remove(node);
 
-const opIf = (cond, ...args) => createIf().elif(cond, args);
-export { opIf as if };
+const if_ = (cond, ...args) => createIf().elif(cond, args);
+export { if_ as if };
 
 export const list = (items, render, keyFn) => createList(items, render, keyFn);
 export const slot = (func) => createSlot(func);
