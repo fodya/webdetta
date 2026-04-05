@@ -14,6 +14,7 @@ export class Effect {
     this.parent = parent;
     this.func = func;
     this.reactive = reactive;
+    if (this.reactive) this.handler = this.run.bind(this);
   }
   run() {
     if (this.destroyed) return;

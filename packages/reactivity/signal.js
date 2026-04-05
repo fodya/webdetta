@@ -37,7 +37,7 @@ export const Signal = ({ handlers=SignalHandlers(), get, set }) => {
   const accessor = (...args) => {
     if (args.length === 0) {
       const effect = currentEffect();
-      if (effect?.reactive) add?.(effect.run.bind(effect));
+      if (effect?.handler) add?.(effect.handler);
       return get();
     } else {
       ctx.silentUpdate = false;
