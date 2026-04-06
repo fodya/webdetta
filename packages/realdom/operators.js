@@ -1,18 +1,8 @@
 import { kebab } from '../common/dom.js';
-import { unwrapFn, templateCallToArray } from '../common/utils.js';
+import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
-import { Element, Operator } from './dom.js';
+import { Element, Operator, toString } from './base.js';
 import { createDynamic, createIf, createList, createSlot, onDomAppend, onDomRemove } from './dynamic.js';
-
-const toString = args => {
-  let str = '';
-  for (const a of templateCallToArray(args)) str += unwrapFn(a);
-  return str;
-}
-
-export const textContent = Operator((node, _, args) => r.effect(() => {
-  node.textContent = toString(args);
-}));
 
 export const ref = Operator((node, _, args) => {
   for (const func of args) func(node);
@@ -20,7 +10,7 @@ export const ref = Operator((node, _, args) => {
 
 export const parse = (...args) => {
   const div = document.createElement('div');
-  div.innerHTML = toString(args);
+  div.innerHTML = toString(...args);
   return Array.from(div.children);
 };
 
@@ -42,9 +32,9 @@ export const lifecycle = Operator((node, names, args) => {
 });
 
 export const attr = Operator((node, names, args) => r.effect(() => {
-  const value = toString(args);
+  const value = toString(...args);
   for (const name of names) node.setAttribute(name, value);
-  r.onCleanup(() => {
+  r.cleanup(() => {
     for (const name of names) node.removeAttribute(name);
   });
 }));
@@ -56,7 +46,7 @@ export const on = Operator((node, names, args) => r.effect(() => {
     if (typeof f == 'function') node.addEventListener(e, f, options);
   }
   options = null;
-  r.onCleanup(() => {
+  r.cleanup(() => {
     for (const e of names) for (const f of args) {
       if (typeof f == 'function') node.removeEventListener(e, f);
     }
@@ -67,18 +57,18 @@ const class_ = Operator((node, names, args) => r.effect(() => {
   const value = Boolean(unwrapFn(args[0]));
   if (!value) return;
   node.classList.add(...names.map(kebab));
-  r.onCleanup(() => {
+  r.cleanup(() => {
     node.classList.remove(...names.map(kebab));
   });
 }));
 export { class_ as class };
 
 export const style = Operator((node, names, args) => r.effect(() => {
-  const value = toString(args);
+  const value = toString(...args);
   for (const name of names) {
     node.style.setProperty(kebab(name), value);
   }
-  r.onCleanup(() => {
+  r.cleanup(() => {
     for (const name of names) node.style.removeProperty(kebab(name));
   });
 }));
@@ -86,7 +76,7 @@ export const style = Operator((node, names, args) => r.effect(() => {
 export const prop = Operator((node, names, args) => r.effect(() => {
   const value = unwrapFn(args[0]);
   for (const name of names) node[name] = value;
-  r.onCleanup(() => {
+  r.cleanup(() => {
     for (const name of names) delete node[name];
   });
 }));

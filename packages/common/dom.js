@@ -26,23 +26,24 @@ export const copyText = async text => {
   }
 }
 
-const dummyDiv = document.createElement('div');
-Object.assign(dummyDiv.style, {
-  position: 'fixed',
-  left: '-99999px',
-  top: '-99999px',
-  visibility: 'hidden',
-  pointerEvents: 'none'
-});
 export const measureText = (text, style={}) => {
-  document.documentElement.append(dummyDiv);
+  const div = measureText.div ??= document.createElement('div');
+  Object.assign(div.style, {
+    position: 'fixed',
+    left: '-99999px',
+    top: '-99999px',
+    visibility: 'hidden',
+    pointerEvents: 'none'
+  });
+
+  document.documentElement.append(div);
   const keys = style instanceof CSSStyleDeclaration ? style : Object.keys(style);
-  for (const k of ['width', 'height']) dummyDiv.style[k] = '';
-  for (const k of keys) dummyDiv.style[k] = style[k];
-  dummyDiv.textContent = text;
+  for (const k of ['width', 'height']) div.style[k] = '';
+  for (const k of keys) div.style[k] = style[k];
+  div.textContent = text;
   // const zoom = +style.zoom || 1;
-  const { scrollHeight: height, scrollWidth: width } = dummyDiv;
-  dummyDiv.remove();
+  const { scrollHeight: height, scrollWidth: width } = div;
+  div.remove();
   return { width, height };
 }
 export const autogrowInput = ({
@@ -64,14 +65,15 @@ export const autogrowInput = ({
   element.style.overflow = 'hidden';
 }
 
-const dummyAnchor = document.createElement("a");
-dummyAnchor.style = "display: none";
 export const saveBlob = (filename, blob) => {
-  document.documentElement.append(dummyAnchor);
+  const link = saveBlob.a ??= document.createElement("a");
+  link.style = "display: none";
+
+  document.documentElement.append(link);
   const url = URL.createObjectURL(blob);
-  dummyAnchor.href = url;
-  dummyAnchor.download = filename;
-  dummyAnchor.click();
+  link.href = url;
+  link.download = filename;
+  link.click();
   URL.revokeObjectURL(url);
 };
 
@@ -83,8 +85,8 @@ export const importAsset = (tagName, attrs) => new Promise((resolve) => {
   el.onerror = () => (resolve(null), el.remove());
 });
 
-const canvasCtx = document.createElement('canvas').getContext('2d');
 export const colorToHex = (colorStr) => {
+  const canvasCtx = colorToHex.ctx ??= document.createElement('canvas').getContext('2d')
   canvasCtx.fillStyle = colorStr;
   return canvasCtx.fillStyle;
 }
@@ -122,5 +124,9 @@ export const isEventInside = (event, target) => {
   return event.composedPath().includes(target);
 }
 
-export const L = new Promise(r => window.addEventListener('load', r));
-export const DCL = new Promise(r => window.addEventListener('DOMContentLoaded', r));
+export const L = new Promise(resolve => {
+  globalThis?.window?.addEventListener('load', resolve);
+});
+export const DCL = new Promise(resolve => {
+  globalThis?.window?.addEventListener('DOMContentLoaded', resolve);
+});

@@ -28,7 +28,7 @@ const RouterRealdom = ({
     loadedRoutes(loaded);
     currentRoute(key);
   }
-  router.listen((...a) => r.detach(listener.bind(null, ...a)));
+  router.listen((...a) => r.untrack(listener.bind(null, ...a)));
   router.attach();
 
   const container = el[':'](

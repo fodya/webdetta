@@ -1,5 +1,6 @@
 */**/.git
 dist/*
+benchmarks/
 node_modules
 package-lock.json
 _

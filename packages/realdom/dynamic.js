@@ -1,6 +1,6 @@
 import { unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
-import { Element, Operator } from './dom.js';
+import { Element, Operator, processItem } from './base.js';
 
 const domHandlers = () => {
   const map = new WeakMap();
@@ -20,17 +20,6 @@ const domHandlers = () => {
 export const [onDomAppend, domAppendTrigger] = domHandlers();
 export const [onDomRemove, domRemoveTrigger] = domHandlers();
 
-const isFragment = node => node.nodeType === 11;
-
-const initializeLazyElements = (list) => {
-  if (list) for (let i = 0; i < list.length; i++) {
-    // unwrap lazy elements:
-    // el.if(condition, () => someLazyContent()) => rendered content
-    const item = list[i];
-    if (Element.isLazyElement(item)) list[i] = unwrapFn(item);
-  }
-}
-
 const lRoot = Symbol();
 const defaultKeyFn = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
@@ -48,16 +37,14 @@ export const createList = (
   const root = document.createTextNode('');
 
   const elements = new Map([[lRoot, root]]);
-  const controllers = new Map();
+  const effects = new Map();
   const prev = new Map();
   const next = new Map();
 
   const connect = (k, func) => {
     let dom;
-    const controller = r.detach(() => {
-      dom = func();
-    });
-    controllers.set(k, controller);
+    const effect = r.untrack(() => dom = func());
+    effects.set(k, effect);
     elements.set(k, dom);
   }
   const move = (prevK, k) => {
@@ -67,7 +54,7 @@ export const createList = (
     next.set(prevK, k);
     prev.set(nextK, k);
     next.set(k, nextK);
-    Element.append(elements.get(prevK), elements.get(k), 'after');
+    Element.appendAfter(elements.get(prevK), elements.get(k));
   }
   const disconnect = (k) => {
     const prevK = prev.get(k);
@@ -76,8 +63,8 @@ export const createList = (
     next.set(prevK, nextK);
     prev.delete(k);
     next.delete(k);
-    controllers.get(k).destroy();
-    controllers.delete(k);
+    effects.get(k).destroy();
+    effects.delete(k);
     Element.remove(elements.get(k));
     elements.delete(k);
   }
@@ -123,41 +110,38 @@ export const createSlot = (content) => {
   const node = document.createTextNode('');
   const attached = r.dval(false);
 
-  let controller = null;
-
+  let effect = null;
   const append = (items) => {
     if (!items) return;
-    controller = r.detach(() => {
-      const parentNode = node.parentNode;
-      let last = node;
-      for (const item of [items].flat(Infinity)) {
-        if (Operator.isOperator(item)) Operator.apply(parentNode, item);
-        else {
-          const node = Element.from(item);
-          const nodes = isFragment(node) ? node.childNodes : [node];
-          for (const child of nodes) {
-            Element.append(last, child, 'after');
-            last = child;
-          }
-          r.onCleanup(() => {
-            for (const child of nodes) Element.remove(child);
-          });
-        }
-      }
+    let nodes = [], last = node;
+    r.untrack(() => {
+      processItem(items,
+        op => Operator.apply.bind(node.parentNode, op),
+        child => {
+          nodes.push(child);
+          Element.appendAfter(last, child);
+          last = child;
+        },
+        true
+      );
+      r.cleanup(() => {
+        for (const child of nodes) Element.remove(child);
+        nodes = null;
+      });
     });
-  }
+  };
 
   let currentContent;
   const remove = () => {
     currentContent = null;
-    controller?.destroy();
-    controller = null;
+    effect?.destroy();
+    effect = null;
   }
 
   r.effect(() => {
     if (!attached()) { remove(); return; }
     const newContent = content();
-    if (currentContent == newContent) return;
+    if (currentContent === newContent) return;
     remove();
     append(currentContent = newContent);
   });
@@ -175,7 +159,6 @@ export const createIf = () => {
   
   r.effect(() => {
     const list = conditions().find(d => unwrapFn(d.cond))?.args;
-    initializeLazyElements(list);
     content(list);
   });
 
@@ -201,7 +184,7 @@ export const createDynamic = (argFn, renderFn) => {
   r.effect(() => {
     const arg = argFn();
     controller?.destroy();
-    controller = r.detach(() => {
+    controller = r.untrack(() => {
       content(renderFn(arg));
     });
   });

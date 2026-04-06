@@ -4,9 +4,9 @@ Signals and effects for building reactive applications.
 
 ## Overview
 
-- Signals (reactive values) that automatically trigger effects (reactive computations) when changed
-- Automatic dependency tracking
-- Lifecycle management
+1. Signals (reactive values) that re-run dependent effects when they change.
+1. Automatic dependency tracking for reads inside `r.effect`.
+1. `Effect` instances you can `destroy()`; `r.cleanup` for per-run teardown.
 
 ## Installation
 
@@ -18,57 +18,61 @@ npm i webdetta
 import { r } from 'webdetta/reactivity';
 ```
 
+The public surface is the **`r`** object (frozen). There is no separate `r.scope` export in the current implementation.
+
 ## Signals
 
-Signals are reactive values that can be read and written.\
-When a signal's value changes, all dependent effects are automatically re-run.
+Signals are accessors: call with no arguments to read, with one argument to write. Writes notify dependents.
 
-### `r.val(initialValue)`
+### `r.val(initialValue?)`
 
-Creates a signal with an initial value.\
-Reading the signal (calling with no arguments) returns the current value.\
-Writing (calling with a value) updates it and triggers dependent effects.
+Creates a signal. Every write runs dependent effects (subject to deferred flushing when a write happens inside another effect—see **Deferred side-effects**).
 
 ```javascript
 const value = r.val(0);
-value();        // read: returns 0
-value(5);       // write: sets to 5, returns 5
-value();        // read: returns 5
+value();        // read: 0
+value(5);       // write: 5, returns 5
+value();        // read: 5
 ```
 
-### `r.dval(initialValue)`
+### `r.dval(initialValue?)`
 
-Creates a diff-based signal that only triggers effects when the value actually changes (uses strict equality).
+Like `r.val`, but dependents run only when the new value is `!==` the previous one.
+There is no custom comparator hook in the current implementation, so objects are compared by reference.
 
 ```javascript
 const value = r.dval(0);
-value(0);       // No effect triggered (same value)
-value(1);       // Effect triggered (value changed)
-value(1);       // No effect triggered (same value)
+value(0);       // no run (same value)
+value(1);       // dependents run
+value(1);       // no run
+```
+
+```javascript
+const state = r.dval({ count: 0 });
+const ref = state();
+
+state(ref);            // no run (same object reference)
+state({ count: 0 });   // dependents run (different object reference)
 ```
 
 ## Effects
 
-Effects are functions that automatically re-run when their dependent signals change.
-
 ### `r.effect(func)`
 
-Creates a reactive effect that runs immediately and re-runs whenever any accessed signals change.
+Creates a **reactive** effect: `func` runs immediately, then again when signals read inside `func` change. Returns the `Effect` instance (`destroy()`, etc.).
 
 ```javascript
 const val = r.val(0);
 r.effect(() => {
   console.log('Value:', val());
 });
-val(1);  // Automatically logs "Value: 1"
-val(2);  // Automatically logs "Value: 2"
+val(1);  // logs "Value: 1"
+val(2);  // logs "Value: 2"
 ```
 
-### `r.detach(func)`
+### `r.untrack(func)`
 
-Disables reactivity for the duration of `func`, even if called within a running `r.effect`.\
-This is an **opt-out mechanism**: `r.detach` allows you to read signal values in `func` without subscribing to updates.\
-No automatic re-runs will be scheduled when dependencies change.
+Runs `func` in a **non-reactive** effect: signal reads inside `func` do not subscribe the surrounding `r.effect`. Returns the non-reactive `Effect` after `func` has run synchronously; the handler’s return value is not used by `r.untrack`.
 
 ```javascript
 const a = r.val(2);
@@ -76,44 +80,32 @@ const b = r.val(3);
 
 r.effect(() => {
   const aVal = a();
-
-  // Reads inside r.detach aren't tracked.
-  const result = r.detach(() => aVal * b());
-
-  console.log('Result:', result);
+  r.untrack(() => {
+    const result = aVal * b();
+    console.log('Result:', result);
+  });
 });
 
-a(4); // Triggers effect re-run
-b(5); // Does not trigger effect re-run even though b() is used in calculations
+a(4); // re-runs outer effect
+b(5); // does not re-run outer effect (b was only read inside untrack)
 ```
 
-### `r.scope(func)`
+### `r.cleanup(handler)`
 
-Creates an **effect scope**. Returns an object with an `abort()` method.
+Registers `handler` on the **current** effect’s cleanup list. It runs before that effect’s next execution (after `cleanup()` clears the previous run) and from `Effect.destroy()`. Call **only** synchronously while a `r.effect` / `r.untrack` body is active (`currentEffect`).
 
 ```javascript
-const scope = r.scope(() => {
-  // All effects and nested scopes created here are controlled by the scope.
-  r.effect(() => { /* ... */ });
-  r.scope(() => { /* ... */ });
-  console.log('Running...');
+r.effect(() => {
+  const id = setInterval(() => {}, 1000);
+  r.cleanup(() => clearInterval(id));
 });
-scope.abort();
 ```
 
-Calling `scope.abort()` will:
-1. Stop all `r.effect` handlers created in this scope, so they will never be called again when signals change.
-2. Abort all nested `r.scope` instances created inside this scope, stopping everything within them as well.
-
-This effectively ends the lifecycle of the scope, along with all its inner effects and nested scopes.
-
-This is useful when removing reactive UI elements from webpage or resetting application state.
-
-## Derived Values
+## Derived values
 
 ### `r.memo(func)`
 
-> An optimization to avoid recomputing expensive calculations.
+Caches the result of `func` in an inner signal; recomputes only when signals read **inside** `func` change.
 
 ```javascript
 const a = r.val(314159265);
@@ -124,142 +116,82 @@ function gcd(x, y) {
   return x;
 }
 
-// We optimize this computation using r.memo 
-// Now, gcd(a(), b()) runs ONLY when a or b update – not on every effect run.
 const result = r.memo(() => {
   console.log('GCD computation executed');
   return gcd(a(), b());
 });
 const other = r.val(0);
 r.effect(() => {
-  // No matter how many times this effect runs, the value will be recalculated only when a() or b() change.
-  console.log('GCD:', result(), '|', 'Other dependency:', other());
+  console.log('GCD:', result(), '| other:', other());
 });
-for (let i = 0; i < 10; i++) other(i); // does not trigger gcd() computation
-b(1000000000); // triggers gcd() call
+for (let i = 0; i < 10; i++) other(i);
+b(1000000000);
 ```
 
 ### `r.await(func)`
 
-Creates a signal that tracks async operations. The signal updates when the returned promise resolves.
+Exposes a signal whose value is updated when a **Promise** returned by `func` settles. Implementation uses `throttle.Td(0, …)` plus `Promise.resolve(…).then(…)`, so commits to the signal are **not** strictly same–call-stack synchronous.
 
-#### Important: async functions aren't supported
-
-The `func` must be a **synchronous** function that returns a promise.
-
-Tracking signals/effects inside an async function is not fully possible because AsyncContext is not yet supported in browsers.
-
-#### [✓] Intended usage: synchronous function returning a Promise
+`func` must be a **synchronous** function that **returns** a Promise (not an `async` function) so dependencies are read before any `await`.
 
 ```javascript
 const url = r.val('/api/data');
 const data = r.await(() => {
-  const currentUrl = url(); // The url() dependency is captured correctly
-  return fetch(currentUrl).then(r => r.json()); // Promise
+  const currentUrl = url();
+  return fetch(currentUrl).then(r => r.json());
 });
 r.effect(() => {
-  console.log('Data:', data()); // Prints the resolved value or undefined if still loading
+  console.log('Data:', data());
 });
-url('/other-url') // Calling url() will cause data() to be recalculated
+url('/other-url');
 ```
 
-#### [x] Incorrect usage: async function
+Incorrect (async function loses tracking for `url()` after the first `await`):
 
 ```javascript
-const url = r.val('/api/data');
-const data = r.await(async () => {
-  // Context is lost inside async function
-  const currentUrl = url(); // The url() dependency isn't captured
-  return await fetch(currentUrl).then(r => r.json());
-});
-// Updating url() will not trigger re-runs
-url('/new-url') // Has no-effect on data()
+// const data = r.await(async () => {
+//   const currentUrl = url();
+//   return (await fetch(currentUrl)).json();
+// });
 ```
 
 ### `r.proxy(target)`
 
-Creates a reactive proxy that provides signal-like access to object properties.\
-Each proxied property is individually reactive; updates trigger only the relevant effects.
-
-#### Proxying a plain object
+`target` is either a plain object or `() => object`. Each property is a signal-like accessor; writes go through to the underlying object.
 
 ```javascript
 const state = { x: 1, y: 2 };
 const { x, y } = r.proxy(state);
 
-r.effect(() => console.log('x:', x())); // x: 1
-r.effect(() => console.log('y:', y())); // y: 2
+r.effect(() => console.log('x:', x()));
+r.effect(() => console.log('y:', y()));
 
-x(10); // sets state.x = 10; runs the 1st effect; prints "x: 10"
+x(10);
 ```
-
-
-#### Proxying a reactive object
 
 ```javascript
 const obj = r.val({ name: 'John', age: 30 });
 const { name, age } = r.proxy(() => obj());
 
-r.effect(() => console.log('name:', name())); // name: John
-r.effect(() => console.log('age:', age()));   // age: 30
+r.effect(() => console.log('name:', name()));
+r.effect(() => console.log('age:', age()));
 
-name('Jane'); // runs the 1st effect; prints "name: Jane"
-age(35);      // runs the 2nd effect; prints "age: 35"
-
-obj({ name: 'Alice', age: 40 }); // runs both effects; prints "name: Alice", then "age: 40"
+name('Jane');
+age(35);
+obj({ name: 'Alice', age: 40 });
 ```
 
-## Key Concepts
+## Key concepts
 
-### Fully Synchronous Effects
+### Synchronous core graph
 
-All effects in Webdetta's reactivity system are **fully synchronous**. This means that whenever a signal's value is set, all effects that depend on that signal will run synchronously in the same call stack. No promises, microtasks, or event-loop deferrals are involved in effect propagation.
+When a signal updates **outside** an active effect, dependent effects run **synchronously** in the same stack (until `r.await`-style async flushes).
 
-- There is no batching via `Promise.resolve().then(...)`; updates run instantly and predictably.
-- This makes dataflow and timing easy to reason about, since every change is processed before moving on.
+Inside an `Effect.run`, after your handler returns, the runtime runs any **deferred** subscriber runs queued in `sideEffects` for that same turn—still without yielding the event loop for that core flush.
 
-**Example: Chained synchronous updates**
+### Deferred side-effects
 
-```javascript
-const a = r.val(1);
-const b = r.val(2);
-
-r.effect(() => {
-  // This runs immediately when a or b changes
-  console.log('sum:', a() + b());
-});
-
-// All updates and effects are synchronous:
-a(10);           // Console: "sum: 12"
-b(5);            // Console: "sum: 15"
-console.log('done');  // "done" is logged after the effects run
-```
-
-**Example: Synchronous updates, always finished before continuation**
-
-```javascript
-const state = r.val(0);
-
-r.effect(() => {
-  console.log('Effect sees:', state());
-});
-
-console.log('--- Set state ---');
-state(42);
-// The effect runs to completion *before* this line:
-console.log('After set');
-// Output:
-// --- Set state ---
-// Effect sees: 42
-// After set
-```
-
-### Deferred Side-effects
-
-Side-effect calls are postponed until the current `effect` completes.\
-This prevents intermediate state from propagating to other `effect`s, ensuring that dependent computations are executed with a consistent, finished state.
-
-**Example:**
+If a signal `trigger()` fires **while** some `r.effect` body is running, the affected reactive effects are queued on the **current** effect’s `sideEffects` and run **after** that body finishes. That avoids observers seeing intermediate writes in the middle of the parent run.
 
 ```javascript
 const val = r.val(0);
@@ -267,55 +199,32 @@ r.effect(function handler1() {
   if (val() == 0) { val(1); val(2); val(3); }
 });
 
-// Prints only "3", skipping intermediate values "1" and "2"
 r.effect(function handler2() {
   console.log(val());
 });
+// Typically logs a single settled value (e.g. 3), not 1 then 2 then 3.
 ```
 
-### Lifecycle of an Effect
+### Lifecycle
 
-An effect will only remain subscribed to signals that it reads.\
-If it returns early or throws before reading any signal, it will be unsubscribed and stop reacting to changes.
+1. **Destroy** — call `effect.destroy()` on an `Effect` returned from `r.effect` or `r.untrack` to tear down that subtree (runs cleanups, destroys children, removes from parent).
+1. **Unsubscribe** — a reactive effect stops tracking if it returns before reading any signal on a run (no automatic `destroy()`).
 
-**Example:**
-
-```javascript
-const val = r.val(0);
-let stop = false;
-r.effect(function handler() {
-  if (stop) return;
-  console.log('Current value:', val());
-});
-
-val(1);     // Prints "Current value: 1"
-stop = true;
-val(2);     // No console log (effect handler returned early, unsubscribed automatically)
-stop = false;
-val(3);     // No console log (effect handler is no longer subscribed to this signal)
-```
-
-In summary, effects can be stopped in 2 ways:
-1. Manually, by using the scope.abort()
-2. Automatically, by returning early or not reading any signals
-
-A stopped effect will not receive futher signal updates.
-
-## API Reference
+## API reference
 
 ### Signals
 
-- **`r.val(initialValue)`** - Create a reactive signal
-- **`r.dval(initialValue)`** - Create a diff-based reactive signal
+1. **`r.val(initialValue?)`** — reactive signal
+1. **`r.dval(initialValue?)`** — diff signal (`===`)
 
 ### Effects
 
-- **`r.effect(func)`** - Create a reactive effect
-- **`r.detach(func)`** - Opt-out of reactivity, detach from reactive updates
-- **`r.scope(func)`** - Create an abortable scope
+1. **`r.effect(func)`** — reactive effect; returns `Effect`
+1. **`r.untrack(func)`** — non-reactive run; returns `Effect`
+1. **`r.cleanup(handler)`** — register cleanup handler on current effect
 
 ### Derived
 
-- **`r.memo(func)`** - Memoize reactive computation based on dependencies
-- **`r.await(func)`** - Create a signal from a function that returns a promise
-- **`r.proxy(target)`** - Create a reactive proxy for object properties
+1. **`r.memo(func)`** — memoized signal
+1. **`r.await(func)`** — signal driven by a Promise (sync `func` returning Promise)
+1. **`r.proxy(target)`** — per-property accessors

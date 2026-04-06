@@ -1,23 +1,23 @@
 import * as operators from './operators.js';
-import { Element } from './dom.js';
+import { Element } from './base.js';
 import { kebab } from '../common/dom.js';
 import { Context } from '../context/sync.js';
+import { cached } from '../common/utils.js';
 
 const NS = {
   svg: 'http://www.w3.org/2000/svg',
   math: 'http://www.w3.org/1998/Math/MathML'
 };
 
-const tag = key => key[0].toLowerCase() + kebab(key.slice(1));
-const elNS = ns => {
-  ns = NS[ns = ns.toString().toLowerCase()] ?? ns;
+const tag = key => key.length ? key[0].toLowerCase() + kebab(key.slice(1)) : '';
+const namespace = ns => {
   return new Proxy({}, {
-    get: (_, key) =>
-      key === '' ? Element('')
-      : key === 'ns' ? elNS
-      : key[0] === key[0].toUpperCase() ? Element(tag(key), ns)
-      : operators[key]
+    get: cached((_, key) => (
+      key == 'ns' && ns == null ? key => namespace(NS[key.toLowerCase()])
+      : key in operators ? operators[key]
+      : Element(tag(key), ns)
+    ), (_, key) => key)
   });
 }
-export const el = elNS('');
+export const el = namespace(null);
 export { Context };
