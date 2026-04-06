@@ -26,6 +26,7 @@ describe('flow', () => {
     const c = r.val(0);
     const d = r.val(0);
     let bcRuns = 0;
+    let dRuns = 0;
 
     r.effect(() => {
       b(a() * 2);
@@ -37,19 +38,22 @@ describe('flow', () => {
       d(b() + c());
     });
 
+    r.effect(() => {
+      dRuns++;
+      d();
+    });
+
     bcRuns = 0;
+    dRuns = 0;
     a(2);
-    assert.equal(
-      bcRuns,
-      1,
-      'b+c observer must run once per a() update (two runs would mean the same logical tick flushed it twice)',
-    );
+    assert.equal(bcRuns, 1, 'b+c observer must run once per a() update');
+    assert.equal(dRuns, 1, 'd observer must run once per a() update');
     assert.equal(d(), 10);
   });
 
   /**
    * Glitch: an effect reads A and B where B should always be f(A). Stale B means we saw an
-   * inconsistent pair. Here B = A + 1; we record any run where B !== A + 1 (stricter than B > A).
+   * inconsistent pair. Here B = A + 1; we record any run where B !== A + 1.
    */
   it('glitch', () => {
     const a = r.val(0);
