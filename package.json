@@ -6,8 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "deno test --no-check --reporter=junit packages/**/*.test.js 2>/dev/null | node tools/deno-test-reporter.js",
-    "test-old": "deno test --no-check --reporter=pretty packages/**/*.test.js"
+    "test": "deno test --no-check --reporter=junit packages/**/*.test.js 2>/dev/null | node tools/deno-test-reporter.js"
   },
   "exports": {
     "./*": "./packages/*/index.js",

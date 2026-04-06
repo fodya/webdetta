@@ -82,7 +82,7 @@ describe('derived', () => {
     assert.equal(doubled(), 10);
   });
 
-  it('async_fn', async () => {
+  it('async', async () => {
     const source = r.val(1);
     const value = r.derived(async () => {
       const s = source();
