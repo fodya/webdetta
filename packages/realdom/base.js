@@ -18,7 +18,7 @@ export const processItem = (item, processOperator, processNode, flattenFragments
     processOperator(item);
   } else {
     const node = Element.from(item);
-    if (isFragment(node) && flattenFragments) {
+    if (flattenFragments && isFragment(node)) {
       for (const child of node.childNodes) processNode(child);
     } else {
       processNode(node);

@@ -20,8 +20,8 @@ const domHandlers = () => {
 export const [onDomAppend, domAppendTrigger] = domHandlers();
 export const [onDomRemove, domRemoveTrigger] = domHandlers();
 
-const lRoot = Symbol();
-const defaultKeyFn = (d, i) => {
+const listRoot = Symbol();
+const listKenFnDefault = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
   if (d) {
     if ('key' in d) return d.key;
@@ -29,14 +29,23 @@ const defaultKeyFn = (d, i) => {
   }
   return i;
 };
+const listItemsToEntries = (items, keyFn) => new Map(
+  Array.isArray(items)
+  ? items.map((d, i, a) => [keyFn(d, i, a), d])
+  : typeof items[Symbol.iterator] === 'function'
+  ? Array.from(items.entries())
+  : typeof items == 'object'
+  ? Object.entries(items)
+  : null
+)
 export const createList = (
   itemsFn,
   renderItem,
-  keyFn=defaultKeyFn
+  keyFn=listKenFnDefault
 ) => {
   const root = document.createTextNode('');
 
-  const elements = new Map([[lRoot, root]]);
+  const elements = new Map([[listRoot, root]]);
   const effects = new Map();
   const prev = new Map();
   const next = new Map();
@@ -72,26 +81,20 @@ export const createList = (
   const attached = r.dval(false);
   r.effect(() => {
     if (!attached()) {
-      for (const k of elements.keys()) if (k != lRoot) disconnect(k);
+      for (const k of elements.keys()) if (k != listRoot) disconnect(k);
       return;
     }
     
     const items = unwrapFn(itemsFn);
-    const entries = new Map(
-      Array.isArray(items)
-      ? items.map((d, i, a) => [keyFn(d, i, a), d])
-      : typeof items[Symbol.iterator] === 'function'
-      ? Array.from(items.entries())
-      : typeof items == 'object'
-      ? Object.entries(items)
-      : null
-    );
+    const entries = listItemsToEntries(items, keyFn);
 
-    for (const k of elements.keys())
-      if (k != lRoot && !entries.has(k))
+    for (const k of elements.keys()) {
+      if (k != listRoot && !entries.has(k)) {
         disconnect(k);
+      }
+    }
 
-    let prevK = lRoot;
+    let prevK = listRoot;
     let i = 0;
     for (const [k, v] of entries) {
       if (!elements.has(k)) connect(k, () => renderItem(v, i, items, k));
@@ -110,40 +113,33 @@ export const createSlot = (content) => {
   const node = document.createTextNode('');
   const attached = r.dval(false);
 
-  let effect = null;
-  const append = (items) => {
-    if (!items) return;
-    let nodes = [], last = node;
-    r.untrack(() => {
-      processItem(items,
-        op => Operator.apply.bind(node.parentNode, op),
-        child => {
-          nodes.push(child);
-          Element.appendAfter(last, child);
-          last = child;
-        },
-        true
-      );
-      r.cleanup(() => {
-        for (const child of nodes) Element.remove(child);
-        nodes = null;
-      });
-    });
+  let nodes = [];
+  const append = (content) => {
+    if (!content) return;
+    nodes = [];
+    let last = node;
+    processItem(content,
+      op => {
+        Operator.apply(node.parentNode, op);
+      },
+      child => {
+        Element.appendAfter(last, child);
+        nodes.push(last = child);
+      },
+      true
+    );
   };
 
-  let currentContent;
   const remove = () => {
-    currentContent = null;
-    effect?.destroy();
-    effect = null;
+    if (!nodes) return;
+    for (const child of nodes) Element.remove(child);
+    nodes = null;
   }
 
   r.effect(() => {
-    if (!attached()) { remove(); return; }
-    const newContent = content();
-    if (currentContent === newContent) return;
     remove();
-    append(currentContent = newContent);
+    if (!attached()) return;
+    append(content());
   });
 
   onDomAppend(node, () => attached(true));
@@ -154,14 +150,9 @@ export const createSlot = (content) => {
 
 export const createIf = () => {
   const conditions = r.val([]);
-  const content = r.val(null);
-  const node = createSlot(content);
+  const content = r.computed(() => conditions().find(d => unwrapFn(d.cond))?.args);
   
-  r.effect(() => {
-    const list = conditions().find(d => unwrapFn(d.cond))?.args;
-    content(list);
-  });
-
+  const node = createSlot(content);
   node.elif = (cond, ...args) => {
     const list = conditions();
     list.push({ cond, args });

@@ -40,16 +40,19 @@ export const attr = Operator((node, names, args) => r.effect(() => {
 }));
 
 export const on = Operator((node, names, args) => r.effect(() => {
-  let options;
-  for (const arg of args) if (typeof arg != 'function') options = arg;
-  for (const e of names) for (const f of args) {
-    if (typeof f == 'function') node.addEventListener(e, f, options);
+  let handlers = [], options;
+  for (const arg of args) {
+    if (typeof arg == 'function') handlers.push(arg);
+    else options = arg;
   }
-  options = null;
+  for (const e of names) for (const h of handlers) {
+    node.addEventListener(e, h, options);
+  }
   r.cleanup(() => {
-    for (const e of names) for (const f of args) {
-      if (typeof f == 'function') node.removeEventListener(e, f);
+    for (const e of names) for (const h of handlers) {
+      node.removeEventListener(e, h);
     }
+    options = handlers = null;
   });
 }));
 

@@ -95,6 +95,7 @@ const ms = Math.round(parseFloat(testsuites["@_time"] || 0) * 1000);
 console.log();
 if (failed > 0) {
   console.log(`${red(`[ERR:${ms}ms]`)} ${passed} passed | ${red(`${failed} failed`)}`);
+  process.exit(1);
 } else {
   console.log(`${green(`[OK:${ms}ms]`)} ${passed} passed`);
 }

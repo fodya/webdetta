@@ -31,12 +31,29 @@ r.dval = val => {
   return signal.accessor;
 }
 
-r.derived = (func, awaitPromises=true) => {
-  const value = r.val();
+r.computed = (func, { type=r.val, initial, resolvePromises=true }={}) => {
+  const value = type(initial);
+  let version = 0;
+
+  const handleValue = (active, savedVersion, val, err) => {
+    if (!active || savedVersion !== version) return;
+    if (err) { void err; return; /* TODO add errorHandler */ }
+    value(val);
+  }
+
   r.effect(() => {
+    const savedVersion = ++version;
+    let active = true;
+    r.cleanup(() => active = false);
+
     const res = func();
-    if (awaitPromises && isPromise(res)) res.then(value);
-    else value(res);
+    if (resolvePromises && isPromise(res)) {
+      res
+        .then(val => handleValue(active, savedVersion, val, null))
+        .catch(err => handleValue(active, savedVersion, null, err));
+    } else {
+      handleValue(active, savedVersion, res, null);
+    }
   });
   return value;
 }

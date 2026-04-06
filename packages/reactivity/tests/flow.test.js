@@ -1,9 +1,8 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import assert from 'node:assert/strict';
+import { assert, assertEquals, assertMatch } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 describe('flow', () => {
-  /** Updates flow through a simple chain: a → b → c. */
   it('linear', () => {
     const a = r.val(0);
     const b = r.val(0);
@@ -15,11 +14,10 @@ describe('flow', () => {
       c(b() + 1);
     });
     a(5);
-    assert.equal(b(), 10);
-    assert.equal(c(), 11);
+    assertEquals(b(), 10);
+    assertEquals(c(), 11);
   });
 
-  /** One source fans out to two signals; an effect that reads both runs once per source update (no double-run). */
   it('diamond', () => {
     const a = r.val(0);
     const b = r.val(0);
@@ -46,15 +44,11 @@ describe('flow', () => {
     bcRuns = 0;
     dRuns = 0;
     a(2);
-    assert.equal(bcRuns, 1, 'b+c observer must run once per a() update');
-    assert.equal(dRuns, 1, 'd observer must run once per a() update');
-    assert.equal(d(), 10);
+    assertEquals(bcRuns, 1, 'b+c observer must run once per a() update');
+    assertEquals(dRuns, 1, 'd observer must run once per a() update');
+    assertEquals(d(), 10);
   });
 
-  /**
-   * Glitch: an effect reads A and B where B should always be f(A). Stale B means we saw an
-   * inconsistent pair. Here B = A + 1; we record any run where B !== A + 1.
-   */
   it('glitch', () => {
     const a = r.val(0);
     const b = r.val(0);
@@ -75,14 +69,13 @@ describe('flow', () => {
     for (const next of [0, 1, 2, 10, -3]) {
       a(next);
     }
-    assert.deepEqual(
+    assertEquals(
       violations,
       [],
       `invariant b === a + 1 at every observer run; ${JSON.stringify(violations)}`,
     );
   });
 
-  /** Several writes to the same signal inside one upstream effect should notify dependents once. */
   it('multi_write', () => {
     const src = r.val(0);
     const sink = r.val(0);
@@ -102,14 +95,10 @@ describe('flow', () => {
 
     downstreamRuns = 0;
     src(1);
-    assert.equal(downstreamRuns, 1);
-    assert.equal(sink(), 30);
+    assertEquals(downstreamRuns, 1);
+    assertEquals(sink(), 30);
   });
 
-  /**
-   * Branching read: only the selected source is tracked. Toggling x → y → x → y checks
-   * subscriptions follow the active branch.
-   */
   it('dynamic_deps', () => {
     const pick = r.val('x');
     const x = r.val(1);
@@ -120,31 +109,27 @@ describe('flow', () => {
       out(pick() === 'x' ? x() : y());
     });
 
-    assert.equal(out(), 1);
+    assertEquals(out(), 1);
 
     pick('y');
     y(42);
-    assert.equal(out(), 42);
+    assertEquals(out(), 42);
     x(999);
-    assert.equal(out(), 42, 'on y branch, x must not drive out');
+    assertEquals(out(), 42, 'on y branch, x must not drive out');
 
     pick('x');
-    assert.equal(out(), 999);
+    assertEquals(out(), 999);
 
     x(5);
-    assert.equal(out(), 5);
+    assertEquals(out(), 5);
 
     pick('y');
     y(10);
-    assert.equal(out(), 10);
+    assertEquals(out(), 10);
     x(888);
-    assert.equal(out(), 10, 'back on y branch, x must not drive out');
+    assertEquals(out(), 10, 'back on y branch, x must not drive out');
   });
 
-  /**
-   * Two effects read/write each other synchronously (no delay). That cannot settle;
-   * expect a stack overflow rather than a quiet infinite loop.
-   */
   it('cyclic', () => {
     let err;
     try {
@@ -155,8 +140,8 @@ describe('flow', () => {
     } catch (e) {
       err = e;
     }
-    assert.ok(err, 'expected setup to throw');
-    assert.equal(err.name, 'RangeError');
-    assert.match(String(err.message), /Maximum call stack|too much recursion/i);
+    assert(err, 'expected setup to throw');
+    assertEquals(err.name, 'RangeError');
+    assertMatch(String(err.message), /Maximum call stack|too much recursion/i);
   });
 });

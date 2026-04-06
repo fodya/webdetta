@@ -1,5 +1,5 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import assert from 'node:assert/strict';
+import { assert, assertEquals, assertStrictEquals } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 const watchValues = read => {
@@ -10,7 +10,43 @@ const watchValues = read => {
   return values;
 };
 
+describe('val', () => {
+  it('basic', () => {
+    const value = r.val(1);
+
+    assertEquals(value(), 1);
+    assertEquals(value(2), 2);
+    assertEquals(value(), 2);
+  });
+
+  it('equal_writes_rerun', () => {
+    const value = r.val(0);
+    const seenValues = watchValues(() => value());
+
+    value(0);
+    value(0);
+
+    assertEquals(seenValues, [0, 0, 0]);
+  });
+});
+
 describe('dval', () => {
+  it('basic', () => {
+    const value = r.dval(1);
+    let runs = 0;
+
+    r.effect(() => {
+      runs++;
+      value();
+    });
+
+    value(1);
+    value(2);
+
+    assertEquals(runs, 2);
+    assertEquals(value(), 2);
+  });
+
   it('skip_equal', () => {
     const value = r.dval(0);
     let runCount = 0;
@@ -19,14 +55,14 @@ describe('dval', () => {
       value();
     });
 
-    assert.equal(runCount, 1);
+    assertEquals(runCount, 1);
 
     value(0);
     value(0);
-    assert.equal(runCount, 1, 'must not re-run when value is identical');
+    assertEquals(runCount, 1, 'must not re-run when value is identical');
 
     value(1);
-    assert.equal(runCount, 2, 'must re-run when value changes');
+    assertEquals(runCount, 2, 'must re-run when value changes');
   });
 
   it('strict_identity', () => {
@@ -40,155 +76,235 @@ describe('dval', () => {
     value(secondObject);
     value(thirdObject);
 
-    assert.equal(seenObjects.length, 3);
-    assert.equal(seenObjects[0], firstObject);
-    assert.equal(seenObjects[1], secondObject);
-    assert.equal(seenObjects[2], thirdObject);
+    assertEquals(seenObjects.length, 3);
+    assertStrictEquals(seenObjects[0], firstObject);
+    assertStrictEquals(seenObjects[1], secondObject);
+    assertStrictEquals(seenObjects[2], thirdObject);
   });
 });
 
-describe('derived', () => {
-  it('sync', () => {
+describe('computed', () => {
+  it('basic', () => {
     const left = r.val(2);
     const right = r.val(3);
     let computeCount = 0;
 
-    const sum = r.derived(() => {
+    const sum = r.computed(() => {
       computeCount++;
       return left() + right();
     });
 
-    assert.equal(computeCount, 1);
-    assert.equal(sum(), 5);
+    assertEquals(computeCount, 1);
+    assertEquals(sum(), 5);
 
     left(10);
 
-    assert.equal(computeCount, 2);
-    assert.equal(sum(), 13);
+    assertEquals(computeCount, 2);
+    assertEquals(sum(), 13);
+  });
+
+  it('basic_async', async () => {
+    const source = r.val(2);
+    const doubled = r.computed(() => Promise.resolve(source() * 2));
+
+    assertEquals(doubled(), undefined);
+    await Promise.resolve();
+    assertEquals(doubled(), 4);
   });
 
   it('promise', async () => {
     const source = r.val(1);
-    const doubled = r.derived(() => Promise.resolve(source() * 2));
+    const doubled = r.computed(() => Promise.resolve(source() * 2));
 
-    assert.equal(doubled(), undefined);
+    assertEquals(doubled(), undefined);
 
     await Promise.resolve();
-    assert.equal(doubled(), 2);
+    assertEquals(doubled(), 2);
 
     source(5);
 
     await Promise.resolve();
-    assert.equal(doubled(), 10);
+    assertEquals(doubled(), 10);
   });
 
   it('async', async () => {
     const source = r.val(1);
-    const value = r.derived(async () => {
+    const value = r.computed(async () => {
       const s = source();
       return s + await Promise.resolve(10);
     });
 
-    assert.equal(value(), undefined);
+    assertEquals(value(), undefined);
 
     await Promise.resolve();
     await Promise.resolve();
-    assert.equal(value(), 11);
+    assertEquals(value(), 11);
 
     source(5);
 
     await Promise.resolve();
     await Promise.resolve();
-    assert.equal(value(), 15);
+    assertEquals(value(), 15);
   });
 
-  it('no_await', async () => {
+  it('race_async', async () => {
+    const order = [4, 1, 2, 5, 3];
+    const delays = [50, 40, 10, 30, 20];
+    const promises = Array.from({ length: 5 }, () => Promise.withResolvers());
+    const source = r.val(order[0]);
+    const value = r.computed(() => promises[source() - 1].promise);
+
+    assertEquals(value(), undefined);
+
+    for (const [index, deferred] of promises.entries()) {
+      setTimeout(() => deferred.resolve(index + 1), delays[index]);
+    }
+
+    for (const state of order.slice(1)) {
+      source(state);
+    }
+
+    await Promise.all(promises.map(({ promise }) => promise));
+    await Promise.resolve();
+
+    assertEquals(value(), 3, 'older async results must not overwrite latest one');
+  });
+
+  it('race_async_reject', async () => {
+    const source = r.val('first');
+    const first = Promise.withResolvers();
+    const second = Promise.withResolvers();
+    const value = r.computed(() => source() === 'first' ? first.promise : second.promise);
+
+    source('second');
+    second.resolve(2);
+    await Promise.resolve();
+
+    assertEquals(value(), 2);
+
+    first.reject(new Error('stale'));
+    await Promise.resolve();
+
+    assertEquals(value(), 2, 'stale async reject must not affect newer result');
+  });
+
+  it('disabled_promise_resolution', async () => {
     const source = r.val(1);
-    const value = r.derived(() => Promise.resolve(source() * 3), false);
+    const value = r.computed(() => Promise.resolve(source() * 3), { resolvePromises: false });
 
     const firstPromise = value();
-    assert.ok(firstPromise instanceof Promise);
-    assert.equal(await firstPromise, 3);
+    assert(firstPromise instanceof Promise);
+    assertEquals(await firstPromise, 3);
 
     source(2);
 
     const secondPromise = value();
-    assert.ok(secondPromise instanceof Promise);
-    assert.notEqual(secondPromise, firstPromise);
-    assert.equal(await secondPromise, 6);
+    assert(secondPromise instanceof Promise);
+    assert(secondPromise !== firstPromise);
+    assertEquals(await secondPromise, 6);
+  });
+
+  it('custom_type', () => {
+    const source = r.val(1);
+    const value = r.computed(() => source() % 2, {
+      type: r.dval
+    });
+    const seenValues = [];
+
+    r.effect(() => {
+      seenValues.push(value());
+    });
+
+    assertEquals(value(), 1);
+    assertEquals(seenValues, [1]);
+
+    source(3);
+    assertEquals(value(), 1);
+    assertEquals(seenValues, [1]);
+
+    source(2);
+    assertEquals(value(), 0);
+    assertEquals(seenValues, [1, 0]);
+  });
+
+  it('initial_value', async () => {
+    const source = r.val(1);
+    const value = r.computed(
+      () => Promise.resolve(source() * 2),
+      { type: r.val, initial: 'loading' },
+    );
+
+    assertEquals(value(), 'loading');
+
+    await Promise.resolve();
+    assertEquals(value(), 2);
   });
 });
 
-describe('store', () => {
-  it('reactive_object', () => {
-    const store = r.store({ count: 1 });
-    const seenValues = watchValues(() => store.count);
-
-    store.count = 2;
-
-    assert.deepEqual(seenValues, [1, 2]);
-    assert.equal(store.count, 2);
-  });
-
-  it('property_isolation', () => {
-    const store = r.store({ first: 1, second: 2 });
-    const seenFirstValues = watchValues(() => store.first);
-
-    store.second = 3;
-    store.first = 4;
-
-    assert.deepEqual(seenFirstValues, [1, 4]);
-  });
-
-  it('functional_target', () => {
-    const object = r.val({ name: 'a', age: 1 });
-    const store = r.store(() => object());
-    const seenNames = watchValues(() => store.name);
-
-    store.name = 'b';
-    assert.equal(object().name, 'b');
-
-    object({ name: 'c', age: 9 });
-
-    assert.deepEqual(seenNames, ['a', 'b', 'c']);
-    assert.equal(store.name, 'c');
-  });
-});
-
-describe('proxy', () => {
-  it('plain_object', () => {
+const describeStore = (name, create, read, write) => describe(name, () => {
+  it('basic', () => {
     const state = { x: 1, y: 2 };
-    const proxy = r.proxy(state);
-    const seenValues = watchValues(() => proxy.x());
+    const target = create(state);
+    const seenValues = watchValues(() => read(target, 'x'));
 
-    proxy.x(10);
+    write(target, 'x', 10);
 
-    assert.deepEqual(seenValues, [1, 10]);
-    assert.equal(state.x, 10);
+    assertEquals(seenValues, [1, 10]);
+    assertEquals(state.x, 10);
   });
 
   it('property_isolation', () => {
     const state = { first: 1, second: 2 };
-    const proxy = r.proxy(state);
-    const seenFirstValues = watchValues(() => proxy.first());
+    const target = create(state);
+    const seenFirstValues = watchValues(() => read(target, 'first'));
 
-    proxy.second(3);
-    proxy.first(4);
+    write(target, 'second', 3);
+    write(target, 'first', 4);
 
-    assert.deepEqual(seenFirstValues, [1, 4]);
+    assertEquals(seenFirstValues, [1, 4]);
   });
 
   it('functional_target', () => {
     const object = r.val({ name: 'a', age: 1 });
-    const proxy = r.proxy(() => object());
-    const seenNames = watchValues(() => proxy.name());
+    const target = create(() => object());
+    const seenNames = watchValues(() => read(target, 'name'));
 
-    proxy.name('b');
-    assert.equal(object().name, 'b');
+    write(target, 'name', 'b');
+    assertEquals(object().name, 'b');
 
     object({ name: 'c', age: 9 });
 
-    assert.deepEqual(seenNames, ['a', 'b', 'c']);
-    assert.equal(proxy.name(), 'c');
+    assertEquals(seenNames, ['a', 'b', 'c']);
+    assertEquals(read(target, 'name'), 'c');
+  });
+
+  it('writes_follow_current_target', () => {
+    const first = { name: 'a' };
+    const second = { name: 'b' };
+    const current = r.val(first);
+    const target = create(() => current());
+
+    current(second);
+    write(target, 'name', 'c');
+
+    assertEquals(first.name, 'a');
+    assertEquals(second.name, 'c');
+    assertEquals(read(target, 'name'), 'c');
   });
 });
+
+describeStore(
+  'store',
+  target => r.store(target),
+  (target, key) => target[key],
+  (target, key, value) => {
+    target[key] = value;
+  },
+);
+
+describeStore(
+  'proxy',
+  target => r.proxy(target),
+  (target, key) => target[key](),
+  (target, key, value) => target[key](value),
+);
