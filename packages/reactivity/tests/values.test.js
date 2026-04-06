@@ -1,5 +1,5 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import { assert, assertEquals, assertStrictEquals } from 'jsr:@std/assert';
+import { assert, assertEquals } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 const watchValues = read => {
@@ -76,10 +76,7 @@ describe('dval', () => {
     value(secondObject);
     value(thirdObject);
 
-    assertEquals(seenObjects.length, 3);
-    assertStrictEquals(seenObjects[0], firstObject);
-    assertStrictEquals(seenObjects[1], secondObject);
-    assertStrictEquals(seenObjects[2], thirdObject);
+    assertEquals(seenObjects, [firstObject, secondObject, thirdObject]);
   });
 });
 
@@ -167,7 +164,7 @@ describe('computed', () => {
     await Promise.all(promises.map(({ promise }) => promise));
     await Promise.resolve();
 
-    assertEquals(value(), 3, 'older async results must not overwrite latest one');
+    assertEquals(value(), 3, 'older async results must not overwrite the latest one');
   });
 
   it('race_async_reject', async () => {
