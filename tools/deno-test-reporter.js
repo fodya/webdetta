@@ -65,14 +65,15 @@ const print = (node, name, depth, path) => {
   }
 };
 
-for (const [pkg, files] of Object.entries(byPkg)) {
+Object.entries(byPkg).forEach(([pkg, files], pkgI) => {
+  if (pkgI > 0) console.log('');
   console.log(brightCyan(pkg));
   for (const [file, entries] of files) {
     const { rel } = parsePath(file);
     console.log(`  ${cyan(rel)}`);
     for (const [name, node] of entries) print(node, name, 2, [pkg, rel]);
   }
-}
+});
 
 if (failures.length > 0) {
   console.log();

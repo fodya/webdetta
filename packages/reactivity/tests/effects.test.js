@@ -1,5 +1,5 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import { assertEquals } from 'jsr:@std/assert';
+import { assertEquals, assertThrows } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 const watchCleanupLog = signal => {
@@ -16,6 +16,17 @@ const watchCleanupLog = signal => {
 };
 
 describe('effect', () => {
+  it('run after destroy skips handler', () => {
+    let runs = 0;
+    const eff = r.effect(() => {
+      runs++;
+    });
+    assertEquals(runs, 1);
+    eff.destroy();
+    eff.run();
+    assertEquals(runs, 1);
+  });
+
   it('basic', () => {
     const value = r.val(1);
     const seen = [];
@@ -28,39 +39,33 @@ describe('effect', () => {
     assertEquals(seen, [1, 2]);
   });
 
-  it('unsubscribe_when_branch_skips_read', () => {
+  it('unsubscribe when branch skips read', () => {
     const enabled = r.val(true);
     const source = r.val(1);
     let runCount = 0;
-    const seenValues = [];
-    const reset = () => {
-      runCount = 0;
-      seenValues.length = 0;
-    };
+    const seen = [];
+    const reset = () => seen.length = runCount = 0;
     r.effect(() => {
       runCount++;
       if (!enabled()) return;
-      seenValues.push(source());
+      seen.push(source());
     });
 
     assertEquals(runCount, 1);
-    assertEquals(seenValues, [1]);
+    assertEquals(seen, [1]);
     reset();
 
     enabled(false);
     source(2);
-
-    assertEquals(
-      runCount,
-      1,
+    assertEquals(runCount, 1,
       'effect should unsubscribe from source when the disabled branch stops reading it',
     );
-    assertEquals(seenValues, []);
+    assertEquals(seen, []);
     reset();
 
     enabled(true);
     assertEquals(runCount, 1);
-    assertEquals(seenValues, [2]);
+    assertEquals(seen, [2]);
   });
 
   it('destroy', () => {
@@ -99,7 +104,7 @@ describe('effect', () => {
     assertEquals(cleanupCount, 0);
   });
 
-  it('nested_rerun_cleans_old_children', () => {
+  it('nested rerun cleans old children', () => {
     const branch = r.val('left');
     const left = r.val(1);
     const right = r.val(10);
@@ -142,7 +147,7 @@ describe('effect', () => {
     assertEquals(cleanups, ['right:10']);
   });
 
-  it('nested_conditional', () => {
+  it('nested conditional', () => {
     const branch = r.val('left');
     const left = r.val(1);
     const right = r.val(10);
@@ -196,7 +201,7 @@ describe('effect', () => {
     assertEquals(log, ['clean:left:3', 'left:4']);
   });
 
-  it('destroy_cascades', () => {
+  it('destroy cascades', () => {
     const outer = r.val(0);
     const inner = r.val(0);
     let childRuns = 0, childCleanups = 0;
@@ -237,7 +242,7 @@ describe('effect', () => {
     assertEquals(childCleanups, 0);
   });
 
-  it('deep_nesting', () => {
+  it('deep nesting', () => {
     const a = r.val(0);
     const b = r.val(0);
     const c = r.val(0);
@@ -288,51 +293,40 @@ describe('effect', () => {
 });
 
 describe('untrack', () => {
-  it('returns_effect', () => {
-    const effect = r.untrack(() => 1);
-
-    assertEquals(typeof effect.destroy, 'function');
-  });
-
-  it('no_subscribe', () => {
+  it('no subscribe', () => {
     const left = r.val(2);
     const right = r.val(3);
     let outerRunCount = 0;
-    const seenProducts = [];
-    const reset = () => {
-      outerRunCount = 0;
-      seenProducts.length = 0;
-    };
+    const seen = [];
+    const reset = () => seen.length = outerRunCount = 0;
     r.effect(() => {
       outerRunCount++;
       const leftValue = left();
       r.untrack(() => {
-        seenProducts.push(leftValue * right());
+        seen.push(leftValue * right());
       });
     });
 
     assertEquals(outerRunCount, 1);
-    assertEquals(seenProducts, [6]);
+    assertEquals(seen, [6]);
     reset();
 
     left(4);
     assertEquals(outerRunCount, 1);
-    assertEquals(seenProducts, [12]);
+    assertEquals(seen, [12]);
     reset();
 
     right(5);
     assertEquals(outerRunCount, 0);
-    assertEquals(seenProducts, []);
+    assertEquals(seen, []);
   });
 
-  it('nested_conditional_cleanup', () => {
+  it('nested conditional cleanup', () => {
     const branch = r.val('left');
     const left = r.val(1);
     const right = r.val(10);
     const log = [];
-    const reset = () => {
-      log.length = 0;
-    };
+    const reset = () => log.length = 0;
     r.effect(() => {
       const active = branch();
       r.untrack(() => {
@@ -371,6 +365,14 @@ describe('untrack', () => {
 });
 
 describe('cleanup', () => {
+  it('outside r.effect throws', () => {
+    assertThrows(
+      () => r.cleanup(() => {}),
+      Error,
+      'Cannot run r.cleanup outside r.effect',
+    );
+  });
+
   it('basic', () => {
     const value = r.val(1);
     const log = [];
@@ -385,7 +387,7 @@ describe('cleanup', () => {
     assertEquals(log, ['run:1', 'clean:1', 'run:2']);
   });
 
-  it('stops_reruns_on_destroy', () => {
+  it('destroy stops reruns', () => {
     const value = r.val(0);
     const { log, effect } = watchCleanupLog(value);
 

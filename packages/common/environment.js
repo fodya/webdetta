@@ -11,6 +11,9 @@ const get = (...path) => {
   return obj;
 }
 
+const ua = String(get('navigator', 'userAgent') ?? '');
+const uaTest = str => ua.includes(str);
+
 export const runtime = (
   get('window', 'document') != null
   ? 'browser' :
@@ -22,9 +25,7 @@ export const runtime = (
   ? 'webworker' :
 
   // https://github.com/jsdom/jsdom/issues/1537#issuecomment-229405327
-  get('window', 'name') === 'nodejs' ||
-  ['Node.js', 'jsdom']
-    .some(d => String(get('navigator', 'userAgent') ?? '').includes(d))
+  get('window', 'name') === 'nodejs' || uaTest('Node.js') || uaTest('jsdom')
   ? 'jsdom' :
 
   get('Deno', 'version', 'deno') != null
@@ -36,11 +37,19 @@ export const runtime = (
 
   undefined
 );
+export const isClientRuntime = ['browser', 'webworker', 'jsdom'].includes(runtime);
+export const isServerRuntime = !isClientRuntime;
 
-export const isMobile = (() => {
-  const list = [
-    'Android', 'webOS', 'iPhone', 'iPad', 'iPod',
-    'BlackBerry', 'Windows Phone', 'Opera Mini', 'IEMobile'
-  ];
-  return list.some(d => String(get('navigator', 'userAgent') ?? '').includes(d));
-})();
+export const browser = (
+  uaTest('Edg/') ? 'edge' :
+  uaTest('OPR/') || uaTest('Opera') ? 'opera' :
+  uaTest('SamsungBrowser/') ? 'samsung' :
+  uaTest('Firefox/') ? 'firefox' :
+  uaTest('Chrome/') || uaTest('CriOS/') ? 'chrome' :
+  uaTest('Safari/') ? 'safari' :
+  undefined
+);
+export const isMobileBrowser = [
+  'Android', 'webOS', 'iPhone', 'iPad', 'iPod',
+  'BlackBerry', 'Windows Phone', 'Opera Mini', 'IEMobile'
+].some(uaTest);

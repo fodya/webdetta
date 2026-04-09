@@ -6,14 +6,17 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "deno test --no-check --reporter=junit packages/**/*.test.js 2>/dev/null | node tools/deno-test-reporter.js"
+    "test": "deno test --parallel --no-check --reporter=junit packages/**/*.test.js 2>/dev/null | node tools/deno-test-reporter.js",
+    "coverage": "rm -fr .coverage; deno test --parallel --no-check --coverage=.coverage packages/**/*.test.js > /dev/null"
   },
   "exports": {
     "./*": "./packages/*/index.js",
     "./builder": "./packages/builder/index.js",
     "./context/*": "./packages/context/*.js",
     "./convert/*": "./packages/convert/*.js",
+    "./execution/*": "./packages/execution/*.js",
     "./i18n/*": "./packages/i18n/*.js",
+    "./logger/*": "./packages/logger/*.js",
     "./reactivity/*": "./packages/reactivity/*.js",
     "./realcss/*": "./packages/realcss/*.js",
     "./realdom/*": "./packages/realdom/*.js",
@@ -21,7 +24,6 @@
     "./rpc/*": "./packages/rpc/*.js",
     "./subprocess/*": "./packages/subprocess/*.js",
     "./templater/*": "./packages/templater/*.js",
-    "./webcomp/*": "./packages/webcomp/*.js",
     "./common/*": "./packages/common/*.js",
     "./config/*": "./packages/config/*.js"
   },

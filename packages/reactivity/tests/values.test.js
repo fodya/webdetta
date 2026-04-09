@@ -1,5 +1,5 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import { assert, assertEquals } from 'jsr:@std/assert';
+import { assert, assertEquals, assertThrows } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 const watchValues = read => {
@@ -19,7 +19,7 @@ describe('val', () => {
     assertEquals(value(), 2);
   });
 
-  it('equal_writes_rerun', () => {
+  it('rerun on equal writes', () => {
     const value = r.val(0);
     const seenValues = watchValues(() => value());
 
@@ -47,7 +47,7 @@ describe('dval', () => {
     assertEquals(value(), 2);
   });
 
-  it('skip_equal', () => {
+  it('skip equal', () => {
     const value = r.dval(0);
     let runCount = 0;
     r.effect(() => {
@@ -65,7 +65,7 @@ describe('dval', () => {
     assertEquals(runCount, 2, 'must re-run when value changes');
   });
 
-  it('strict_identity', () => {
+  it('strict identity', () => {
     const firstObject = { id: 1, label: 'a' };
     const secondObject = { id: 1, label: 'a' };
     const thirdObject = { id: 2, label: 'b' };
@@ -81,6 +81,18 @@ describe('dval', () => {
 });
 
 describe('computed', () => {
+  it('sync throw in body propagates', () => {
+    assertThrows(
+      () => {
+        r.computed(() => {
+          throw new Error('bad-computed');
+        });
+      },
+      Error,
+      'bad-computed',
+    );
+  });
+
   it('basic', () => {
     const left = r.val(2);
     const right = r.val(3);
@@ -100,7 +112,7 @@ describe('computed', () => {
     assertEquals(sum(), 13);
   });
 
-  it('basic_async', async () => {
+  it('async basic', async () => {
     const source = r.val(2);
     const doubled = r.computed(() => Promise.resolve(source() * 2));
 
@@ -144,30 +156,34 @@ describe('computed', () => {
     assertEquals(value(), 15);
   });
 
-  it('race_async', async () => {
-    const order = [4, 1, 2, 5, 3];
-    const delays = [50, 40, 10, 30, 20];
+  it('async race', async () => {
     const promises = Array.from({ length: 5 }, () => Promise.withResolvers());
-    const source = r.val(order[0]);
-    const value = r.computed(() => promises[source() - 1].promise);
+    const source = r.val();
+    const value = r.computed(() => promises[source()]?.promise);
 
     assertEquals(value(), undefined);
 
-    for (const [index, deferred] of promises.entries()) {
-      setTimeout(() => deferred.resolve(index + 1), delays[index]);
-    }
+    setTimeout(() => promises[3].resolve(3), 10);
+    source(3);
 
-    for (const state of order.slice(1)) {
-      source(state);
-    }
+    setTimeout(() => promises[0].resolve(0), 20);
+    source(0);
 
-    await Promise.all(promises.map(({ promise }) => promise));
-    await Promise.resolve();
+    setTimeout(() => promises[1].resolve(1), 30);
+    source(1);
 
-    assertEquals(value(), 3, 'older async results must not overwrite the latest one');
+    setTimeout(() => promises[4].resolve(4), 40);
+    source(4);
+
+    setTimeout(() => promises[2].resolve(2), 0);
+    source(2);
+
+    await new Promise(r => setTimeout(r, 50));
+
+    assertEquals(value(), 2, 'older async results must not overwrite the latest one');
   });
 
-  it('race_async_reject', async () => {
+  it('async race reject', async () => {
     const source = r.val('first');
     const first = Promise.withResolvers();
     const second = Promise.withResolvers();
@@ -185,7 +201,7 @@ describe('computed', () => {
     assertEquals(value(), 2, 'stale async reject must not affect newer result');
   });
 
-  it('disabled_promise_resolution', async () => {
+  it('disabled promise resolution', async () => {
     const source = r.val(1);
     const value = r.computed(() => Promise.resolve(source() * 3), { resolvePromises: false });
 
@@ -201,7 +217,7 @@ describe('computed', () => {
     assertEquals(await secondPromise, 6);
   });
 
-  it('custom_type', () => {
+  it('custom type', () => {
     const source = r.val(1);
     const value = r.computed(() => source() % 2, {
       type: r.dval
@@ -224,7 +240,7 @@ describe('computed', () => {
     assertEquals(seenValues, [1, 0]);
   });
 
-  it('initial_value', async () => {
+  it('initial value', async () => {
     const source = r.val(1);
     const value = r.computed(
       () => Promise.resolve(source() * 2),
@@ -250,7 +266,7 @@ const describeStore = (name, create, read, write) => describe(name, () => {
     assertEquals(state.x, 10);
   });
 
-  it('property_isolation', () => {
+  it('property isolation', () => {
     const state = { first: 1, second: 2 };
     const target = create(state);
     const seenFirstValues = watchValues(() => read(target, 'first'));
@@ -261,7 +277,7 @@ const describeStore = (name, create, read, write) => describe(name, () => {
     assertEquals(seenFirstValues, [1, 4]);
   });
 
-  it('functional_target', () => {
+  it('functional target', () => {
     const object = r.val({ name: 'a', age: 1 });
     const target = create(() => object());
     const seenNames = watchValues(() => read(target, 'name'));
@@ -275,7 +291,7 @@ const describeStore = (name, create, read, write) => describe(name, () => {
     assertEquals(read(target, 'name'), 'c');
   });
 
-  it('writes_follow_current_target', () => {
+  it('writes follow current target', () => {
     const first = { name: 'a' };
     const second = { name: 'b' };
     const current = r.val(first);

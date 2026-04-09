@@ -11,7 +11,7 @@ Implements expressive, chainable DSL syntax using the [builder pattern](https://
 A flexible way of handling scoped variables. Supports sync, async and reactive contexts.
 
 \> `webdetta/convert`\
-Data conversion utilities: text, base64, data URI, blob/file, formdata, json, and more.
+Data conversion utilities: text, base64, datauri, file/bytes, formdata, json.
 
 \> `webdetta/i18n`\
 Internationalization utility for translating UI texts.

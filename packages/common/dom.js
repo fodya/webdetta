@@ -1,5 +1,7 @@
-import { S, cached } from './utils.js';
-import { objectPick } from './object.js';
+import { arr } from './utils.js';
+import { objectPick } from './utils.js';
+import { fileToDatauri } from '../convert/index.js';
+import { cached } from '../execution/index.js';
 
 const regexAZ = /[A-Z]/g;
 export const kebab = cached(s =>
@@ -35,63 +37,63 @@ export const measureText = (text, style={}) => {
     visibility: 'hidden',
     pointerEvents: 'none'
   });
-
-  document.documentElement.append(div);
+  
   const keys = style instanceof CSSStyleDeclaration ? style : Object.keys(style);
-  for (const k of ['width', 'height']) div.style[k] = '';
+  for (const k of ['width', 'height']) delete div.style[k];
   for (const k of keys) div.style[k] = style[k];
   div.textContent = text;
-  // const zoom = +style.zoom || 1;
-  const { scrollHeight: height, scrollWidth: width } = div;
+  
+  document.body.append(div);
+  const rect = div.getBoundingClientRect();
   div.remove();
-  return { width, height };
+  return { width: rect.width, height: rect.height };
 }
-export const autogrowInput = ({
-  element,
-  text,
-  multiline,
-  whiteSpace='pre-wrap'
-}) => {
-  const keys = S`
+
+export const autogrowInput = ({ text, element, style={}, multiline=false }) => {
+  const keys = arr`
     letter-spacing padding margin font font-family word-break white-space
     display perspective-origin transform-origin
   `;
   keys.push(multiline ? 'width' : 'height');
-  const style = objectPick(getComputedStyle(element), keys);
-  style.whiteSpace = whiteSpace;
-  const measurement = measureText(text + (multiline ? '.' : ''), style);
-  if (multiline) element.style.height = measurement.height + 'px';
-  else element.style.width = measurement.width + 'px';
-  element.style.overflow = 'hidden';
+
+  const measurement = measureText(text + (multiline ? '.' : ''), {
+    ...objectPick(getComputedStyle(element), keys),
+    ...style
+  });
+
+  const result = multiline ? 'height' : 'width';
+  element.style[result] = measurement[result] + 'px';
 }
 
-export const saveBlob = (filename, blob) => {
-  const link = saveBlob.a ??= document.createElement("a");
+export const downloadBlob = async (filename, blob) => {
+  const link = downloadBlob.link ??= document.createElement("a");
   link.style = "display: none";
+  document.body.append(link);
 
-  document.documentElement.append(link);
-  const url = URL.createObjectURL(blob);
+  const ua = navigator?.userAgent || '';
+  const useDatauri = (
+    typeof URL?.createObjectURL !== 'function' ||
+    /iPad|iPhone|iPod/.test(ua) && !/\bcrios\b/i.test(ua)
+  );
+  
+  const url = useDatauri
+    ? await fileToDatauri(blob)
+    : URL.createObjectURL(blob);
   link.href = url;
+  link.target = '_blank';
   link.download = filename;
   link.click();
-  URL.revokeObjectURL(url);
+  if (!useDatauri) {
+    await Promise.resolve();
+    URL.revokeObjectURL(url);
+  }
 };
 
-export const importAsset = (tagName, attrs) => new Promise((resolve) => {
-  const el = document.createElement(tagName);
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-  document.head.append(el);
-  el.onload = () => (resolve(el), el.remove());
-  el.onerror = () => (resolve(null), el.remove());
-});
-
 export const colorToHex = (colorStr) => {
-  const canvasCtx = colorToHex.ctx ??= document.createElement('canvas').getContext('2d')
-  canvasCtx.fillStyle = colorStr;
-  return canvasCtx.fillStyle;
+  const ctx = colorToHex.ctx ??= document.createElement('canvas').getContext('2d')
+  ctx.fillStyle = colorStr;
+  return ctx.fillStyle;
 }
-
-export const forceReflow = elem => { elem.offsetHeight; }
 
 export const constrainedZoomValue = ({
   containerWidth,
@@ -118,10 +120,6 @@ export const constrainedZoomValue = ({
   }
 
   return 1;
-}
-
-export const isEventInside = (event, target) => {
-  return event.composedPath().includes(target);
 }
 
 export const L = new Promise(resolve => {

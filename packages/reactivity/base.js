@@ -2,6 +2,13 @@ import { Context } from '../context/sync.js';
 
 export const currentEffect = Context();
 
+const flush = (obj, key, cb) => {
+  const queue = obj[key];
+  if (!queue) return;
+  obj[key] = null;
+  for (const item of queue) cb(item);
+}
+
 export class Signal {
   getter = null;
   setter = null;
@@ -15,22 +22,20 @@ export class Signal {
   effects = new Set();
 
   trigger() {
-    if (!this.effects) return;
-    const effects = this.effects;
-    this.effects = new Set();
-
     const effect = currentEffect();
-    for (const eff of effects) {
-      if (effect) effect.queued.add(eff);
-      else eff.run();
+    if (effect) {
+      effect.queued ??= new Set();
+      flush(this, 'effects', eff => effect.queued.add(eff));
+    } else {
+      flush(this, 'effects', eff => eff.run());
     }
   }
 
   get() {
     const effect = currentEffect();
     if (effect?.reactive) {
-      effect.signals.add(this);
-      this.effects.add(effect);
+      (effect.signals ??= new Set()).add(this);
+      (this.effects ??= new Set()).add(effect);
     }
     return this.getter();
   }
@@ -50,41 +55,45 @@ export class Effect {
   handler = null;
   reactive = false;
   destroyed = false;
-  children = [];
-  oncleanup = [];
-  queued = new Set();
-  signals = new Set();
+  children = null;
+  oncleanup = null;
+  queued = null;
+  signals = null;
   constructor(parent, handler, reactive) {
     this.parent = parent;
     this.handler = handler;
     this.reactive = reactive;
-    this.parent?.children.push(this);
+    if (parent) (parent.children ??= []).push(this);
   }
   run() {
     if (this.destroyed) return;
     this.cleanup();
-    const result = currentEffect.run(this, this.handler);
-    if (this.signals.size == 0) this.reactive = false;
-    for (const effect of this.queued) effect.run();
-    this.queued.clear();
-    return result;
+
+    let res, err;
+    try {
+      this.queued = null;
+      res = currentEffect.run(this, this.handler);
+      flush(this, 'queued', eff => eff.run());
+    } catch (e) {
+      this.queued = null;
+      err = e;
+    }
+    if (!this.signals) this.reactive = false;
+    if (err) { throw err; /* this.errorHandler(err); */ }
+    return res;
   }
 
   cleanup() {
-    for (const signal of this.signals) signal.effects.delete(this);
-    this.signals.clear();
-    for (const func of this.oncleanup) func();
-    this.oncleanup.length = 0;
-    for (const child of this.children) child.cleanup();
-    this.children.length = 0;
+    flush(this, 'signals', signal => signal.effects?.delete(this));
+    flush(this, 'oncleanup', func => func());
+    flush(this, 'children', child => child.cleanup());
   }
 
   destroy() {
     this.destroyed = true;
     this.parent = null;
-
-    const children = this.children;
-    this.cleanup();
-    if (children) for (const child of children) child.destroy();
+    flush(this, 'signals', signal => signal.effects?.delete(this));
+    flush(this, 'oncleanup', func => func());
+    flush(this, 'children', child => child.destroy());
   }
 }

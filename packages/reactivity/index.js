@@ -31,29 +31,32 @@ r.dval = val => {
   return signal.accessor;
 }
 
+const unwrap = (func, resolvePromises, callback) => {
+  let res, err;
+  try { res = func(); }
+  catch (e) { err = e; }
+  if (resolvePromises && isPromise(res)) {
+    res
+      .then(val => callback(val, null))
+      .catch(err => callback(null, err));
+  } else {
+    callback(res, err);
+  }
+}
+
 r.computed = (func, { type=r.val, initial, resolvePromises=true }={}) => {
   const value = type(initial);
-  let version = 0;
-
-  const handleValue = (active, savedVersion, val, err) => {
-    if (!active || savedVersion !== version) return;
-    if (err) { void err; return; /* TODO add errorHandler */ }
-    value(val);
-  }
-
   r.effect(() => {
-    const savedVersion = ++version;
     let active = true;
     r.cleanup(() => active = false);
-
-    const res = func();
-    if (resolvePromises && isPromise(res)) {
-      res
-        .then(val => handleValue(active, savedVersion, val, null))
-        .catch(err => handleValue(active, savedVersion, null, err));
-    } else {
-      handleValue(active, savedVersion, res, null);
-    }
+    unwrap(func, resolvePromises, (res, err) => {
+      if (!active) return;
+      if (err) {
+        throw err;
+        /*handleError(err);*/
+      }
+      else value(res);
+    });
   });
   return value;
 }
@@ -105,7 +108,9 @@ r.untrack = handler => {
 // Utils
 
 r.cleanup = handler => {
-  currentEffect().oncleanup.push(handler);
+  const effect = currentEffect();
+  if (!effect) throw new Error('Cannot run r.cleanup outside r.effect');
+  (effect.oncleanup ??= []).push(handler);
 }
 
 //

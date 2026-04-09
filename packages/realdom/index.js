@@ -2,7 +2,7 @@ import * as operators from './operators.js';
 import { Element } from './base.js';
 import { kebab } from '../common/dom.js';
 import { Context } from '../context/sync.js';
-import { cached } from '../common/utils.js';
+import { cached } from '../execution/index.js';
 
 const NS = {
   svg: 'http://www.w3.org/2000/svg',

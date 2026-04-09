@@ -151,43 +151,6 @@ canvas.toBlob((blob) => {
 </details>
 
 <details>
-<summary><strong>importAsset(tagName, attrs)</strong></summary>
-
-Dynamically loads external assets (scripts, stylesheets, etc.) into the document and returns a Promise that resolves when loading completes or fails.
-
-**Parameters:**
-- `tagName` (string): HTML tag name (e.g., `'script'`, `'link'`, `'img'`)
-- `attrs` (object): Attributes to set on the element (e.g., `{ src: '...', type: '...' }`)
-
-**Returns:**
-- `Promise<HTMLElement | null>`: Resolves with the element on success, `null` on error
-
-**Examples:**
-```javascript
-import { importAsset } from 'webdetta/common/dom';
-
-const script = await importAsset('script', {
-  src: 'https://example.com/library.js',
-  type: 'text/javascript'
-});
-// script: <script> element on success, null on error
-
-const stylesheet = await importAsset('link', {
-  rel: 'stylesheet',
-  href: 'https://example.com/styles.css'
-});
-// stylesheet: <link> element on success, null on error
-
-const img = await importAsset('img', {
-  src: 'https://example.com/image.png',
-  alt: 'Image'
-});
-// img: <img> element on success, null on error
-```
-
-</details>
-
-<details>
 <summary><strong>colorToHex(colorStr)</strong></summary>
 
 Converts any CSS color string (named colors, RGB, RGBA, HSL, etc.) to hexadecimal format.

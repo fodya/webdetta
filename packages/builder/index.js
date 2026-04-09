@@ -2,8 +2,6 @@
 // https://github.com/frameorc/frameorc/blob/github/src/builder.js
 // Original author: Michael Lazarev
 
-import { objectHasOwn } from '../common/object.js';
-
 export const Builder = (effect, tasks=[], names=[]) => {
   const call = (...args) => {
     if (args[0] === Builder.symbol) return (args[0] = tasks, effect(...args));
@@ -18,5 +16,5 @@ export const Builder = (effect, tasks=[], names=[]) => {
 }
 
 Builder.symbol = Symbol('Builder.symbol');
-Builder.isBuilder = (f) => f && objectHasOwn(f, Builder.symbol);
+Builder.isBuilder = (f) => f && Object.hasOwn(f, Builder.symbol);
 Builder.launch = (f, ...args) => f(Builder.symbol, ...args);

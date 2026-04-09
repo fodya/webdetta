@@ -76,7 +76,7 @@ describe('flow', () => {
     );
   });
 
-  it('multi_write', () => {
+  it('multi write', () => {
     const src = r.val(0);
     const sink = r.val(0);
     let downstreamRuns = 0;
@@ -99,7 +99,7 @@ describe('flow', () => {
     assertEquals(sink(), 30);
   });
 
-  it('dynamic_deps', () => {
+  it('dynamic deps', () => {
     const pick = r.val('x');
     const x = r.val(1);
     const y = r.val(100);

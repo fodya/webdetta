@@ -1,6 +1,5 @@
 import { kebab } from '../common/dom.js';
-import { isTemplateCall, unwrapFn } from '../common/utils.js';
-import { err } from '../common/errors.js';
+import { err, isTemplateCall, unwrapFn } from '../common/utils.js';
 
 export const ID = (() => {
   const store = {}, indexes = {};
