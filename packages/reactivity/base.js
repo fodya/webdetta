@@ -25,7 +25,10 @@ export class Signal {
     const effect = currentEffect();
     if (effect) {
       effect.queued ??= new Set();
-      flush(this, 'effects', eff => effect.queued.add(eff));
+      flush(this, 'effects', eff => {
+        if (effect == eff) return console.warn('Reactive recursion detected');
+        effect.queued.add(eff);
+      });
     } else {
       flush(this, 'effects', eff => eff.run());
     }
@@ -90,10 +93,7 @@ export class Effect {
       this.queued = null;
       const cleanup = currentEffect.run(this, this.handler);
       if (typeof cleanup == 'function') (this.oncleanup ??= []).push(cleanup);
-      flush(this, 'queued', eff => {
-        if (this == eff) return console.warn('Reactive recursion detected');
-        eff.run();
-      });
+      flush(this, 'queued', eff => eff.run());
     } catch (e) {
       err = e;
     } finally {
