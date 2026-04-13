@@ -1,5 +1,4 @@
 import { isIterable, isObject, unwrapFn } from '../common/utils.js';
-import { currentEffect } from '../reactivity/base.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator, processItem } from './base.js';
 
@@ -50,7 +49,7 @@ export const createList = (
 
   const connect = (k, func) => {
     let dom;
-    const effect = r.untrack(() => { dom = func(); });
+    const effect = r.subtle.effectRoot(() => { dom = func(); });
     effects.set(k, effect);
     elements.set(k, dom);
   }
@@ -95,7 +94,7 @@ export const createList = (
     let prevK = listRoot;
     let i = 0;
     for (const [k, v] of entries) {
-      if (!elements.has(k)) connect(k, () => currentEffect.run(null, renderItem, v, i, items, k));
+      if (!elements.has(k)) connect(k, () => renderItem(v, i, items, k));
       move(prevK, k);
       prevK = k;
       i++;
@@ -111,33 +110,39 @@ export const createSlot = (content) => {
   const node = document.createTextNode('');
   const attached = r.dval(false);
 
+  let controller;
   let nodes = [];
   const append = (content) => {
     if (!content) return;
     nodes = [];
-    let last = node;
-    processItem(content,
-      op => {
-        Operator.apply(node.parentNode, op);
-      },
-      child => {
-        Element.appendAfter(last, child);
-        nodes.push(last = child);
-      },
-      true
-    );
+    
+    controller = r.subtle.effectRoot(() => {
+      let last = node;
+      processItem(content,
+        op => {
+          Operator.apply(node.parentNode, op);
+        },
+        child => {
+          Element.appendAfter(last, child);
+          nodes.push(last = child);
+        },
+        true
+      );
+    });
   };
 
   const remove = () => {
     if (!nodes) return;
     for (const child of nodes) Element.remove(child);
     nodes = null;
+    controller?.destroy();
+    controller = null;
   }
 
   r.effect(() => {
     remove();
     if (!attached()) return;
-    currentEffect.run(null, append, content());
+    append(content());
   });
 
   onDomAppend(node, () => attached(true));
@@ -173,7 +178,7 @@ export const createDynamic = (argFn, renderFn) => {
   r.effect(() => {
     const arg = argFn();
     controller?.destroy();
-    controller = currentEffect.run(null, () => {
+    controller = r.subtle.effectRoot(() => {
       content(renderFn(arg));
     });
   });

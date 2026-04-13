@@ -158,6 +158,7 @@ r.untrack = (handler, { onError, readonly }={}) => {
 // Utils
 
 r.subtle = {};
+r.subtle.effectRoot = handler => currentEffect.run(null, r.untrack, handler);
 r.subtle.onCleanup = handler => {
   assertSyncFunction('r.cleanup `handler`', handler);
   const effect = currentEffect();
