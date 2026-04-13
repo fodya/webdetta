@@ -86,12 +86,7 @@ export class Effect {
     try {
       this.queued = null;
       const cleanup = currentEffect.run(this, this.handler);
-      if (cleanup) {
-        if (typeof cleanup != 'function') {
-          throw new Error('r.effect must return a function or undefined');
-        }
-        (this.oncleanup ??= []).push(cleanup);
-      }
+      if (typeof cleanup == 'function') (this.oncleanup ??= []).push(cleanup);
       flush(this, 'queued', eff => eff.run());
     } catch (e) {
       this.queued = null;
