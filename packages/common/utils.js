@@ -1,7 +1,3 @@
-const AsyncFunction = (async () => {}).constructor;
-const GeneratorFunction = (function* () {}).constructor;
-const AsyncGeneratorFunction = (async function* () {}).constructor;
-
 // Syntax sugar
 
 export const arr = (...args) => String.raw(...args).match(/\S+/g) ?? [];
@@ -26,11 +22,20 @@ export const isPlainObject = value => {
   return proto && !proto2;
 }
 
-export const isAsync = f => f instanceof AsyncFunction;
-export const isGenerator = f => f instanceof GeneratorFunction;
-export const isAsyncGenerator = f => f instanceof AsyncGeneratorFunction;
+const PlainFunction = (() => {}).constructor;
+export const isPlainFunction = f => typeof f == 'function' && f.constructor == PlainFunction;
+
+const AsyncFunction = (async () => {}).constructor;
+export const isAsyncFunction = f => f instanceof AsyncFunction;
+
+const GeneratorFunction = (function* () {}).constructor;
+export const isGeneratorFunction = f => f instanceof GeneratorFunction;
+
+const AsyncGeneratorFunction = (async function* () {}).constructor;
+export const isAsyncGeneratorFunction = f => f instanceof AsyncGeneratorFunction;
 
 export const isIterable = d => d != null && typeof d[Symbol.iterator] == 'function';
+
 export const isAsyncIterable = d => d != null && typeof d[Symbol.asyncIterator] == 'function';
 
 export const isPromise = d => d == Promise.resolve(d);

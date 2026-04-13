@@ -1,13 +1,27 @@
-export const Context = (initialValue) => {
-  let value = initialValue;
+let snapshot = [];
+const contexts = [];
 
-  const context = () => value;
+const Snapshot = () => {
+  const values = contexts.map(f => f());
+  return function (func, ...args) {
+    const prev = snapshot;
+    snapshot = values;
+    try { return func.apply(this, args); }
+    finally { snapshot = prev; }
+  };
+}
+
+const Context = (initialValue) => {
+  const context = () => snapshot[id];
+  const id = contexts.push(context) - 1;
+  snapshot[id] ??= initialValue;
 
   const run = context.run = function (data, func, ...args) {
-    const prev = value;
-    value = data;
+    const snap = snapshot;
+    const prev = snap[id];
+    snap[id] = data;
     try { return func.apply(this, args); }
-    finally { value = prev; }
+    finally { snap[id] = prev; }
   };
 
   context.bind = (data, func) => function (...args) {
@@ -16,3 +30,7 @@ export const Context = (initialValue) => {
 
   return context;
 };
+
+Context.Snapshot = Snapshot;
+
+export { Context }

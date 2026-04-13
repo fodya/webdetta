@@ -5,9 +5,10 @@ import {
   err,
   isObject,
   isPlainObject,
-  isAsync,
-  isGenerator,
-  isAsyncGenerator,
+  isPlainFunction,
+  isAsyncFunction,
+  isGeneratorFunction,
+  isAsyncGeneratorFunction,
   isIterable,
   isAsyncIterable,
   isPromise,
@@ -89,45 +90,59 @@ describe('isPlainObject', () => {
   });
 });
 
-describe('isAsync', () => {
-  it('async function', () => {
-    assertEquals(isAsync(async () => 1), true);
-  });
-
-  it('sync function', () => {
-    assertEquals(isAsync(() => 1), false);
-  });
-
-  it('generator function', () => {
-    assertEquals(isAsync(function* () {}), false);
-  });
-});
-
-describe('isGenerator', () => {
-  it('generator function', () => {
-    assertEquals(isGenerator(function* () {}), true);
-  });
-
-  it('sync function', () => {
-    assertEquals(isGenerator(() => {}), false);
+describe('isPlainFunction', () => {
+  it('sync arrow', () => {
+    assertEquals(isPlainFunction(() => 1), true);
   });
 
   it('async function', () => {
-    assertEquals(isGenerator(async () => {}), false);
+    assertEquals(isPlainFunction(async () => 1), false);
+  });
+
+  it('generator function', () => {
+    assertEquals(isPlainFunction(function* () {}), false);
   });
 });
 
-describe('isAsyncGenerator', () => {
+describe('isAsyncFunction', () => {
+  it('async function', () => {
+    assertEquals(isAsyncFunction(async () => 1), true);
+  });
+
+  it('sync function', () => {
+    assertEquals(isAsyncFunction(() => 1), false);
+  });
+
+  it('generator function', () => {
+    assertEquals(isAsyncFunction(function* () {}), false);
+  });
+});
+
+describe('isGeneratorFunction', () => {
+  it('generator function', () => {
+    assertEquals(isGeneratorFunction(function* () {}), true);
+  });
+
+  it('sync function', () => {
+    assertEquals(isGeneratorFunction(() => {}), false);
+  });
+
+  it('async function', () => {
+    assertEquals(isGeneratorFunction(async () => {}), false);
+  });
+});
+
+describe('isAsyncGeneratorFunction', () => {
   it('async generator function', () => {
-    assertEquals(isAsyncGenerator(async function* () {}), true);
+    assertEquals(isAsyncGeneratorFunction(async function* () {}), true);
   });
 
   it('generator function', () => {
-    assertEquals(isAsyncGenerator(function* () {}), false);
+    assertEquals(isAsyncGeneratorFunction(function* () {}), false);
   });
 
   it('async function', () => {
-    assertEquals(isAsyncGenerator(async () => {}), false);
+    assertEquals(isAsyncGeneratorFunction(async () => {}), false);
   });
 });
 

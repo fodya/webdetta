@@ -9,7 +9,7 @@ const watchCleanupLog = signal => {
     effect = r.effect(() => {
       const current = signal();
       log.push(`run:${current}`);
-      r.cleanup(() => log.push(`clean:${current}`));
+      return () => log.push(`clean:${current}`);
     });
   });
   return { log, effect };
@@ -37,6 +37,51 @@ describe('effect', () => {
 
     value(2);
     assertEquals(seen, [1, 2]);
+  });
+
+  it('throws', () => {
+    const err = new Error('boom');
+    assertThrows(
+      () => r.effect(() => { throw err; }),
+      Error,
+      'boom',
+    );
+  });
+
+  it('handling nested errors', () => {
+    const log = [];
+
+    r.effect(() => {
+      r.effect(() => {
+        throw new Error('a');
+      });
+
+      r.effect(() => {
+        r.effect(() => {
+          throw new Error('b');
+        });
+      }, {
+        onError: err => log.push(`subtree1:${err.message}`),
+      });
+
+      r.effect(() => {
+        r.effect(() => {
+          r.effect(() => {
+            throw new Error('c');
+          });
+        });
+      }, {
+        onError: err => log.push(`subtree2:${err.message}`),
+      });
+    }, {
+      onError: err => log.push(`parent:${err.message}`),
+    });
+
+    assertEquals(log, [
+      'parent:a',
+      'subtree1:b',
+      'subtree2:c',
+    ]);
   });
 
   it('unsubscribe when branch skips read', () => {
@@ -78,7 +123,7 @@ describe('effect', () => {
     const effect = r.effect(() => {
       runCount++;
       source();
-      r.cleanup(() => cleanupCount++);
+      return () => cleanupCount++;
     });
 
     assertEquals(runCount, 1);
@@ -119,7 +164,7 @@ describe('effect', () => {
       r.effect(() => {
         const current = active === 'left' ? left() : right();
         seen.push(`${active}:${current}`);
-        r.cleanup(() => cleanups.push(`${active}:${current}`));
+        return () => cleanups.push(`${active}:${current}`);
       });
     });
 
@@ -159,13 +204,13 @@ describe('effect', () => {
         r.effect(() => {
           const value = left();
           log.push(`left:${value}`);
-          r.cleanup(() => log.push(`clean:left:${value}`));
+          return () => log.push(`clean:left:${value}`);
         });
       } else {
         r.effect(() => {
           const value = right();
           log.push(`right:${value}`);
-          r.cleanup(() => log.push(`clean:right:${value}`));
+          return () => log.push(`clean:right:${value}`);
         });
       }
     });
@@ -214,7 +259,7 @@ describe('effect', () => {
       r.effect(() => {
         childRuns++;
         inner();
-        r.cleanup(() => childCleanups++);
+        return () => childCleanups++;
       });
     });
 
@@ -250,16 +295,16 @@ describe('effect', () => {
     const reset = () => seen.length = cleanups.outer = cleanups.middle = cleanups.inner = 0;
     r.effect(() => {
       const av = a();
-      r.cleanup(() => cleanups.outer++);
       r.effect(() => {
         const bv = b();
-        r.cleanup(() => cleanups.middle++);
         r.effect(() => {
           const cv = c();
           seen.push([av, bv, cv]);
-          r.cleanup(() => cleanups.inner++);
+          return () => cleanups.inner++;
         });
+        return () => cleanups.middle++;
       });
+      return () => cleanups.outer++;
     });
 
     assertEquals(seen, [[0, 0, 0]]);
@@ -332,7 +377,7 @@ describe('untrack', () => {
       r.untrack(() => {
         const value = active === 'left' ? left() : right();
         log.push(`${active}:${value}`);
-        r.cleanup(() => log.push(`clean:${active}:${value}`));
+        return () => log.push(`clean:${active}:${value}`);
       });
     });
 
@@ -364,15 +409,7 @@ describe('untrack', () => {
   });
 });
 
-describe('cleanup', () => {
-  it('outside r.effect throws', () => {
-    assertThrows(
-      () => r.cleanup(() => {}),
-      Error,
-      'Cannot run r.cleanup outside r.effect',
-    );
-  });
-
+describe('handler return cleanup', () => {
   it('basic', () => {
     const value = r.val(1);
     const log = [];
@@ -380,7 +417,7 @@ describe('cleanup', () => {
     r.effect(() => {
       const current = value();
       log.push(`run:${current}`);
-      r.cleanup(() => log.push(`clean:${current}`));
+      return () => log.push(`clean:${current}`);
     });
 
     value(2);

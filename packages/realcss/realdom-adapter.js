@@ -27,8 +27,8 @@ const removeNode = (dom, node) => {
 export default Adapter((ctx, nodes) =>
   el.ref(dom => r.effect(() => {
     for (const node of nodes) addNode(ctx, dom, node);
-    r.cleanup(() => {
+    return () => {
       for (const node of nodes) removeNode(dom, node);
-    });
+    };
   }))
 );

@@ -69,12 +69,12 @@ a(4); // run outer effect
 b(5); // does not run outer effect (b was only read inside untrack)
 ```
 
-### `r.cleanup(handler)`
+### Effect cleanup (return from handler)
 
 ```javascript
 r.effect(() => {
   const id = setInterval(() => {}, 1000);
-  r.cleanup(() => clearInterval(id));
+  return () => clearInterval(id);
 });
 ```
 

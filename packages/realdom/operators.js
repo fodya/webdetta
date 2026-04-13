@@ -34,9 +34,9 @@ export const lifecycle = Operator((node, names, args) => {
 export const attr = Operator((node, names, args) => r.effect(() => {
   const value = toString(...args);
   for (const name of names) node.setAttribute(name, value);
-  r.cleanup(() => {
+  return () => {
     for (const name of names) node.removeAttribute(name);
-  });
+  };
 }));
 
 export const on = Operator((node, names, args) => r.effect(() => {
@@ -48,21 +48,21 @@ export const on = Operator((node, names, args) => r.effect(() => {
   for (const e of names) for (const h of handlers) {
     node.addEventListener(e, h, options);
   }
-  r.cleanup(() => {
+  return () => {
     for (const e of names) for (const h of handlers) {
       node.removeEventListener(e, h);
     }
     options = handlers = null;
-  });
+  };
 }));
 
 const class_ = Operator((node, names, args) => r.effect(() => {
   const value = Boolean(unwrapFn(args[0]));
   if (!value) return;
   node.classList.add(...names.map(kebab));
-  r.cleanup(() => {
+  return () => {
     node.classList.remove(...names.map(kebab));
-  });
+  };
 }));
 export { class_ as class };
 
@@ -71,15 +71,15 @@ export const style = Operator((node, names, args) => r.effect(() => {
   for (const name of names) {
     node.style.setProperty(kebab(name), value);
   }
-  r.cleanup(() => {
+  return () => {
     for (const name of names) node.style.removeProperty(kebab(name));
-  });
+  };
 }));
 
 export const prop = Operator((node, names, args) => r.effect(() => {
   const value = unwrapFn(args[0]);
   for (const name of names) node[name] = value;
-  r.cleanup(() => {
+  return () => {
     for (const name of names) delete node[name];
-  });
+  };
 }));

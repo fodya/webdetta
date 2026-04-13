@@ -81,15 +81,33 @@ describe('dval', () => {
 });
 
 describe('computed', () => {
-  it('sync throw in body propagates', () => {
+  it('throw propagates', () => {
+    assertThrows(() => {
+      r.computed(() => { throw new Error('test'); });
+    }, Error, 'test');
+
+    const log = [];
+    r.effect(() => {
+      r.computed(() => { throw new Error('test'); });
+    }, {
+      onError: err => log.push(`error:${err.message}`),
+    });
+    assertEquals(log, ['error:test']);
+  });
+
+  it('rejects async function', () => {
     assertThrows(
-      () => {
-        r.computed(() => {
-          throw new Error('bad-computed');
-        });
-      },
+      () => r.computed(async () => {}),
       Error,
-      'bad-computed',
+      'synchronous function expected',
+    );
+  });
+
+  it('rejects async generator function', () => {
+    assertThrows(
+      () => r.computed(async function* () {}),
+      Error,
+      'synchronous function expected',
     );
   });
 
@@ -112,145 +130,75 @@ describe('computed', () => {
     assertEquals(sum(), 13);
   });
 
-  it('async basic', async () => {
+  it('cached reads', () => {
     const source = r.val(2);
-    const doubled = r.computed(() => Promise.resolve(source() * 2));
-
-    assertEquals(doubled(), undefined);
-    await Promise.resolve();
-    assertEquals(doubled(), 4);
-  });
-
-  it('promise', async () => {
-    const source = r.val(1);
-    const doubled = r.computed(() => Promise.resolve(source() * 2));
-
-    assertEquals(doubled(), undefined);
-
-    await Promise.resolve();
-    assertEquals(doubled(), 2);
-
-    source(5);
-
-    await Promise.resolve();
-    assertEquals(doubled(), 10);
-  });
-
-  it('async', async () => {
-    const source = r.val(1);
-    const value = r.computed(async () => {
-      const s = source();
-      return s + await Promise.resolve(10);
+    let computeCount = 0;
+    const doubled = r.computed(() => {
+      computeCount++;
+      return source() * 2;
     });
 
-    assertEquals(value(), undefined);
+    assertEquals(computeCount, 1);
+    assertEquals(doubled(), 4);
+    assertEquals(doubled(), 4);
+    assertEquals(computeCount, 1);
 
-    await Promise.resolve();
-    await Promise.resolve();
-    assertEquals(value(), 11);
-
-    source(5);
-
-    await Promise.resolve();
-    await Promise.resolve();
-    assertEquals(value(), 15);
-  });
-
-  it('async race', async () => {
-    const promises = Array.from({ length: 5 }, () => Promise.withResolvers());
-    const source = r.val();
-    const value = r.computed(() => promises[source()]?.promise);
-
-    assertEquals(value(), undefined);
-
-    setTimeout(() => promises[3].resolve(3), 10);
     source(3);
-
-    setTimeout(() => promises[0].resolve(0), 20);
-    source(0);
-
-    setTimeout(() => promises[1].resolve(1), 30);
-    source(1);
-
-    setTimeout(() => promises[4].resolve(4), 40);
-    source(4);
-
-    setTimeout(() => promises[2].resolve(2), 0);
-    source(2);
-
-    await new Promise(r => setTimeout(r, 50));
-
-    assertEquals(value(), 2, 'older async results must not overwrite the latest one');
+    assertEquals(computeCount, 2);
+    assertEquals(doubled(), 6);
+    assertEquals(doubled(), 6);
+    assertEquals(computeCount, 2);
   });
 
-  it('async race reject', async () => {
-    const source = r.val('first');
-    const first = Promise.withResolvers();
-    const second = Promise.withResolvers();
-    const value = r.computed(() => source() === 'first' ? first.promise : second.promise);
+  it('dynamic dependency switching', () => {
+    const a = r.val(1);
+    const b = r.val(2);
+    const toggle = r.val(true);
+    let runs = 0;
 
-    source('second');
-    second.resolve(2);
-    await Promise.resolve();
+    const picked = r.computed(() => {
+      runs++;
+      return toggle() ? a() : b();
+    });
 
-    assertEquals(value(), 2);
+    assertEquals(picked(), 1);
+    assertEquals(runs, 1);
 
-    first.reject(new Error('stale'));
-    await Promise.resolve();
+    toggle(false);
+    assertEquals(picked(), 2);
+    assertEquals(runs, 2);
 
-    assertEquals(value(), 2, 'stale async reject must not affect newer result');
+    a(10);
+    assertEquals(runs, 2, 'must not recompute when inactive dep changes');
+    assertEquals(picked(), 2);
+
+    b(20);
+    assertEquals(picked(), 20);
+    assertEquals(runs, 3);
   });
 
-  it('disabled promise resolution', async () => {
+  it('readonly enforcement', () => {
     const source = r.val(1);
-    const value = r.computed(() => Promise.resolve(source() * 3), { resolvePromises: false });
+    const target = r.val(0);
+    assertThrows(
+      () => r.computed(() => target(source())),
+      Error,
+      'readonly',
+    );
+  });
+
+  it('returns raw promise without resolving', () => {
+    const source = r.val(1);
+    const value = r.computed(() => Promise.resolve(source() * 3));
 
     const firstPromise = value();
     assert(firstPromise instanceof Promise);
-    assertEquals(await firstPromise, 3);
 
     source(2);
 
     const secondPromise = value();
     assert(secondPromise instanceof Promise);
     assert(secondPromise !== firstPromise);
-    assertEquals(await secondPromise, 6);
-  });
-
-  it('custom type', () => {
-    const source = r.val(1);
-    const value = r.computed(() => source() % 2, {
-      type: r.dval
-    });
-    const seenValues = [];
-
-    r.effect(() => {
-      seenValues.push(value());
-    });
-
-    assertEquals(value(), 1);
-    assertEquals(seenValues, [1]);
-
-    source(3);
-    assertEquals(value(), 1);
-    assertEquals(seenValues, [1]);
-
-    source(2);
-    assertEquals(value(), 0);
-    assertEquals(seenValues, [1, 0]);
-  });
-
-  it('initial value', async () => {
-    const source = r.val(1);
-    const value = r.computed(
-      () => Promise.resolve(source() * 2),
-      { type: r.val, initial: 'loading' },
-    );
-
-    assertEquals(value(), 'loading');
-
-    await Promise.resolve();
-    assertEquals(value(), 2);
   });
 });
 
@@ -275,6 +223,26 @@ const describeStore = (name, create, read, write) => describe(name, () => {
     write(target, 'first', 4);
 
     assertEquals(seenFirstValues, [1, 4]);
+  });
+
+  it('nested in-place mutation does not rerun top-level dependency', () => {
+    const state = { user: { name: 'a', age: 1 } };
+    const target = create(state);
+    const seenNames = watchValues(() => read(target, 'user').name);
+
+    state.user.name = 'b';
+
+    assertEquals(seenNames, ['a']);
+  });
+
+  it('replace nested object reruns top-level dependency', () => {
+    const state = { user: { name: 'a', age: 1 } };
+    const target = create(state);
+    const seenNames = watchValues(() => read(target, 'user').name);
+
+    write(target, 'user', { ...state.user, name: 'c' });
+
+    assertEquals(seenNames, ['a', 'c']);
   });
 
   it('functional target', () => {
@@ -306,17 +274,13 @@ const describeStore = (name, create, read, write) => describe(name, () => {
   });
 });
 
-describeStore(
-  'store',
+describeStore('store',
   target => r.store(target),
   (target, key) => target[key],
-  (target, key, value) => {
-    target[key] = value;
-  },
+  (target, key, value) => target[key] = value,
 );
 
-describeStore(
-  'proxy',
+describeStore('proxy',
   target => r.proxy(target),
   (target, key) => target[key](),
   (target, key, value) => target[key](value),

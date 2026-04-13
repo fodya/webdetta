@@ -33,7 +33,7 @@ export class Signal {
 
   get() {
     const effect = currentEffect();
-    if (effect?.reactive) {
+    if (effect?.tracking) {
       (effect.signals ??= new Set()).add(this);
       (this.effects ??= new Set()).add(effect);
     }
@@ -41,6 +41,8 @@ export class Signal {
   }
 
   set(...args) {
+    const effect = currentEffect();
+    if (effect?.readonly) throw new Error('Cannot write to signals in readonly scope');
     return this.setter(...args);
   }
 
@@ -53,34 +55,61 @@ export class Signal {
 export class Effect {
   parent = null;
   handler = null;
-  reactive = false;
+  errorHandler = null;
+  loadingHandler = null;
+  tracking = false;
   destroyed = false;
   children = null;
   oncleanup = null;
   queued = null;
   signals = null;
-  constructor(parent, handler, reactive) {
+  readonly = false;
+  constructor({ parent, tracking, readonly, handler, errorHandler, loadingHandler }) {
     this.parent = parent;
     this.handler = handler;
-    this.reactive = reactive;
-    if (parent) (parent.children ??= []).push(this);
+    this.errorHandler = errorHandler;
+    this.loadingHandler = loadingHandler;
+    this.tracking = tracking;
+    this.readonly = readonly;
+    if (parent) {
+      this.errorHandler ??= parent.errorHandler;
+      this.readonly ||= parent.readonly;
+      (parent.children ??= []).push(this);
+    }
   }
+
   run() {
     if (this.destroyed) return;
     this.cleanup();
 
-    let res, err;
+    let err;
     try {
       this.queued = null;
-      res = currentEffect.run(this, this.handler);
+      const cleanup = currentEffect.run(this, this.handler);
+      if (cleanup) {
+        if (typeof cleanup != 'function') {
+          throw new Error('r.effect must return a function or undefined');
+        }
+        (this.oncleanup ??= []).push(cleanup);
+      }
       flush(this, 'queued', eff => eff.run());
     } catch (e) {
       this.queued = null;
       err = e;
     }
-    if (!this.signals) this.reactive = false;
-    if (err) { throw err; /* this.errorHandler(err); */ }
-    return res;
+
+    if (!this.signals) this.tracking = false;
+
+    if (err) this.handleError(err);
+  }
+
+  handleLoading(value) {
+    if (this.loadingHandler) this.loadingHandler(this, value);
+  }
+
+  handleError(err) {
+    if (this.errorHandler) this.errorHandler(err);
+    else throw err;
   }
 
   cleanup() {

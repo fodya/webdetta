@@ -1,4 +1,4 @@
-import { unwrapFn } from '../common/utils.js';
+import { isIterable, isObject, unwrapFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator, processItem } from './base.js';
 
@@ -21,7 +21,7 @@ export const [onDomAppend, domAppendTrigger] = domHandlers();
 export const [onDomRemove, domRemoveTrigger] = domHandlers();
 
 const listRoot = Symbol();
-const listKenFnDefault = (d, i) => {
+const listItemKey = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
   if (d) {
     if ('key' in d) return d.key;
@@ -30,18 +30,15 @@ const listKenFnDefault = (d, i) => {
   return i;
 };
 const listItemsToEntries = (items, keyFn) => new Map(
-  Array.isArray(items)
-  ? items.map((d, i, a) => [keyFn(d, i, a), d])
-  : typeof items[Symbol.iterator] === 'function'
-  ? Array.from(items.entries())
-  : typeof items == 'object'
-  ? Object.entries(items)
+  Array.isArray(items) ? items.map((d, i, a) => [keyFn(d, i, a), d])
+  : isIterable(items) ? Array.from(items.entries())
+  : isObject(items) ? Object.entries(items)
   : null
 )
 export const createList = (
   itemsFn,
   renderItem,
-  keyFn=listKenFnDefault
+  keyFn = listItemKey
 ) => {
   const root = document.createTextNode('');
 
@@ -52,7 +49,7 @@ export const createList = (
 
   const connect = (k, func) => {
     let dom;
-    const effect = r.untrack(() => dom = func());
+    const effect = r.untrack(() => { dom = func(); });
     effects.set(k, effect);
     elements.set(k, dom);
   }

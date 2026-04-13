@@ -6,8 +6,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "deno test --parallel --no-check --reporter=junit packages/**/*.test.js 2>/dev/null | node tools/deno-test-reporter.js",
-    "coverage": "rm -fr .coverage; deno test --parallel --no-check --coverage=.coverage packages/**/*.test.js > /dev/null"
+    "test": "bash tools/test.sh",
+    "coverage": "bash tools/coverage.sh"
   },
   "exports": {
     "./*": "./packages/*/index.js",
@@ -31,7 +31,6 @@
     "@eslint/js": "^9.24.0",
     "eslint": "^9.24.0",
     "express": "^4.19.2",
-    "fast-xml-parser": "^5.5.10",
     "globals": "^16.0.0",
     "jsdom": "^27.0.1",
     "mitata": "^1.0.34"

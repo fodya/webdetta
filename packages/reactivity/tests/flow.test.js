@@ -135,8 +135,8 @@ describe('flow', () => {
     try {
       const a = r.val(0);
       const b = r.val(0);
-      r.effect(() => b(a() + 1));
-      r.effect(() => a(b()));
+      r.effect(() => { b(a() + 1); });
+      r.effect(() => { a(b()); });
     } catch (e) {
       err = e;
     }

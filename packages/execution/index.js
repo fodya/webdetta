@@ -1,4 +1,4 @@
-import { err, isAsync, isPromise } from "../common/utils.js";
+import { err, isAsyncFunction, isPromise } from "../common/utils.js";
 
 export const safe = (f, onError=safe.defaultErrorHandler) => {
   return function () {
@@ -32,7 +32,7 @@ sleep.after = (delay, func) => Promise.resolve(func()).then(res =>
 
 export const throttle = (func, { onError=console.error }={}) => {
   let lock;
-  const async = isAsync(func);
+  const async = isAsyncFunction(func);
   const wrapped = function () {
     if (async) return lock ??= Promise.resolve(func.apply(this, arguments))
       .catch(onError)  

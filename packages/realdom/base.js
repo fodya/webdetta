@@ -39,7 +39,7 @@ Element.from = arg => {
   if (arg instanceof Node) return arg;
   if (typeof arg == 'function') {
     const text = document.createTextNode('');
-    r.effect(() => text.textContent = toString(arg));
+    r.effect(() => { text.textContent = toString(arg); });
     return text;
   }
   return document.createTextNode(arg);

@@ -474,14 +474,14 @@ handleUncaught({
 General-purpose utilities for throttling, memoization, error handling, data formatting and more.
 
 <details>
-<summary><strong>isAsync(f)</strong></summary>
+<summary><strong>isAsyncFunction(f)</strong></summary>
 
 ```javascript
-import { isAsync } from 'webdetta/common/utils';
+import { isAsyncFunction } from 'webdetta/common/utils';
 
 // Check if function is async
-isAsync(async () => {}); // true
-isAsync(() => {}); // false
+isAsyncFunction(async () => {}); // true
+isAsyncFunction(() => {}); // false
 ```
 
 </details>

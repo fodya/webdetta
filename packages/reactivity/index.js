@@ -1,64 +1,100 @@
-import { isPromise } from '../common/utils.js';
+import { isPlainFunction, isAsyncFunction, isAsyncGeneratorFunction } from '../common/utils.js';
 import { Signal, Effect, currentEffect } from './base.js';
+import { resolveResource } from './resolve.js';
+
+const assertFunction = (errorPrefix, func) => {
+  if (typeof func == 'function') return;
+  throw new Error(errorPrefix + ': function expected, got ' + func);
+}
+
+const assertSyncFunction = (errorPrefix, func) => {
+  assertFunction(errorPrefix, func);
+  if (isPlainFunction(func)) return;
+  let err;
+  if (isAsyncFunction(func)) err = 'synchronous function expected, got async function';
+  if (isAsyncGeneratorFunction(func)) err = 'synchronous function expected, got async generator function';
+  if (err) throw new Error(errorPrefix + ': ' + err);
+}
 
 const r = {};
 
 // Values
 
-r.val = val => {
+r.val = value => {
   const signal = new Signal({
-    get() { return val; },
+    get() { return value; },
+    set(v) { value = v; this.trigger(); return value; }
+  });
+  return signal.accessor;
+}
+
+r.dval = value => {
+  const signal = new Signal({
+    get() { return value; },
     set(v) {
-      val = v;
-      this.trigger();
-      return val;
+      if (value !== v) { value = v; this.trigger(); }
+      return value;
     }
   });
   return signal.accessor;
 }
 
-r.dval = val => {
+// Derived
+
+r.computed = (func, { initial }={}) => {
+  assertSyncFunction('r.computed `func`', func);
+  let value = initial;
   const signal = new Signal({
-    get() { return val; },
-    set(v) {
-      if (val !== v) {
-        val = v;
-        this.trigger();
-      }
-      return val;
-    }
+    get() { return value; },
+    set(v) { value = v; this.trigger(); return value; }
   });
+  const effect = new Effect({
+    parent: currentEffect(),
+    handler: () => { value = func(); signal.trigger(); },
+    tracking: true,
+    readonly: true
+  });
+  effect.run();
   return signal.accessor;
 }
 
-const unwrap = (func, resolvePromises, callback) => {
-  let res, err;
-  try { res = func(); }
-  catch (e) { err = e; }
-  if (resolvePromises && isPromise(res)) {
-    res
-      .then(val => callback(val, null))
-      .catch(err => callback(null, err));
-  } else {
-    callback(res, err);
+r.resource = (source, func, { initial }) => {
+  assertSyncFunction('r.resource `source`', source);
+  assertFunction('r.resource `func`', func);
+
+  const value = r.val(initial);
+  const error = r.val(null);
+  const loading = r.dval(false);
+
+  const resourceHandlers = {
+    onLoading: val => {
+      loading(val);
+      effect.handleLoading(val);
+    },
+    onError: err => {
+      loading(false); value(null); error(err);
+      effect.handleError(err);
+    },
+    onValue: val => {
+      loading(false); value(val); error(null);
+    }
   }
-}
 
-r.computed = (func, { type=r.val, initial, resolvePromises=true }={}) => {
-  const value = type(initial);
-  r.effect(() => {
-    let active = true;
-    r.cleanup(() => active = false);
-    unwrap(func, resolvePromises, (res, err) => {
-      if (!active) return;
-      if (err) {
-        throw err;
-        /*handleError(err);*/
-      }
-      else value(res);
-    });
+  const effect = new Effect({
+    parent: currentEffect(),
+    handler: () => {
+      const boundFunc = func.bind(this, source());
+      r.untrack(() => {
+        const res = resolveResource(effect, boundFunc, resourceHandlers);
+        return res.destroy
+      });
+    },
+    tracking: true,
+    readonly: true
   });
-  return value;
+  effect.run();
+
+  return Object.assign(value, { error, loading });
 }
 
 // Stores
@@ -94,22 +130,38 @@ r.proxy = target => {
 
 // Effects
 
-r.effect = handler => {
-  const effect = new Effect(currentEffect(), handler, true);
+r.effect = (handler, { onError, readonly }={}) => {
+  assertSyncFunction('r.effect `handler`', handler);
+  const effect = new Effect({
+    parent: currentEffect(),
+    handler,
+    errorHandler: onError,
+    tracking: true,
+    readonly: readonly
+  });
   effect.run();
   return effect;
 };
-r.untrack = handler => {
-  const effect = new Effect(currentEffect(), handler, false);
+r.untrack = (handler, { onError, readonly }={}) => {
+  assertSyncFunction('r.untrack `handler`', handler);
+  const effect = new Effect({
+    parent: currentEffect(),
+    handler,
+    errorHandler: onError,
+    tracking: false,
+    readonly,
+  });
   effect.run();
   return effect;
 };
 
 // Utils
 
-r.cleanup = handler => {
+r.subtle = {};
+r.subtle.onCleanup = handler => {
+  assertSyncFunction('r.cleanup `handler`', handler);
   const effect = currentEffect();
-  if (!effect) throw new Error('Cannot run r.cleanup outside r.effect');
+  if (!effect) throw new Error('r.cleanup cannot be executed outside r.effect');
   (effect.oncleanup ??= []).push(handler);
 }
 
@@ -117,3 +169,18 @@ r.cleanup = handler => {
 
 Object.freeze(r);
 export { r };
+
+/* draft
+const status = source => {
+  const effect = r.effect(source, { readonly: true });
+  const value = r.computed(() => {
+    eff.run();
+    let loading = false;
+    r.untrack(() => {
+      for (const sig of effect.signals) loading ||= unwrapFn(sig.loading);
+    });
+    return { loading, error };
+  })
+  return value;
+}
+*/
