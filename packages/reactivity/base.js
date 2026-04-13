@@ -59,7 +59,6 @@ export class Effect {
   loadingHandler = null;
   tracking = false;
   readonly = false;
-  running = false;
   destroyed = false;
   children = null;
   oncleanup = null;
@@ -82,11 +81,7 @@ export class Effect {
   run() {
     if (this.destroyed) return;
 
-    if (this.running) {
-      this.running = false;
-      console.warn('Reactive recursion detected');
-      return;
-    }
+    
 
     this.cleanup();
 
@@ -95,12 +90,14 @@ export class Effect {
       this.queued = null;
       const cleanup = currentEffect.run(this, this.handler);
       if (typeof cleanup == 'function') (this.oncleanup ??= []).push(cleanup);
-      flush(this, 'queued', eff => eff.run());
+      flush(this, 'queued', eff => {
+        if (this == eff) return console.warn('Reactive recursion detected');
+        eff.run();
+      });
     } catch (e) {
       err = e;
     } finally {
       this.queued = null;
-      this.running = false;
     }
 
     if (!this.signals) this.tracking = false;
