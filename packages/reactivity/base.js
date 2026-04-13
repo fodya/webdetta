@@ -58,17 +58,19 @@ export class Effect {
   errorHandler = null;
   loadingHandler = null;
   tracking = false;
+  readonly = false;
+  initialized = false;
   destroyed = false;
   children = null;
   oncleanup = null;
   queued = null;
   signals = null;
-  readonly = false;
-  constructor({ parent, tracking, readonly, handler, errorHandler, loadingHandler }) {
+  constructor({ parent, tracking, readonly, initialized, handler, errorHandler, loadingHandler }) {
     this.parent = parent;
     this.handler = handler;
     this.errorHandler = errorHandler;
     this.loadingHandler = loadingHandler;
+    this.initialized = initialized;
     this.tracking = tracking;
     this.readonly = readonly;
     if (parent) {
@@ -87,10 +89,15 @@ export class Effect {
       this.queued = null;
       const cleanup = currentEffect.run(this, this.handler);
       if (typeof cleanup == 'function') (this.oncleanup ??= []).push(cleanup);
-      flush(this, 'queued', eff => eff.run());
+      if (!this.initialized) {
+        this.initialized = true;
+      } else {
+        flush(this, 'queued', eff => eff.run());
+      }
     } catch (e) {
-      this.queued = null;
       err = e;
+    } finally {
+      this.queued = null;
     }
 
     if (!this.signals) this.tracking = false;
