@@ -59,18 +59,16 @@ export class Effect {
   loadingHandler = null;
   tracking = false;
   readonly = false;
-  initialized = false;
   destroyed = false;
   children = null;
   oncleanup = null;
   queued = null;
   signals = null;
-  constructor({ parent, tracking, readonly, initialized, handler, errorHandler, loadingHandler }) {
+  constructor({ parent, tracking, readonly, handler, errorHandler, loadingHandler }) {
     this.parent = parent;
     this.handler = handler;
     this.errorHandler = errorHandler;
     this.loadingHandler = loadingHandler;
-    this.initialized = initialized;
     this.tracking = tracking;
     this.readonly = readonly;
     if (parent) {
