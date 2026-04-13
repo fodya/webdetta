@@ -1,4 +1,5 @@
 import { isIterable, isObject, unwrapFn } from '../common/utils.js';
+import { currentEffect } from '../reactivity/base.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator, processItem } from './base.js';
 
@@ -94,7 +95,7 @@ export const createList = (
     let prevK = listRoot;
     let i = 0;
     for (const [k, v] of entries) {
-      if (!elements.has(k)) connect(k, () => renderItem(v, i, items, k));
+      if (!elements.has(k)) connect(k, () => currentEffect.run(null, renderItem, v, i, items, k));
       move(prevK, k);
       prevK = k;
       i++;
@@ -136,7 +137,7 @@ export const createSlot = (content) => {
   r.effect(() => {
     remove();
     if (!attached()) return;
-    append(content());
+    currentEffect.run(null, append, content());
   });
 
   onDomAppend(node, () => attached(true));
@@ -172,7 +173,7 @@ export const createDynamic = (argFn, renderFn) => {
   r.effect(() => {
     const arg = argFn();
     controller?.destroy();
-    controller = r.untrack(() => {
+    controller = currentEffect.run(null, () => {
       content(renderFn(arg));
     });
   });
