@@ -67,7 +67,6 @@ describe('signal', () => {
         signal.trigger();
         signal.trigger();
       },
-      initialized: true,
       tracking: true,
     });
 
@@ -77,7 +76,6 @@ describe('signal', () => {
         childRuns++;
         signal.get();
       },
-      initialized: true,
       tracking: true,
     });
 
@@ -216,14 +214,12 @@ describe('effect', () => {
     const child = new Effect({
       handler: () => { runs++; },
       tracking: false,
-      initialized: true,
     });
     const effect = new Effect({
       handler: () => {
         effect.queued = new Set([child, child]);
       },
       tracking: false,
-      initialized: true,
     });
 
     effect.run();
@@ -374,7 +370,6 @@ describe('leak', () => {
         signal.get();
       },
       tracking: true,
-      initialized: true,
     });
     child.run();
     childRuns = 0;
@@ -385,7 +380,6 @@ describe('leak', () => {
         signal.trigger();
       },
       tracking: true,
-      initialized: true,
     });
 
     for (let i = 0; i < 50; i++) {

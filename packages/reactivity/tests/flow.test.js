@@ -140,10 +140,8 @@ describe('flow', () => {
     } catch (e) {
       err = e;
     }
-    let x = 0; if (x) {
-      assert(err, 'expected setup to throw');
-      assertEquals(err.name, 'RangeError');
-      assertMatch(String(err.message), /Maximum call stack|too much recursion/i);
-    }
+    assert(err, 'expected setup to throw');
+    assertEquals(err.name, 'RangeError');
+    assertMatch(String(err.message), /Maximum call stack|too much recursion/i);
   });
 });

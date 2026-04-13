@@ -89,11 +89,7 @@ export class Effect {
       this.queued = null;
       const cleanup = currentEffect.run(this, this.handler);
       if (typeof cleanup == 'function') (this.oncleanup ??= []).push(cleanup);
-      if (!this.initialized) {
-        this.initialized = true;
-      } else {
-        flush(this, 'queued', eff => eff.run());
-      }
+      flush(this, 'queued', eff => eff.run());
     } catch (e) {
       err = e;
     } finally {
