@@ -190,7 +190,7 @@ const gridTrack = (size, str) => {
 
   if (isNaN(count)) return '';
   if (!repeat.length) return [...head,
-    `repeat(${count - head.length},1fr)`
+    `repeat(${count - head.length},minmax(0, 1fr))`
   ].join(' ');
 
   const tail = repeat.slice(0, (count - head.length) % repeat.length);
