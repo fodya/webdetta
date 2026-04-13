@@ -130,7 +130,7 @@ r.proxy = target => {
 
 // Effects
 
-r.effect = (handler, { onError, readonly }={}) => {
+r.effect = (handler, { onError, readonly, immediate=true }={}) => {
   assertSyncFunction('r.effect `handler`', handler);
   const effect = new Effect({
     parent: currentEffect(),
@@ -139,7 +139,7 @@ r.effect = (handler, { onError, readonly }={}) => {
     tracking: true,
     readonly: readonly
   });
-  effect.run();
+  if (immediate) effect.run();
   return effect;
 };
 r.untrack = (handler, { onError, readonly }={}) => {
