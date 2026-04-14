@@ -45,12 +45,14 @@ export const on = Operator((node, names, args) => r.effect(() => {
     if (typeof arg == 'function') handlers.push(arg);
     else options = arg;
   }
+
+  const target = options?.target ?? node;
   for (const e of names) for (const h of handlers) {
-    node.addEventListener(e, h, options);
+    target.addEventListener(e, h, options);
   }
   return () => {
     for (const e of names) for (const h of handlers) {
-      node.removeEventListener(e, h);
+      target.removeEventListener(e, h);
     }
     options = handlers = null;
   };
