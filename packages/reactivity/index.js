@@ -99,11 +99,16 @@ r.resource = (source, func, { initial }) => {
 
 // Stores
 
-const Store = (target) => {
+const Store = ({ target, updateTarget=false }) => {
   const refs = {};
   const ref = key => refs[key] ??= new Signal({
     get() { return currentTarget[key]; },
-    set(v) { return (currentTarget[key] = v, this.trigger(), v); }
+    set(v) {
+      currentTarget[key] = v;
+      if (updateTarget) target(currentTarget);
+      else this.trigger();
+      return v;
+    }
   });
 
   let currentTarget;
@@ -114,15 +119,15 @@ const Store = (target) => {
 
   return { ref }
 }
-r.store = target => {
-  const { ref } = Store(target);
+r.store = (target, { updateTarget }={}) => {
+  const { ref } = Store({ target, updateTarget });
   return new Proxy({}, {
     get(_, key) { return ref(key).accessor(); },
     set(_, key, val) { return ref(key).accessor(val); }
   });
 }
-r.proxy = target => {
-  const { ref } = Store(target);
+r.proxy = (target, { updateTarget }={}) => {
+  const { ref } = Store({ target, updateTarget });
   return new Proxy({}, {
     get(_, key) { return ref(key).accessor; }
   });
