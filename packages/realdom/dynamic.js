@@ -54,14 +54,28 @@ export const createList = (
     elements.set(k, dom);
   }
   const move = (prevK, k) => {
+    const oldPrev = prev.get(k);
+    const oldNext = next.get(k);
+
+    if (oldPrev !== undefined && oldNext !== undefined) {
+      next.set(oldPrev, oldNext);
+      prev.set(oldNext, oldPrev);
+    }
+
     const nextK = next.get(prevK);
+
     if (prev.get(k) === prevK && nextK === k) return;
+
     prev.set(k, prevK);
     next.set(prevK, k);
-    prev.set(nextK, k);
-    next.set(k, nextK);
+
+    if (nextK !== undefined) {
+      prev.set(nextK, k);
+      next.set(k, nextK);
+    }
+
     Element.appendAfter(elements.get(prevK), elements.get(k));
-  }
+  };
   const disconnect = (k) => {
     const prevK = prev.get(k);
     const nextK = next.get(k);
