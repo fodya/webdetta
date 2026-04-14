@@ -1,6 +1,13 @@
 import { kebab } from '../common/dom.js';
 import { unwrapFn } from '../common/utils.js';
-import { splitSelector, styleStr, processMethodArgs, processNestedSelector, escape, combinedStyle, ID } from './common.js';
+import { splitSelector, styleStr, processMethodArgs, processNestedSelector, escape, combinedStyle, idStore } from './common.js';
+
+const atId = idStore();
+const selectorId = idStore();
+const cssStyleId = idStore();
+const transitionId = idStore();
+const keyframeId = idStore();
+const animationId = idStore();
 
 const NODES = Symbol('VCSS_NODES');
 export const inspect = obj => {
@@ -26,12 +33,18 @@ class StyleSheet {
     this.style = style;
   }
   insertNode(node) {
-    const { cls, css, additionalCss: css_ } = node;
+    const { cls, css, additionalCss } = node;
     if (this.processedNodes.has(cls)) return;
     const stylesheet = this.style.sheet;
     this.processedNodes.set(cls, node);
-    if (css) stylesheet.insertRule(css, stylesheet.cssRules.length);
-    if (css_) stylesheet.insertRule(css_, stylesheet.cssRules.length);
+    if (css) {
+      try { stylesheet.insertRule(css, stylesheet.cssRules.length); }
+      catch (e) {}
+    }
+    if (additionalCss) {
+      try { stylesheet.insertRule(additionalCss, stylesheet.cssRules.length); }
+      catch (e) { }
+    }
   }
   recalculate() {
     this.style.innerText = '';
@@ -68,8 +81,8 @@ class Node {
     if (!this.style) return;
     this.prevCls = this.cls;
     this.cls = escape(
-      (this.query ? '＠(' + ID('at', this.query) + ')' : '') +
-      (this.selector ? '𝕊(' + this.selector + ')' : '') +
+      (this.query ? '＠' + atId(this.query) + ':' : '') +
+      (this.selector ? '𝕊' + selectorId(this.selector) + ':' : '') +
       (this.classname ? this.classname : '') +
       (this.important ? 'ǃ' : '')
     );
@@ -84,7 +97,7 @@ const StyleNode = (...args_) => new Node(function() {
   const args = args_.map(unwrapFn);
   if (args.length === 1) {
     this.style = unwrapStyle(args[0]);
-    this.classname = '𝕀(' + ID('CSS', JSON.stringify(this.style)) + ')';
+    this.classname = '𝕀' + cssStyleId(JSON.stringify(this.style)) + ':';
   } else {
     this.style = unwrapStyle(args[1]);
     this.classname = args[0];
@@ -127,9 +140,7 @@ const operators = {
     return nodes.concat(new Node(function() {
       const keys = Object.keys(combinedStyle(nodes));
       const param_ = unwrapFn(param);
-      this.classname = '𝕋(' +
-        ID('transition', param_ + keys.join(',')) +
-      ')';
+      this.classname = '𝕋' + transitionId(param_ + keys.join(',')) + ':';
       this.style = {
         transition: keys.map(k => param_ + ' ' + kebab(k)).join(',')
       };
@@ -142,10 +153,10 @@ const operators = {
       const style = combinedStyle(nodes);
       return ident + '% ' + styleStr(style, false);
     }).join('\n');
-    const kfId = ID('keyframes', str);
+    const kfId = keyframeId(str);
     const param_ = unwrapFn(param);
-    const aId = ID('animation', param_ + kfId);
-    this.classname = '𝔸(' + aId + ')';
+    const aId = animationId(param_ + kfId);
+    this.classname = '𝔸' + aId + ':';
     this.additionalCss = `@keyframes 𝔸${kfId} {\n${str}\n}`;
     this.style = { animation: param_ + ' 𝔸' + kfId };
   })],

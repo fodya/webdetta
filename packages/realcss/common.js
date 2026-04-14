@@ -1,13 +1,12 @@
 import { kebab } from '../common/dom.js';
 import { err, isTemplateCall, unwrapFn } from '../common/utils.js';
 
-export const ID = (() => {
-  const store = {}, indexes = {};
-  return (type, value) => store[type + value] ??= (
-    indexes[type] ??= -1,
-    ++indexes[type]
-  );
-})();
+export const idStore = () => {
+  const store = {};
+  let counter = 0;
+  return value => store[value] ??= counter++;
+};
+
 const charMapping = Object.fromEntries([...
   ` ␣(⦗)⦘:᛬.ꓸ,‚[❲]❳|⼁#＃<﹤>﹥{❴}❵"“'‘%％!ǃ&＆*∗/∕@＠`.matchAll(/../g)
 ].map(v => v[0].split('')));
