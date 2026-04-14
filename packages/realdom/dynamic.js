@@ -58,13 +58,11 @@ export const createList = (
     if (prev.get(k) === prevK && nextK === k) return;
     const oldPrevK = prev.get(k);
     const oldNextK = next.get(k);
-    if (oldPrevK !== undefined && oldNextK !== undefined) {
-      next.set(oldPrevK, oldNextK);
-      prev.set(oldNextK, oldPrevK);
-    }
+    if (oldPrevK !== undefined) next.set(oldPrevK, oldNextK);
+    if (oldNextK !== undefined) prev.set(oldNextK, oldPrevK);
     prev.set(k, prevK);
     next.set(prevK, k);
-    prev.set(nextK, k);
+    if (nextK !== undefined) prev.set(nextK, k);
     next.set(k, nextK);
     Element.appendAfter(elements.get(prevK), elements.get(k));
   }
