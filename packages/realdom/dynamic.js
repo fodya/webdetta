@@ -72,7 +72,9 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
     for (const [k, v] of entries) {
       let el = elements.get(k);
       if (!el) el = connect(k, v, i, items);
-      Element.appendAfter(last, el);
+      if (el !== last.nextSibling) {
+        Element.appendAfter(last, el);
+      }
       last = el;
       i++;
     }
