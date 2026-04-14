@@ -20,7 +20,6 @@ const domHandlers = () => {
 export const [onDomAppend, domAppendTrigger] = domHandlers();
 export const [onDomRemove, domRemoveTrigger] = domHandlers();
 
-const listRoot = Symbol();
 const listItemKey = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
   if (d) {
@@ -35,80 +34,63 @@ const listItemsToEntries = (items, keyFn) => new Map(
   : isObject(items) ? Object.entries(items)
   : null
 )
-export const createList = (
-  itemsFn,
-  renderItem,
-  keyFn = listItemKey
-) => {
+export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
   const root = document.createTextNode('');
 
-  const elements = new Map([[listRoot, root]]);
+  const elements = new Map();
   const effects = new Map();
-  const prev = new Map();
-  const next = new Map();
 
-  const connect = (k, func) => {
+  const connect = (k, v, i, items) => {
     let dom;
-    const effect = r.subtle.effectRoot(() => { dom = func(); });
+    const effect = r.subtle.effectRoot(() => {
+      dom = renderItem(v, i, items, k);
+    });
     effects.set(k, effect);
     elements.set(k, dom);
-  }
-  const move = (prevK, k) => {
-    const nextK = next.get(prevK);
-    if (prev.get(k) === prevK && nextK === k) return;
-    const oldPrevK = prev.get(k);
-    const oldNextK = next.get(k);
-    if (oldPrevK !== undefined) next.set(oldPrevK, oldNextK);
-    if (oldNextK !== undefined) prev.set(oldNextK, oldPrevK);
-    prev.set(k, prevK);
-    next.set(prevK, k);
-    if (nextK !== undefined) prev.set(nextK, k);
-    next.set(k, nextK);
-    Element.appendAfter(elements.get(prevK), elements.get(k));
-  }
+    return dom;
+  };
   const disconnect = (k) => {
-    const prevK = prev.get(k);
-    const nextK = next.get(k);
-    prev.set(nextK, prevK);
-    next.set(prevK, nextK);
-    prev.delete(k);
-    next.delete(k);
-    effects.get(k).destroy();
+    effects.get(k)?.destroy();
     effects.delete(k);
-    Element.remove(elements.get(k));
+    const el = elements.get(k);
+    if (el) Element.remove(el);
     elements.delete(k);
-  }
+  };
 
   const attached = r.dval(false);
+
   r.effect(() => {
     if (!attached()) {
-      for (const k of elements.keys()) if (k != listRoot) disconnect(k);
+      for (const k of elements.keys()) disconnect(k);
       return;
     }
-    
+
     const items = unwrapFn(itemsFn);
     const entries = listItemsToEntries(items, keyFn);
 
-    for (const k of elements.keys()) {
-      if (k != listRoot && !entries.has(k)) {
-        disconnect(k);
-      }
-    }
-
-    let prevK = listRoot;
-    let i = 0;
+    const used = new Set();
+    let last = root, i = 0;
     for (const [k, v] of entries) {
-      if (!elements.has(k)) connect(k, () => renderItem(v, i, items, k));
-      move(prevK, k);
-      prevK = k;
+      let el = elements.get(k);
+      if (!el) el = connect(k, v, i, items);
+
+      used.add(k);
+
+      Element.appendAfter(last, el);
+      last = el;
       i++;
     }
+
+    for (const k of elements.keys()) {
+      if (!used.has(k)) disconnect(k);
+    }
   });
+
   onDomAppend(root, () => attached(true));
   onDomRemove(root, () => attached(false));
 
   return root;
-}
+};
 
 export const createSlot = (content) => {
   const node = document.createTextNode('');
