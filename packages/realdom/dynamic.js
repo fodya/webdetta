@@ -68,21 +68,17 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
     const items = unwrapFn(itemsFn);
     const entries = listItemsToEntries(items, keyFn);
 
-    const used = new Set();
     let last = root, i = 0;
     for (const [k, v] of entries) {
       let el = elements.get(k);
       if (!el) el = connect(k, v, i, items);
-
-      used.add(k);
-
       Element.appendAfter(last, el);
       last = el;
       i++;
     }
 
     for (const k of elements.keys()) {
-      if (!used.has(k)) disconnect(k);
+      if (!entries.has(k)) disconnect(k);
     }
   });
 
