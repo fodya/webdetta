@@ -45,15 +45,24 @@ Element.from = arg => {
   return document.createTextNode(arg);
 }
 
-const elementHooks = new WeakMap();
-Element.registerHooks = (node, hooks) => elementHooks.set(node, hooks);
+const hooks = {
+  beforeAppend: new WeakMap(),
+  afterAppend: new WeakMap(),
+  beforeRemove: new WeakMap(),
+  afterRemove: new WeakMap(),
+}
+Element.registerHook = (node, hook, handler) => {
+  const map = hooks[hook];
+  const prev = map.get(node);
+  map.set(node, function hook() { prev?.(); handler(); });
+}
 
 const performAppend = (node, method, item) => {
   const itemNode = Element.from(item);
-  const hooks = elementHooks.get(itemNode);
-  hooks?.beforeAppend?.();
+  const { beforeAppend, afterAppend } = hooks;
+  beforeAppend.get(itemNode)?.();
   node[method](itemNode);
-  hooks?.afterAppend?.();
+  afterAppend.get(itemNode)?.();
 }
 Element.append = (node, item) => {
   processItem(item,
@@ -67,10 +76,10 @@ Element.appendBefore = (node, sibling) => performAppend(node, 'before', sibling)
 Element.appendAfter = (node, sibling) => performAppend(node, 'after', sibling);
 
 Element.remove = (node) => {
-  const hooks = elementHooks.get(node);
-  hooks?.beforeRemove?.();
+  const { beforeRemove, afterRemove } = hooks;
+  beforeRemove.get(node)?.();
   node.remove();
-  hooks?.afterRemove?.();
+  afterRemove.get(node)?.();
 }
 
 export const Operator = (...funcs) => Builder((tasks, node) => {

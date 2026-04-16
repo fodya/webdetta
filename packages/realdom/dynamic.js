@@ -62,12 +62,10 @@ const createContainer = (content) => {
 export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
   const root = document.createTextNode('');
   const containers = new Map();
-  Element.registerHooks(root, {
-    afterAppend: () => effect.run(),
-    beforeRemove: () => {
-      for (const c of containers.values()) c.remove();
-      containers.clear();
-    }
+  Element.registerHook(root, 'afterAppend', () => effect.run());
+  Element.registerHook(root, 'beforeRemove', () => {
+    for (const c of containers.values()) c.remove();
+    containers.clear();
   });
 
   const effect = r.effect(() => {
@@ -98,10 +96,8 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
 export const createSlot = (content) => {
   const root = document.createTextNode('');
   const container = createContainer(content);
-  Element.registerHooks(root, {
-    afterAppend: () => container.appendAfter(root),
-    beforeRemove: () => container.remove()
-  });
+  Element.registerHook(root, 'afterAppend', () => container.appendAfter(root));
+  Element.registerHook(root, 'beforeRemove', () => container.remove());
   return root;
 }
 
