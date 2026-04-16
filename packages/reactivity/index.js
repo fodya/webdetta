@@ -61,6 +61,8 @@ r.effect = (handler, {
   return effect;
 }
 
+r.untrack = (handler, options) => r.effect(handler, { ...options, track: false });
+
 // Derived
 
 r.computed = (func, { initial }={}) => {
