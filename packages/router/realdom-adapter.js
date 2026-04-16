@@ -11,6 +11,7 @@ const RouterRealdom = ({
   const currentRoute = r.val();
   const loadedRoutes = r.val(new Map());
   const listener = ({ key, value: page, params }) => {
+    // 2
     const loaded = loadedRoutes();
     const paramKeys = Object.keys({ ...params, ...(paramVals[key] ?? {}) });
     for (const param of paramKeys) {
@@ -28,17 +29,18 @@ const RouterRealdom = ({
     loadedRoutes(loaded);
     currentRoute(key);
   }
-  router.listen((...a) => r.untrack(listener.bind(null, ...a)));
+  router.listen((...a) => {
+    // 1
+    r.untrack(listener.bind(null, ...a));
+  });
   router.attach();
 
-  const container = el[':'](
-    el.list(loadedRoutes, ({ key, dom }) => {
-      const isVisible = () => currentRoute() == key;
-      return el.append(dom,
-        el.if(() => !isVisible(), el.style.display`none`),
-      );
-    })
-  );
+  const container = el.list(loadedRoutes, ({ key, dom }) => {
+    const isVisible = () => currentRoute() == key;
+    return el.append(dom,
+      el.if(() => !isVisible(), el.style.display`none`),
+    );
+  });
   return { container, router };
 };
 RouterRealdom.ctx = Context();
