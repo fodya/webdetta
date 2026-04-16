@@ -1,4 +1,4 @@
-import { isIterable, isObject, unwrapFn } from '../common/utils.js';
+import { isIterable, isObject, callFn } from '../common/utils.js';
 import { once } from '../execution/index.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator, processItem } from './base.js';
@@ -20,7 +20,7 @@ const createContainer = (content) => {
 
   const nodes = [], operators = [];
   const contentEffect = r.effect(() => {
-    const items = unwrapFn(content);
+    const items = callFn(content);
     processItem(items, o => operators.push(o), c => nodes.push(c), true);
     if (startNode) appendAfter(startNode);
     return () => {
@@ -69,7 +69,7 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
   });
 
   const effect = r.effect(() => {
-    const items = unwrapFn(itemsFn);
+    const items = callFn(itemsFn);
     const entries = listItemsToEntries(items, keyFn);
 
     let last = root, i = 0;
@@ -104,7 +104,7 @@ export const createSlot = (content) => {
 export const createIf = () => {
   const conditions = [];
   const node = createSlot(() =>
-    conditions.find(d => unwrapFn(d.cond))?.value
+    conditions.find(d => callFn(d.cond))?.value
   );
 
   node.elif = (cond, ...args) => {
