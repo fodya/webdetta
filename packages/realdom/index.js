@@ -4,7 +4,7 @@ import { unwrapFn } from '../common/utils.js';
 import { Context } from '../context/sync.js';
 import { cached } from '../execution/index.js';
 import { Operator, toString } from './base.js';
-import { createIf, createList, createSlot } from './dynamic.js';
+import { createIf, createList, createSlot, createDynamic } from './dynamic.js';
 
 const api = {};
 
@@ -22,9 +22,9 @@ api.append = (node, ...args) => Element.append(node, args);
 api.remove = Element.remove;
 
 api.if = (cond, ...args) => createIf().elif(cond, args);
-
 api.list = createList;
 api.slot = createSlot;
+api.dynamic = createDynamic;
 
 api.attr = Operator((node, names, args) => {
   const value = toString(...args);

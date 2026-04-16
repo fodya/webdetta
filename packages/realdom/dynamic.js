@@ -124,3 +124,12 @@ export const createIf = () => {
 
   return node;
 }
+
+export const createDynamic = (deps, func) => {
+  const content = r.val();
+  r.effect(() => {
+    const arg = deps();
+    r.effect(() => content(func(arg)), { track: false })
+  });
+  return createSlot(content);
+}
