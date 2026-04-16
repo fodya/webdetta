@@ -10,8 +10,9 @@ export const toString = (...args) => {
 
 const isFragment = node => node.nodeType === 11;
 export const processItem = (item, processOperator, processNode, flattenFragments=false) => {
-  if (item === undefined || item === null) {}
-  else if (Array.isArray(item)) {
+  if (item === false || item === undefined || item === null) {
+
+  } else if (Array.isArray(item)) {
     for (const d of item) processItem(d, processOperator, processNode, flattenFragments);
   } else if (Operator.isOperator(item)) {
     processOperator(item);
