@@ -93,9 +93,9 @@ api.prop = Operator((node, names, args) => {
 
 const namespace = ns => new Proxy(api, {
   get: cached((target, key) => (
-    key[0] >= 'A' && key[0] <= 'Z'
-      ? Element.bind(null, ns, key[0].toLowerCase() + kebab(key.slice(1)))
-      : target[key]
+    key == '!' || key == ':' || key[0] >= 'A' && key[0] <= 'Z'
+    ? Element.bind(null, ns, key[0].toLowerCase() + kebab(key.slice(1)))
+    : target[key]
   ), (_, key) => key + ns)
 });
 api.NS_SVG = namespace('http://www.w3.org/2000/svg');
