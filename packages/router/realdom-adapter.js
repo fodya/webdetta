@@ -11,7 +11,6 @@ const RouterRealdom = ({
   const currentRoute = r.val();
   const loadedRoutes = r.val(new Map());
   const listener = ({ key, value: page, params }) => {
-    // 2
     const loaded = loadedRoutes();
     const paramKeys = Object.keys({ ...params, ...(paramVals[key] ?? {}) });
     for (const param of paramKeys) {

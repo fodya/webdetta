@@ -23,7 +23,10 @@ const createContainer = (content) => {
   const contentEffect = r.effect(() => {
     const items = callFn(content);
     processItem(items, o => operators.push(o), c => nodes.push(c), true);
-    if (startNode) appendAfter(startNode);
+    if (startNode) {
+      operatorsEffect.run();
+      appendAfter(startNode);
+    }
     return () => {
       for (const child of nodes) Element.remove(child);
       nodes.length = 0;
