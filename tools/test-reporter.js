@@ -48,13 +48,27 @@ const nodes = lines.nodes.map((line, i) => {
     if (curr < prev) return null;
   }
 
+  return { pkg, file, parts };
+}).filter(Boolean).filter((node, _, all) => {
+  const { pkg, file, parts } = node;
+  if (parts.length !== 2) return true;
+  const suiteName = parts[0];
+  const hasChildren = all.some(other =>
+    other !== node &&
+    other.pkg === pkg &&
+    other.file === file &&
+    other.parts.length > 2 &&
+    other.parts[0] === suiteName
+  );
+  return !hasChildren;
+}).map(({ pkg, file, parts }) => {
   return [
     brightCyan('webdetta/' + pkg),
     cyan(file),
     ...parts.slice(0, -2),
     [nodeResult(parts.at(-1)), parts.at(-2)].filter(Boolean).join(' ')
   ];
-}).filter(Boolean);
+});
 
 const group = (arr) => {
   const res = {};

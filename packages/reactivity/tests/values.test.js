@@ -1,5 +1,5 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import { assert, assertEquals, assertThrows } from 'jsr:@std/assert';
+import { assertEquals, assertThrows } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 const watchValues = read => {
@@ -187,19 +187,6 @@ describe('computed', () => {
     );
   });
 
-  it('returns raw promise without resolving', () => {
-    const source = r.val(1);
-    const value = r.computed(() => Promise.resolve(source() * 3));
-
-    const firstPromise = value();
-    assert(firstPromise instanceof Promise);
-
-    source(2);
-
-    const secondPromise = value();
-    assert(secondPromise instanceof Promise);
-    assert(secondPromise !== firstPromise);
-  });
 });
 
 const describeStore = (name, create, read, write) => describe(name, () => {

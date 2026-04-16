@@ -51,24 +51,6 @@ val(1);  // logs "Value: 1"
 val(2);  // logs "Value: 2"
 ```
 
-### `r.untrack(func)`
-
-```javascript
-const a = r.val(2);
-const b = r.val(3);
-
-r.effect(() => {
-  const aVal = a();
-  r.untrack(() => {
-    const result = aVal * b();
-    console.log('Result:', result);
-  });
-});
-
-a(4); // run outer effect
-b(5); // does not run outer effect (b was only read inside untrack)
-```
-
 ### Effect cleanup (return from handler)
 
 ```javascript
@@ -80,7 +62,7 @@ r.effect(() => {
 
 ## Computed values
 
-### `r.computed(func, { type, initial, resolvePromises }?)`
+### `r.computed(func, { initial }?)`
 
 ```javascript
 const a = r.val(2);
@@ -88,38 +70,6 @@ const b = r.val(3);
 const sum = r.computed(() => a() + b());
 
 sum(); // 5
-```
-
-```javascript
-const source = r.val(1);
-const doubled = r.computed(
-  () => source() * 2,
-  { type: r.dval, initial: 0 }, // custom signal type
-);
-```
-
-```javascript
-const url = r.val('/api/data');
-const data = r.computed(() => {
-  const currentUrl = url();
-  return fetch(currentUrl).then(r => r.json()); // resolves Promise by default
-});
-
-r.effect(() => {
-  console.log(data()); // parsed response after Promise resolves
-});
-```
-
-```javascript
-const source = r.val(1);
-const promise = r.computed(
-  () => Promise.resolve(source() * 3),
-  { resolvePromises: false }, // store Promise as-is
-);
-
-r.effect(() => {
-  console.log(promise()); // Promise { 3 }
-});
 ```
 
 ### `r.store(target)`

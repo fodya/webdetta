@@ -337,7 +337,7 @@ describe('effect', () => {
   });
 });
 
-describe('untrack', () => {
+describe('effect untracked', () => {
   it('no subscribe', () => {
     const left = r.val(2);
     const right = r.val(3);
@@ -347,9 +347,9 @@ describe('untrack', () => {
     r.effect(() => {
       outerRunCount++;
       const leftValue = left();
-      r.untrack(() => {
+      r.effect(() => {
         seen.push(leftValue * right());
-      });
+      }, { track: false });
     });
 
     assertEquals(outerRunCount, 1);
@@ -374,11 +374,11 @@ describe('untrack', () => {
     const reset = () => log.length = 0;
     r.effect(() => {
       const active = branch();
-      r.untrack(() => {
+      r.effect(() => {
         const value = active === 'left' ? left() : right();
         log.push(`${active}:${value}`);
         return () => log.push(`clean:${active}:${value}`);
-      });
+      }, { track: false });
     });
 
     assertEquals(log, ['left:1']);

@@ -39,6 +39,28 @@ r.dval = value => {
   return signal.accessor;
 }
 
+// Effect
+
+r.effect = (handler, {
+  track = true,
+  attach = true,
+  writes = undefined,
+  run = true,
+  onError,
+} = {}) => {
+  assertSyncFunction('effect `handler`', handler);
+  const parent = currentEffect();
+  const effect = new Effect({
+    parent: attach ? parent : null,
+    handler,
+    errorHandler: onError,
+    tracking: track,
+    readonly: writes !== undefined ? !writes : parent?.readonly,
+  });
+  if (run) effect.run();
+  return effect;
+}
+
 // Derived
 
 r.computed = (func, { initial }={}) => {
@@ -48,13 +70,10 @@ r.computed = (func, { initial }={}) => {
     get() { return value; },
     set(v) { value = v; this.trigger(); return value; }
   });
-  const effect = new Effect({
-    parent: currentEffect(),
-    handler: () => { value = func(); signal.trigger(); },
-    tracking: true,
-    readonly: true
-  });
-  effect.run();
+  r.effect(() => {
+    value = func();
+    signal.trigger();
+  }, { track: true, writes: false });
   return signal.accessor;
 }
 
@@ -80,26 +99,20 @@ r.resource = (source, func, { initial }) => {
     }
   }
 
-  const effect = new Effect({
-    parent: currentEffect(),
-    handler: () => {
-      const boundFunc = func.bind(this, source());
-      r.untrack(() => {
-        const res = resolveResource(effect, boundFunc, resourceHandlers);
-        return res.destroy
-      });
-    },
-    tracking: true,
-    readonly: true
-  });
-  effect.run();
+  const effect = r.effect(() => {
+    const boundFunc = func.bind(this, source());
+    r.effect(() => {
+      const res = resolveResource(effect, boundFunc, resourceHandlers);
+      return res.destroy
+    }, { track: false });
+  }, { track: true, writes: false });
 
   return Object.assign(value, { error, loading });
 }
 
 // Stores
 
-const Store = ({ target, updateTarget=false }) => {
+const createStore = ({ target, updateTarget=false }) => {
   const refs = {};
   const ref = key => refs[key] ??= new Signal({
     get() { return currentTarget[key]; },
@@ -120,54 +133,25 @@ const Store = ({ target, updateTarget=false }) => {
   return { ref }
 }
 r.store = (target, { updateTarget }={}) => {
-  const { ref } = Store({ target, updateTarget });
+  const { ref } = createStore({ target, updateTarget });
   return new Proxy({}, {
     get(_, key) { return ref(key).accessor(); },
     set(_, key, val) { return ref(key).accessor(val); }
   });
 }
 r.proxy = (target, { updateTarget }={}) => {
-  const { ref } = Store({ target, updateTarget });
+  const { ref } = createStore({ target, updateTarget });
   return new Proxy({}, {
     get(_, key) { return ref(key).accessor; }
   });
 }
 
-// Effects
-
-r.effect = (handler, { onError, readonly }={}) => {
-  assertSyncFunction('r.effect `handler`', handler);
-  const effect = new Effect({
-    parent: currentEffect(),
-    handler,
-    errorHandler: onError,
-    tracking: true,
-    readonly: readonly
-  });
-  effect.run();
-  return effect;
-};
-r.untrack = (handler, { onError, readonly }={}) => {
-  assertSyncFunction('r.untrack `handler`', handler);
-  const effect = new Effect({
-    parent: currentEffect(),
-    handler,
-    errorHandler: onError,
-    tracking: false,
-    readonly,
-  });
-  effect.run();
-  return effect;
-};
-
 // Utils
 
-r.subtle = {};
-r.subtle.effectRoot = handler => currentEffect.run(null, r.untrack, handler);
-r.subtle.onCleanup = handler => {
-  assertSyncFunction('r.cleanup `handler`', handler);
+r.onCleanup = handler => {
+  assertSyncFunction('r.onCleanup `handler`', handler);
   const effect = currentEffect();
-  if (!effect) throw new Error('r.cleanup cannot be executed outside r.effect');
+  if (!effect) throw new Error('r.onCleanup cannot be executed outside r.effect');
   (effect.oncleanup ??= []).push(handler);
 }
 

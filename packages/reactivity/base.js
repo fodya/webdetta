@@ -84,8 +84,6 @@ export class Effect {
   run() {
     if (this.destroyed) return;
 
-    
-
     this.cleanup();
 
     let err;

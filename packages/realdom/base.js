@@ -1,6 +1,5 @@
 import { Builder } from '../builder/index.js';
 import { unwrapFn, templateCallToArray } from '../common/utils.js';
-import { domAppendTrigger, domRemoveTrigger } from './dynamic.js';
 import { r } from '../reactivity/index.js';
 
 export const toString = (...args) => {
@@ -26,7 +25,7 @@ export const processItem = (item, processOperator, processNode, flattenFragments
   }
 }
 
-export const Element = (tag, ns) => (...args) => {
+export const Element = (ns, tag, ...args) => {
   const node = (
     tag === '!' ? document.createComment('') :
     tag === ':' ? document.createDocumentFragment() :
@@ -45,10 +44,15 @@ Element.from = arg => {
   return document.createTextNode(arg);
 }
 
+const elementHooks = new WeakMap();
+Element.registerHooks = (node, hooks) => elementHooks.set(node, hooks);
+
 const performAppend = (node, method, item) => {
-  const dom = Element.from(item);
-  node[method](dom);
-  domAppendTrigger(dom);
+  const itemNode = Element.from(item);
+  const hooks = elementHooks.get(itemNode);
+  hooks?.beforeAppend?.();
+  node[method](itemNode);
+  hooks?.afterAppend?.();
 }
 Element.append = (node, item) => {
   processItem(item,
@@ -62,17 +66,18 @@ Element.appendBefore = (node, sibling) => performAppend(node, 'before', sibling)
 Element.appendAfter = (node, sibling) => performAppend(node, 'after', sibling);
 
 Element.remove = (node) => {
-  domRemoveTrigger(node);
+  const hooks = elementHooks.get(node);
+  hooks?.beforeRemove?.();
   node.remove();
+  hooks?.afterRemove?.();
 }
 
 export const Operator = (...funcs) => Builder((tasks, node) => {
-  for (const {names, args} of tasks)
-    for (const func of funcs)
-      func(node, names, args);
+  for (const {names, args} of tasks) {
+    for (const func of funcs) {
+      r.effect(() => func(node, names, args));
+    }
+  }
 });
 Operator.isOperator = Builder.isBuilder;
 Operator.apply = (node, operator) => Builder.launch(operator, node);
-Operator.extend = (operator, { get }) => new Proxy(operator, {
-  get: (_, key) => get(_, key) ?? operator[key]
-});

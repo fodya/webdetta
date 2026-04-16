@@ -1,31 +1,11 @@
 import { isIterable, isObject, unwrapFn } from '../common/utils.js';
+import { once } from '../execution/index.js';
 import { r } from '../reactivity/index.js';
 import { Element, Operator, processItem } from './base.js';
 
-const domHandlers = () => {
-  const map = new WeakMap();
-  const on = (dom, f) => {
-    let list = map.get(dom);
-    if (!list) map.set(dom, list = []);
-    list.push(f);
-  }
-  const trigger = (dom) => {
-    const list = map.get(dom);
-    if (!list) return;
-    for (const f of list) f();
-  }
-  return [on, trigger];
-}
-
-export const [onDomAppend, domAppendTrigger] = domHandlers();
-export const [onDomRemove, domRemoveTrigger] = domHandlers();
-
 const listItemKey = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
-  if (d) {
-    if ('key' in d) return d.key;
-    if ('id' in d) return d.id;
-  }
+  if (d && Object.hasOwn(d, 'id')) return d.id;
   return i;
 };
 const listItemsToEntries = (items, keyFn) => new Map(
@@ -33,138 +13,114 @@ const listItemsToEntries = (items, keyFn) => new Map(
   : isIterable(items) ? Array.from(items.entries())
   : isObject(items) ? Object.entries(items)
   : null
-)
+);
+
+const createContainer = (content) => {
+  let startNode;
+
+  const nodes = [], operators = [];
+  const contentEffect = r.effect(() => {
+    const items = unwrapFn(content);
+    processItem(items, o => operators.push(o), c => nodes.push(c), true);
+    if (startNode) appendAfter(startNode);
+    return () => {
+      for (const child of nodes) Element.remove(child);
+      nodes.length = 0;
+      operators.length = 0;
+    }
+  }, { writes: false, attach: false, track: true, run: false });
+  
+  const operatorsEffect = r.effect(() => {
+    for (const o of operators) Operator.apply(startNode.parentNode, o);
+  }, { writes: false, attach: false, track: true, run: false });
+
+  const initContent = once(contentEffect.run.bind(contentEffect));
+  const appendAfter = (newStartNode) => {
+    initContent();
+    const parentChanged = startNode?.parentNode != newStartNode.parentNode;
+    let lastNode = startNode = newStartNode;
+    if (parentChanged) operatorsEffect.run();
+    for (const node of nodes) {
+      if (node !== lastNode.nextSibling) Element.appendAfter(lastNode, node);
+      lastNode = node;
+    }
+    return lastNode;
+  };
+
+  const remove = () => {
+    contentEffect.cleanup();
+    operatorsEffect.cleanup();
+  }
+  const destroy = () => {
+    contentEffect.destroy();
+    operatorsEffect.destroy();
+  }
+
+  return { nodes, appendAfter, remove, destroy };
+}
+
 export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
   const root = document.createTextNode('');
-
-  const elements = new Map();
-  const effects = new Map();
-
-  const connect = (k, v, i, items) => {
-    let dom;
-    const effect = r.subtle.effectRoot(() => {
-      dom = renderItem(v, i, items, k);
-    });
-    effects.set(k, effect);
-    elements.set(k, dom);
-    return dom;
-  };
-  const disconnect = (k) => {
-    effects.get(k)?.destroy();
-    effects.delete(k);
-    const el = elements.get(k);
-    if (el) Element.remove(el);
-    elements.delete(k);
-  };
-
-  const attached = r.dval(false);
-
-  r.effect(() => {
-    if (!attached()) {
-      for (const k of elements.keys()) disconnect(k);
-      return;
+  const containers = new Map();
+  Element.registerHooks(root, {
+    afterAppend: () => effect.run(),
+    beforeRemove: () => {
+      for (const c of containers.values()) c.remove();
+      containers.clear();
     }
+  });
 
+  const effect = r.effect(() => {
     const items = unwrapFn(itemsFn);
     const entries = listItemsToEntries(items, keyFn);
 
     let last = root, i = 0;
     for (const [k, v] of entries) {
-      let el = elements.get(k);
-      if (!el) el = connect(k, v, i, items);
-      if (el !== last.nextSibling) {
-        Element.appendAfter(last, el);
-      }
-      last = el;
+      let container = containers.get(k);
+      if (!container) containers.set(k, container = createContainer(
+        () => renderItem(v, i, items, k)
+      ));
+      last = container.appendAfter(last);
       i++;
     }
 
-    for (const k of elements.keys()) {
-      if (!entries.has(k)) disconnect(k);
+    for (const [k, c] of containers) {
+      if (!entries.has(k)) {
+        c.remove();
+        containers.delete(k);
+      }
     }
-  });
-
-  onDomAppend(root, () => attached(true));
-  onDomRemove(root, () => attached(false));
+  }, { run: false });
 
   return root;
 };
 
 export const createSlot = (content) => {
-  const node = document.createTextNode('');
-  const attached = r.dval(false);
-
-  let controller;
-  let nodes = [];
-  const append = (content) => {
-    if (!content) return;
-    nodes = [];
-    
-    controller = r.subtle.effectRoot(() => {
-      let last = node;
-      processItem(content,
-        op => {
-          Operator.apply(node.parentNode, op);
-        },
-        child => {
-          Element.appendAfter(last, child);
-          nodes.push(last = child);
-        },
-        true
-      );
-    });
-  };
-
-  const remove = () => {
-    if (!nodes) return;
-    for (const child of nodes) Element.remove(child);
-    nodes = null;
-    controller?.destroy();
-    controller = null;
-  }
-
-  r.effect(() => {
-    remove();
-    if (!attached()) return;
-    append(content());
+  const root = document.createTextNode('');
+  const container = createContainer(content);
+  Element.registerHooks(root, {
+    afterAppend: () => container.appendAfter(root),
+    beforeRemove: () => container.remove()
   });
-
-  onDomAppend(node, () => attached(true));
-  onDomRemove(node, () => attached(false));
-
-  return node;
+  return root;
 }
 
 export const createIf = () => {
-  const conditions = r.val([]);
-  const content = r.computed(() => conditions().find(d => unwrapFn(d.cond))?.args);
-  
-  const node = createSlot(content);
+  const conditions = [];
+  const node = createSlot(() =>
+    conditions.find(d => unwrapFn(d.cond))?.value
+  );
+
   node.elif = (cond, ...args) => {
-    const list = conditions();
-    list.push({ cond, args });
-    conditions(list);
+    conditions.push({ cond, value: args });
     return node;
   }
   node.else = (...args) => {
-    node.elif(true, ...args);
+    conditions.push({ cond: true, value: args });
     delete node.elif;
     delete node.else;
     return node;
   }
 
   return node;
-}
-
-export const createDynamic = (argFn, renderFn) => {
-  const content = r.val();
-  let controller;
-  r.effect(() => {
-    const arg = argFn();
-    controller?.destroy();
-    controller = r.subtle.effectRoot(() => {
-      content(renderFn(arg));
-    });
-  });
-  return createSlot(content);
 }
