@@ -34,6 +34,17 @@ api.attr = Operator((node, names, args) => {
   };
 });
 
+api.hook = Operator((node, names, args) => {
+  for (const name of names) {
+    for (const arg of args) {
+      Element.registerHook(node, name, arg);
+    }
+  }
+  return () => {
+    // TODO
+  };
+});
+
 api.on = Operator((node, names, args) => {
   let handlers = [], options;
   for (const arg of args) {
