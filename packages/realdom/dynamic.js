@@ -45,7 +45,6 @@ const createContainer = (content) => {
       if (lastNode.nextSibling !== node) Element.appendAfter(lastNode, node);
       lastNode = lastNodes.get(node) ?? node;
     }
-    lastNodes.set(newStartNode, lastNode);
     return lastNode;
   };
 
@@ -98,7 +97,9 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
 export const createSlot = (content) => {
   const root = document.createTextNode('');
   const container = createContainer(content);
-  Element.registerHook(root, 'afterAppend', () => container.appendAfter(root));
+  Element.registerHook(root, 'afterAppend', () => {
+    lastNodes.set(root, container.appendAfter(root));
+  });
   Element.registerHook(root, 'beforeRemove', () => container.remove());
   return root;
 }
