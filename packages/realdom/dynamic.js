@@ -15,6 +15,7 @@ const listItemsToEntries = (items, keyFn) => new Map(
   : null
 );
 
+const lastNodes = new WeakMap();
 const createContainer = (content) => {
   let startNode;
 
@@ -41,9 +42,10 @@ const createContainer = (content) => {
     let lastNode = startNode = newStartNode;
     if (parentChanged) operatorsEffect.run();
     for (const node of nodes) {
-      if (node !== lastNode.nextSibling) Element.appendAfter(lastNode, node);
-      lastNode = node;
+      if (lastNode.nextSibling !== node) Element.appendAfter(lastNode, node);
+      lastNode = lastNodes.get(node) ?? node;
     }
+    lastNodes.set(newStartNode, lastNode);
     return lastNode;
   };
 
