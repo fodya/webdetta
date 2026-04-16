@@ -55,7 +55,7 @@ r.effect = (handler, {
     handler,
     errorHandler: onError,
     tracking: track,
-    readonly: writes !== undefined ? !writes : parent?.readonly,
+    readonly: writes === undefined ? undefined : !writes
   });
   if (run) effect.run();
   return effect;

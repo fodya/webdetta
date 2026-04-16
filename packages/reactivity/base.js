@@ -76,7 +76,6 @@ export class Effect {
     this.readonly = readonly;
     if (parent) {
       this.errorHandler ??= parent.errorHandler;
-      this.readonly ||= parent.readonly;
       (parent.children ??= []).push(this);
     }
   }
