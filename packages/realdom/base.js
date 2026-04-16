@@ -82,11 +82,9 @@ Element.remove = (node) => {
   afterRemove.get(node)?.();
 }
 
-export const Operator = (...funcs) => Builder((tasks, node) => {
+export const Operator = (func, { track=true }={}) => Builder((tasks, node) => {
   for (const {names, args} of tasks) {
-    for (const func of funcs) {
-      r.effect(() => func(node, names, args));
-    }
+    r.effect(() => func(node, names, args), { track });
   }
 });
 Operator.isOperator = Builder.isBuilder;

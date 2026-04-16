@@ -10,7 +10,7 @@ const api = {};
 
 api.ref = Operator((node, _, args) => {
   for (const func of args) func(node);
-});
+}, { track: false });
 
 api.parse = (...args) => {
   const div = document.createElement('div');
