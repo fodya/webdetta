@@ -67,7 +67,7 @@ const parse = (str, config, operators, onOperatorNotFound) => {
     }
 
     if (op != null && buf.endsWith(openBracket)) {
-      if (operators && !(op in operators)) {
+      if (!(op in operators)) {
         onOperatorNotFound(op, node);
         node.nested++;
         resetOp();
@@ -118,10 +118,13 @@ const parse = (str, config, operators, onOperatorNotFound) => {
   return root;
 };
 
+const flatObjects = new WeakSet();
 const hasNestedPlainObject = (ctx) => {
+  if (flatObjects.has(ctx)) return false;
   for (const key in ctx) {
     if (isPlainObject(ctx[key])) return true;
   }
+  flatObjects.add(ctx);
   return false;
 };
 
@@ -133,6 +136,7 @@ const flattenCtx = (ctx, prefix = '', res = {}) => {
       res[prefix + key] = val;
     }
   }
+  if (prefix === '') flatObjects.add(res);
   return res;
 };
 
