@@ -4,38 +4,63 @@
 
 ### Core modules
 
-| Module | Description |
-| --- | --- |
-| [`webdetta/builder`](./packages/builder/docs/README.md) | Implements expressive, chainable DSL syntax using [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern). |
-| [`webdetta/context`](./packages/context/docs/README.md) | A flexible way of handling scoped variables. Supports sync, async and reactive contexts. |
-| [`webdetta/convert`](./packages/convert/docs/README.md) | Data conversion utilities: text, base64, datauri, file/bytes, formdata, json. |
-| [`webdetta/i18n`](./packages/i18n/docs/README.md) | Internationalization utility for translating UI texts. |
-| [`webdetta/reactivity`](./packages/reactivity/docs/README.md) | Reactive variables and effects library. Inspired by SolidJS. |
-| [`webdetta/realcss`](./packages/realcss/docs/README.md) | Library for generating CSS at runtime. |
-| [`webdetta/realdom`](./packages/realdom/docs/README.md) | Lightweight and efficient DOM manipulation library. |
-| [`webdetta/router`](./packages/router/docs/README.md) | Client-side history/hash routing library. |
-| [`webdetta/rpc`](./packages/rpc/docs/README.md) | Remote Procedure Call library for realtime APIs. |
-| [`webdetta/templater`](./packages/templater/docs/README.md) | Extensible template engine. |
+[webdetta/builder](./packages/builder/docs/README.md)\
+Implements expressive, chainable DSL syntax using [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern).
+
+[webdetta/context](./packages/context/docs/README.md) \
+A flexible way of handling scoped variables. Supports sync, async and reactive contexts.
+
+[webdetta/convert](./packages/convert/docs/README.md)\
+Data conversion utilities: text, base64, datauri, file/bytes, formdata, json.
+
+[webdetta/i18n](./packages/i18n/docs/README.md)\
+Internationalization utility for translating UI texts.
+
+[webdetta/reactivity](./packages/reactivity/docs/README.md)\
+Reactive variables and effects library. Inspired by SolidJS.
+
+[webdetta/realcss](./packages/realcss/docs/README.md)\
+Library for generating CSS at runtime.
+
+[webdetta/realdom](./packages/realdom/docs/README.md)\
+Lightweight and efficient DOM manipulation library.
+
+[webdetta/router](./packages/router/docs/README.md)\
+Client-side history/hash routing library.
+
+[webdetta/rpc](./packages/rpc/docs/README.md)\
+Remote Procedure Call library for realtime APIs.
+
+[webdetta/templater](./packages/templater/docs/README.md)\
+Extensible template engine.
 
 ---
 
 ### Common modules
 
-| Module | Description |
-| --- | --- |
-| [`webdetta/common/dom`](./packages/common/docs/README.md) | DOM-specific functions. |
-| [`webdetta/common/environment`](./packages/common/docs/README.md) | JavaScript runtime environment detection: browser, node, webworker, jsdom, deno, bun. Also provides browser-specific detection (e.g., `mobile`). |
-| [`webdetta/common/utils`](./packages/common/docs/README.md) | General-purpose utilities for throttling, memoization, error handling, data formatting and more. |
+[webdetta/common/dom](./packages/common/docs/README.md)\
+DOM-specific functions.
+
+[webdetta/common/environment](./packages/common/docs/README.md)\
+JavaScript runtime environment detection: browser, node, webworker, jsdom, deno, bun.\
+Also provides browser-specific detection (e.g., `mobile`).
+
+[webdetta/common/utils](./packages/common/docs/README.md)\
+General-purpose utilities for throttling, memoization, error handling, data formatting and more.
 
 ---
 
 ### Configuration modules
 
-| Module | Description |
-| --- | --- |
-| [`webdetta/config/enable-http-modules`](./packages/config/docs/README.md) | Enables NodeJS http(s) imports. |
-| [`webdetta/config/enable-websockets-node`](./packages/config/docs/README.md) | Enables NodeJS websocket client support. |
-| [`webdetta/config/handle-uncaught-errors`](./packages/config/docs/README.md) | Automatically handles global uncaught errors and logs them to console. Prevents a NodeJS process from exiting on an unhandled promise rejection. |
+[webdetta/config/enable-http-modules](./packages/config/docs/README.md)\
+Enables NodeJS http(s) imports.
+
+[webdetta/config/enable-websockets-node](./packages/config/docs/README.md)\
+Enables NodeJS websocket client support.
+
+[webdetta/config/handle-uncaught-errors](./packages/config/docs/README.md)\
+Automatically handles global uncaught errors and logs them to console.\
+Prevents a NodeJS process from exiting on an unhandled promise rejection.
 
 ---
 
