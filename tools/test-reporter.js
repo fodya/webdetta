@@ -63,7 +63,7 @@ const nodes = lines.nodes.map((line, i) => {
   return !hasChildren;
 }).map(({ pkg, file, parts }) => {
   return [
-    brightCyan('webdetta/' + pkg),
+    brightCyan(pkg),
     cyan(file),
     ...parts.slice(0, -2),
     [nodeResult(parts.at(-1)), parts.at(-2)].filter(Boolean).join(' ')
@@ -116,7 +116,7 @@ if (errors.size == 0) {
 }
 
 console.log("---");
-for (const [row, err] of errors.entries()) {
+for (const [row, err] of errors.entries()) try {
   const testPath = row.split(/\s*=>\s*/, 2)[0];
   const parts = testPath.split(/\s*\.\.\.\s*/).map(d => d.trim()).filter(Boolean);
   const [_, pkg, file] = (
@@ -127,6 +127,6 @@ for (const [row, err] of errors.entries()) {
   if (err?.message) console.log(red(err.message));
   if (err?.stack) console.log(white(err.stack));
   console.log("---");
-}
+} catch (e) { console.error(err); }
 console.log(`${red(`[ERR:${ms}ms]`)} ${passed} passed | ${red(`${failed} failed`)}`);
 process.exit(1);

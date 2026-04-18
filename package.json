@@ -10,22 +10,62 @@
     "coverage": "bash tools/coverage.sh"
   },
   "exports": {
-    "./*": "./packages/*/index.js",
-    "./builder": "./packages/builder/index.js",
-    "./context/*": "./packages/context/*.js",
-    "./convert/*": "./packages/convert/*.js",
-    "./execution/*": "./packages/execution/*.js",
-    "./i18n/*": "./packages/i18n/*.js",
-    "./logger/*": "./packages/logger/*.js",
-    "./reactivity/*": "./packages/reactivity/*.js",
-    "./realcss/*": "./packages/realcss/*.js",
-    "./realdom/*": "./packages/realdom/*.js",
-    "./router/*": "./packages/router/*.js",
-    "./rpc/*": "./packages/rpc/*.js",
-    "./subprocess/*": "./packages/subprocess/*.js",
-    "./templater/*": "./packages/templater/*.js",
-    "./common/*": "./packages/common/*.js",
-    "./config/*": "./packages/config/*.js"
+    "./*": {
+      "types": "./packages/*/types/index.d.ts",
+      "default": "./packages/*/index.js"
+    },
+    "./context/*": {
+      "types": "./packages/context/types/*.d.ts",
+      "default": "./packages/context/*.js"
+    },
+    "./convert/*": {
+      "types": "./packages/convert/types/*.d.ts",
+      "default": "./packages/convert/*.js"
+    },
+    "./execution/*": {
+      "types": "./packages/execution/types/*.d.ts",
+      "default": "./packages/execution/*.js"
+    },
+    "./i18n/*": {
+      "types": "./packages/i18n/types/*.d.ts",
+      "default": "./packages/i18n/*.js"
+    },
+    "./logger/*": {
+      "types": "./packages/logger/types/*.d.ts",
+      "default": "./packages/logger/*.js"
+    },
+    "./reactivity/*": {
+      "types": "./packages/reactivity/types/*.d.ts",
+      "default": "./packages/reactivity/*.js"
+    },
+    "./realcss/*": {
+      "types": "./packages/realcss/types/*.d.ts",
+      "default": "./packages/realcss/*.js"
+    },
+    "./realdom/*": {
+      "types": "./packages/realdom/types/*.d.ts",
+      "default": "./packages/realdom/*.js"
+    },
+    "./router/*": {
+      "types": "./packages/router/types/*.d.ts",
+      "default": "./packages/router/*.js"
+    },
+    "./rpc/*": {
+      "types": "./packages/rpc/types/*.d.ts",
+      "default": "./packages/rpc/*.js"
+    },
+    "./templater/*": {
+      "types": "./packages/templater/types/*.d.ts",
+      "default": "./packages/templater/*.js"
+    },
+    "./common/*": {
+      "types": "./packages/common/types/*.d.ts",
+      "default": "./packages/common/*.js"
+    },
+    "./config/*": {
+      "types": "./packages/config/types/*.d.ts",
+      "default": "./packages/config/*.js"
+    }
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",

@@ -1,8 +1,6 @@
 let snapshot = [];
-const contexts = [];
-
 const Snapshot = () => {
-  const values = contexts.map(f => f());
+  const values = [...snapshot];
   return function (func, ...args) {
     const prev = snapshot;
     snapshot = values;
@@ -11,10 +9,11 @@ const Snapshot = () => {
   };
 }
 
+let ctxId = 0;
 const Context = (initialValue) => {
-  const context = () => snapshot[id];
-  const id = contexts.push(context) - 1;
+  const id = ctxId++;
   snapshot[id] ??= initialValue;
+  const context = () => snapshot[id];
 
   const run = context.run = function (data, func, ...args) {
     const snap = snapshot;
