@@ -11,7 +11,7 @@ import {
 } from '../index.js';
 
 describe('safe', () => {
-  it('default onError on sync throw', () => {
+  it('falls back to the default handler when no handler is provided', () => {
     const seen = [];
     const orig = safe.defaultErrorHandler;
     safe.defaultErrorHandler = (e) => void seen.push(e);
@@ -27,7 +27,7 @@ describe('safe', () => {
     }
   });
 
-  it('sync error handler', () => {
+  it('forwards sync errors to the provided handler', () => {
     let seen;
     const wrapped = safe(() => {
       throw new Error('boom');
@@ -36,7 +36,7 @@ describe('safe', () => {
     assertEquals(seen, 'boom');
   });
 
-  it('async error handler', async () => {
+  it('forwards async errors to the provided handler', async () => {
     let seen;
     const wrapped = safe(async () => {
       throw new Error('async-boom');
@@ -45,19 +45,19 @@ describe('safe', () => {
     assertEquals(seen, 'async-boom');
   });
 
-  it('sync return value', () => {
+  it('returns the wrapped sync function result unchanged', () => {
     const wrapped = safe(() => 42, () => {});
     assertEquals(wrapped(), 42);
   });
 
-  it('async return value', async () => {
+  it('returns the wrapped async function result unchanged', async () => {
     const wrapped = safe(async () => 99, () => {});
     assertEquals(await wrapped(), 99);
   });
 });
 
 describe('once', () => {
-  it('single run', () => {
+  it('runs the wrapped function only on the first call', () => {
     let runs = 0;
     const wrapped = once(() => (++runs, 'ok'));
     assertEquals(wrapped(), 'ok');
@@ -65,7 +65,7 @@ describe('once', () => {
     assertEquals(runs, 1);
   });
 
-  it('arguments', () => {
+  it('forwards arguments to the underlying function on the first call', () => {
     const wrapped = once((a, b) => a + b);
     assertEquals(wrapped(2, 3), 5);
     assertEquals(wrapped(10, 10), undefined);
@@ -73,7 +73,7 @@ describe('once', () => {
 });
 
 describe('sleep', () => {
-  it('before waits then runs func', async () => {
+  it('waits the requested time before running the function', async () => {
     const waitMs = 25;
     const started = performance.now();
     let funcAt;
@@ -86,7 +86,7 @@ describe('sleep', () => {
     assert(funcAt - started >= waitMs * 0.9);
   });
 
-  it('after runs func then waits', async () => {
+  it('runs the function first and waits the remainder afterwards', async () => {
     const waitMs = 25;
     const started = performance.now();
     let funcAt;
@@ -103,7 +103,7 @@ describe('sleep', () => {
 });
 
 describe('throttle', () => {
-  it('async lock sharing', async () => {
+  it('shares one pending async invocation across overlapping callers', async () => {
     let runs = 0;
     const wrapped = throttle(async (v) => {
       runs++;
@@ -118,7 +118,7 @@ describe('throttle', () => {
     assertEquals(runs, 1);
   });
 
-  it('sync concurrent calls', () => {
+  it('does not share results between sequential sync calls', () => {
     let runs = 0;
     const wrapped = throttle((x) => (++runs, x + 1));
     assertEquals(wrapped(1), 2);
@@ -126,7 +126,7 @@ describe('throttle', () => {
     assertEquals(runs, 2);
   });
 
-  it('true while async work pending', async () => {
+  it('reports isLocked while an async call is pending', async () => {
     const wrapped = throttle(async () => {
       await sleep(20);
       return 1;
@@ -137,7 +137,7 @@ describe('throttle', () => {
     assertEquals(wrapped.isLocked(), false);
   });
 
-  it('false for sync function', () => {
+  it('never reports isLocked for a purely synchronous function', () => {
     const wrapped = throttle(() => 1);
     assertEquals(wrapped.isLocked(), false);
     assertEquals(wrapped(), 1);
@@ -146,7 +146,7 @@ describe('throttle', () => {
 });
 
 describe('debounce', () => {
-  it('default onError when options omitted', async () => {
+  it('forwards errors to console.error when no handler is provided', async () => {
     const seen = [];
     const orig = console.error;
     console.error = (e) => void seen.push(e);
@@ -162,7 +162,7 @@ describe('debounce', () => {
     }
   });
 
-  it('latest call result', async () => {
+  it('cancels earlier calls and resolves only the latest', async () => {
     const wrapped = debounce(2, (v) => v + 1, { onError: () => {} });
     const first = wrapped(1);
     const second = wrapped(2);
@@ -170,7 +170,7 @@ describe('debounce', () => {
     assertEquals(await second, 3);
   });
 
-  it('true until timer fires', async () => {
+  it('reports isLocked while the debounce timer is armed', async () => {
     const wrapped = debounce(40, () => 1, { onError: () => {} });
     const p = wrapped();
     assertEquals(wrapped.isLocked(), true);
@@ -178,7 +178,7 @@ describe('debounce', () => {
     assertEquals(wrapped.isLocked(), false);
   });
 
-  it('sync throw in func', async () => {
+  it('forwards sync errors from the underlying function to the handler', async () => {
     let seen;
     const wrapped = debounce(2, () => {
       throw new Error('debounce-boom');
@@ -189,7 +189,7 @@ describe('debounce', () => {
 });
 
 describe('cached', () => {
-  it('memoized value', () => {
+  it('memoizes the computed value for the same argument', () => {
     let runs = 0;
     const wrapped = cached((x) => (++runs, x * 2));
     assertEquals(wrapped(2), 4);
@@ -197,7 +197,7 @@ describe('cached', () => {
     assertEquals(runs, 1);
   });
 
-  it('falsy result cached', () => {
+  it('caches falsy results just like truthy ones', () => {
     let runs = 0;
     const wrapped = cached(() => (++runs, 0));
     assertEquals(wrapped(), 0);
@@ -205,7 +205,7 @@ describe('cached', () => {
     assertEquals(runs, 1);
   });
 
-  it('custom keyFn', () => {
+  it('uses the custom key function to group calls', () => {
     let runs = 0;
     const wrapped = cached(
       (a, b) => (++runs, `${a}:${b}`),
@@ -218,7 +218,7 @@ describe('cached', () => {
     assertEquals(runs, 2);
   });
 
-  it('custom map and manual invalidation', () => {
+  it('accepts an external map for manual invalidation', () => {
     const map = new Map();
     let runs = 0;
     const wrapped = cached((k) => (++runs, k.toUpperCase()), String, map);
@@ -231,7 +231,7 @@ describe('cached', () => {
     assertEquals(runs, 2);
   });
 
-  it('default keyFn coerces key with String', () => {
+  it('coerces the first argument with String for the default key', () => {
     let runs = 0;
     const wrapped = cached((x) => (++runs, x.n));
     assertEquals(wrapped({ n: 1 }), 1);
@@ -241,7 +241,7 @@ describe('cached', () => {
 });
 
 describe('backoff', () => {
-  it('success after retries', async () => {
+  it('resolves with the result once the wrapped call eventually succeeds', async () => {
     let tries = 0;
     const result = await backoff({
       retries: 3,
@@ -257,7 +257,7 @@ describe('backoff', () => {
     assertEquals(tries, 3);
   });
 
-  it('delay function receives attempt index', async () => {
+  it('passes the current attempt index to the delay function', async () => {
     let tries = 0;
     const attempts = [];
     await backoff({
@@ -276,7 +276,7 @@ describe('backoff', () => {
     assertEquals(attempts, [0, 1]);
   });
 
-  it('exponential object delay', async () => {
+  it('accepts an exponential delay config object', async () => {
     let tries = 0;
     const result = await backoff({
       retries: 4,
@@ -292,7 +292,7 @@ describe('backoff', () => {
     assertEquals(tries, 2);
   });
 
-  it('last error after retries exhausted', async () => {
+  it('rejects with the last error once retries are exhausted', async () => {
     const err = new Error('final');
     await assertRejects(
       () => backoff({
@@ -308,7 +308,7 @@ describe('backoff', () => {
     );
   });
 
-  it('invalid retries', async () => {
+  it('rejects when retries is not a valid number', async () => {
     await assertRejects(
       () => backoff({
         retries: 'nope',
@@ -320,7 +320,7 @@ describe('backoff', () => {
     );
   });
 
-  it('invalid jitter option', async () => {
+  it('rejects when jitter is set to an unknown mode', async () => {
     await assertRejects(
       () => backoff({
         retries: 1,
@@ -332,7 +332,7 @@ describe('backoff', () => {
     );
   });
 
-  it('invalid delay argument', async () => {
+  it('rejects when delay is neither a function nor a config object', async () => {
     await assertRejects(
       () => backoff({
         retries: 1,
@@ -344,7 +344,7 @@ describe('backoff', () => {
     );
   });
 
-  it('jitter full equal and decorrelated string modes', async () => {
+  it('accepts the built-in jitter modes full, equal and decorrelated', async () => {
     for (const jitterMode of ['full', 'equal', 'decorrelated']) {
       let n = 0;
       await backoff({
@@ -361,7 +361,7 @@ describe('backoff', () => {
     }
   });
 
-  it('custom jitter function and min max delay', async () => {
+  it('invokes a custom jitter function bounded by min and max delay', async () => {
     let n = 0;
     const jitterCalls = [];
     await backoff({
@@ -383,7 +383,7 @@ describe('backoff', () => {
     assertEquals(jitterCalls.length, 2);
   });
 
-  it('default onError when omitted', async () => {
+  it('logs retry errors through console.error when no handler is provided', async () => {
     const seen = [];
     const orig = console.error;
     console.error = (...a) => void seen.push(a[0]);

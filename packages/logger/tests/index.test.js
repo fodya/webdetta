@@ -16,7 +16,7 @@ function capture() {
 }
 
 describe('withLogger', () => {
-  it('bound logger', () => {
+  it('routes logger calls to the bound sink', () => {
     const c = capture();
     withLogger(c, () => {
       logger.info('hi', 1);
@@ -28,12 +28,12 @@ describe('withLogger', () => {
     ]);
   });
 
-  it('function return value', () => {
+  it('returns the callback result', () => {
     const c = capture();
     assertEquals(withLogger(c, () => 'ok'), 'ok');
   });
 
-  it('nested loggers', () => {
+  it('restores the outer logger after a nested withLogger block', () => {
     const outer = capture();
     const inner = capture();
     withLogger(outer, () => {
@@ -52,7 +52,7 @@ describe('withLogger', () => {
 });
 
 describe('withLoggerFormatter', () => {
-  it('argument prefix', () => {
+  it('prepends formatter output to the logged arguments', () => {
     const c = capture();
     withLogger(c, () => {
       withLoggerFormatter(
@@ -65,7 +65,7 @@ describe('withLoggerFormatter', () => {
     assertEquals(c.calls, [['info', ['[app]', 'ready']]]);
   });
 
-  it('nested formatters', () => {
+  it('chains nested formatters from outer to inner', () => {
     const c = capture();
     withLogger(c, () => {
       withLoggerFormatter(
@@ -86,7 +86,7 @@ describe('withLoggerFormatter', () => {
     assertEquals(c.calls, [['info', ['A', 'B', 'C', 'x']]]);
   });
 
-  it('stopPropagation parent skip', () => {
+  it('skips outer formatters when inner sets stopPropagation', () => {
     const c = capture();
     let outerRan = false;
     withLogger(c, () => {
@@ -112,11 +112,11 @@ describe('withLoggerFormatter', () => {
     assertEquals(c.calls, [['info', ['[inner]', 'x']]]);
   });
 
-  it('function return value', () => {
+  it('returns the callback result', () => {
     assertEquals(withLoggerFormatter((a) => a, () => 7), 7);
   });
 
-  it('original arguments', () => {
+  it('passes the original arguments array to the formatter', () => {
     const c = capture();
     let seen;
     withLogger(c, () => {
@@ -134,7 +134,7 @@ describe('withLoggerFormatter', () => {
     assertEquals(Array.from(seen.args), ['a', 'b']);
   });
 
-  it('formatter scope boundary', () => {
+  it('stops applying the formatter once its block exits', () => {
     const c = capture();
     withLogger(c, () => {
       withLoggerFormatter(
@@ -151,7 +151,7 @@ describe('withLoggerFormatter', () => {
 });
 
 describe('logger', () => {
-  it('log levels', () => {
+  it('forwards each log level to the matching sink method', () => {
     const c = capture();
     withLogger(c, () => {
       logger.log(1);
@@ -171,7 +171,7 @@ describe('logger', () => {
     ]);
   });
 
-  it('optional logger methods', () => {
+  it('silently ignores levels the sink does not implement', () => {
     const c = {
       calls: [],
       info: (...a) => void c.calls.push(a),
@@ -183,7 +183,7 @@ describe('logger', () => {
     assertEquals(c.calls, [['kept']]);
   });
 
-  it('no arguments', () => {
+  it('forwards calls with no arguments as an empty argument list', () => {
     const c = capture();
     withLogger(c, () => {
       logger.info();

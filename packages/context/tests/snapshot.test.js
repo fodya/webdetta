@@ -6,7 +6,7 @@ import { AsyncContext } from '../async.js';
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const sharedTests = (Ctx) => {
-  it('capture', () => {
+  it('captures the current value and replays it later', () => {
     const ctx = Ctx('root');
     let snap;
     ctx.run('A', () => {
@@ -22,7 +22,7 @@ const sharedTests = (Ctx) => {
     assertEquals(ctx(), 'root');
   });
 
-  it('inner run restore', () => {
+  it('restores the snapshot value after an inner run finishes', () => {
     const ctx = Ctx('root');
     let snap;
     ctx.run('A', () => {
@@ -41,7 +41,7 @@ const sharedTests = (Ctx) => {
     assertEquals(ctx(), 'root');
   });
 
-  it('throw restore', () => {
+  it('restores the outer value after the snapshot callback throws', () => {
     const ctx = Ctx('root');
     let snap;
     ctx.run('A', () => {
@@ -60,7 +60,7 @@ const sharedTests = (Ctx) => {
     assertEquals(ctx(), 'root');
   });
 
-  it('no leak', () => {
+  it('does not leak the snapshot value outside the snapshot call', () => {
     const ctx = Ctx('root');
     let snap;
     ctx.run('A', () => {
@@ -72,7 +72,7 @@ const sharedTests = (Ctx) => {
     assertEquals(ctx(), 'root');
   });
 
-  it('reuse', () => {
+  it('can be replayed multiple times from different outer scopes', () => {
     const ctx = Ctx('root');
     let snap;
     ctx.run('A', () => {
@@ -97,7 +97,7 @@ describe('sync', () => {
 describe('async', () => {
   sharedTests(AsyncContext);
 
-  it('async await', async () => {
+  it('preserves the captured value across awaits', async () => {
     const ctx = AsyncContext('root');
     let snap;
     await ctx.run('A', async () => {
@@ -116,7 +116,7 @@ describe('async', () => {
     assertEquals(ctx(), 'root');
   });
 
-  it('async throw restore', async () => {
+  it('restores the outer value after an async snapshot callback rejects', async () => {
     const ctx = AsyncContext('root');
     let snap;
     await ctx.run('A', async () => {
@@ -139,7 +139,7 @@ describe('async', () => {
     assertEquals(ctx(), 'root');
   });
 
-  it('async concurrency isolation', async () => {
+  it('keeps concurrent snapshot replays isolated from each other', async () => {
     const ctx = AsyncContext('root');
     let snapA;
     let snapB;
@@ -168,7 +168,7 @@ describe('async', () => {
     assertEquals(ctx(), 'root');
   });
 
-  it('async nested capture', async () => {
+  it('captures a nested snapshot inside a replayed outer snapshot', async () => {
     const ctx = AsyncContext('root');
     let outer;
     await ctx.run('A', async () => {

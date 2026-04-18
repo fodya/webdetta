@@ -6,24 +6,24 @@ import { AsyncContext } from '../async.js';
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 describe('sync', () => {
-  it('initial state', () => {
+  it('exposes the initial value before any run', () => {
     const ctx = Context(1);
     assertEquals(ctx(), 1);
   });
 
-  it('run return', () => {
+  it('returns the callback result from run', () => {
     const ctx = Context(0);
     assertEquals(ctx.run(1, () => 42), 42);
   });
 
-  it('bind return', () => {
+  it('returns the callback result from a bound function', () => {
     const ctx = Context(0);
     const fn = ctx.bind(5, (x, y) => ctx() + x + y);
     assertEquals(fn(1, 2), 5 + 1 + 2);
     assertEquals(ctx(), 0);
   });
 
-  it('escape outer read', () => {
+  it('reads the outer value when a closure escapes its run scope', () => {
     const ctx = Context(0);
     let fn;
     ctx.run(1, () => {
@@ -34,7 +34,7 @@ describe('sync', () => {
     assertEquals(ctx(), 0);
   });
 
-  it('bind isolation', () => {
+  it('isolates a bound value from an outer active run', () => {
     const ctx = Context(0);
     const fn = ctx.bind(5, () => ctx());
     ctx.run(10, () => {
@@ -45,20 +45,20 @@ describe('sync', () => {
     assertEquals(ctx(), 0);
   });
 
-  it('bind nested override', () => {
+  it('lets a nested run override a bound value', () => {
     const ctx = Context(0);
     const fn = ctx.bind(1, () => ctx.run(2, () => ctx()));
     assertEquals(fn(), 2);
     assertEquals(ctx(), 0);
   });
 
-  it('run value', () => {
+  it('exposes the run value inside the callback and restores after', () => {
     const ctx = Context(0);
     ctx.run(2, () => assertEquals(ctx(), 2));
     assertEquals(ctx(), 0);
   });
 
-  it('throw restore', () => {
+  it('restores the previous value after the callback throws', () => {
     const ctx = Context(0);
     assertThrows(
       () => ctx.run(9, () => {
@@ -71,7 +71,7 @@ describe('sync', () => {
     assertEquals(ctx(), 0);
   });
 
-  it('nested restore', () => {
+  it('restores outer value after a nested run completes', () => {
     const ctx = Context('a');
     ctx.run('b', () => {
       assertEquals(ctx(), 'b');
@@ -81,14 +81,14 @@ describe('sync', () => {
     assertEquals(ctx(), 'a');
   });
 
-  it('nested return', () => {
+  it('returns the innermost run value from nested runs', () => {
     const ctx = Context('a');
     const result = ctx.run('b', () => ctx.run('c', () => ctx()));
     assertEquals(result, 'c');
     assertEquals(ctx(), 'a');
   });
 
-  it('cross-context isolation', () => {
+  it('keeps independent contexts independent of each other', () => {
     const a = Context(1);
     const b = Context(2);
     a.run(10, () => {
@@ -103,14 +103,14 @@ describe('sync', () => {
     assertEquals(b(), 2);
   });
 
-  it('identity stability', () => {
+  it('preserves reference identity for object values', () => {
     const value = { n: 1 };
     const ctx = Context(value);
     assertEquals(ctx(), value);
     assertEquals(ctx(), value);
   });
 
-  it('run arguments', () => {
+  it('forwards extra arguments to the run callback', () => {
     const ctx = Context(10);
     assertEquals(
       ctx.run(5, (a, b) => ctx() + a + b, 1, 2),
@@ -118,7 +118,7 @@ describe('sync', () => {
     );
   });
 
-  it('sync async callback restore', async () => {
+  it('restores the outer value synchronously when the callback is async', async () => {
     const ctx = Context(0);
     let valueRightAfterStart;
     const p = ctx.run(1, async () => {
@@ -134,12 +134,12 @@ describe('sync', () => {
 });
 
 describe('async', () => {
-  it('initial state', () => {
+  it('exposes the initial value before any run', () => {
     const ctx = AsyncContext('init');
     assertEquals(ctx(), 'init');
   });
 
-  it('run return', async () => {
+  it('returns the resolved value from an async run', async () => {
     const ctx = AsyncContext(0);
     const v = await ctx.run(1, async () => {
       await delay(0);
@@ -148,7 +148,7 @@ describe('async', () => {
     assertEquals(v, 99);
   });
 
-  it('bind return', async () => {
+  it('returns the resolved value from a bound async function', async () => {
     const ctx = AsyncContext(0);
     const fn = ctx.bind(7, async () => {
       await delay(0);
@@ -158,7 +158,7 @@ describe('async', () => {
     assertEquals(ctx(), 0);
   });
 
-  it('async escape outer read', async () => {
+  it('reads the outer value when an escaped closure runs after the scope ends', async () => {
     const ctx = AsyncContext(0);
     let fn;
     await ctx.run(1, async () => {
@@ -170,13 +170,13 @@ describe('async', () => {
     assertEquals(ctx(), 0);
   });
 
-  it('run value', () => {
+  it('exposes the run value inside the callback and restores after', () => {
     const ctx = AsyncContext(0);
     ctx.run(2, () => assertEquals(ctx(), 2));
     assertEquals(ctx(), 0);
   });
 
-  it('await propagation', async () => {
+  it('propagates the context across await points', async () => {
     const ctx = AsyncContext(0);
     await ctx.run(1, async () => {
       assertEquals(ctx(), 1);
@@ -186,7 +186,7 @@ describe('async', () => {
     assertEquals(ctx(), 0);
   });
 
-  it('concurrency isolation', async () => {
+  it('keeps concurrent runs isolated from each other', async () => {
     const ctx = AsyncContext(0);
     const seen = [];
     await Promise.all([
@@ -203,7 +203,7 @@ describe('async', () => {
     assertEquals(seen.find((x) => x[0] === 'b'), ['b', 2]);
   });
 
-  it('nested restore', async () => {
+  it('restores outer value after a nested async run completes', async () => {
     const ctx = AsyncContext('o');
     await ctx.run('a', async () => {
       assertEquals(ctx(), 'a');

@@ -44,7 +44,7 @@ const sampleFile = () => new File([new Uint8Array([1, 2, 3, 4])], 'data.bin', {
 });
 
 describe('textToBase64', () => {
-  it('roundtrip', () => {
+  it('round-trips ASCII through base64 and back', () => {
     const value = 'hello';
     assertEquals(
       textToBase64(base64ToText(textToBase64(value))),
@@ -55,19 +55,19 @@ describe('textToBase64', () => {
 });
 
 describe('base64ToText', () => {
-  it('roundtrip', () => {
+  it('decodes ASCII back to the original string', () => {
     const text = 'hello';
     assertEquals(base64ToText(textToBase64(text)), text);
   });
 
-  it('unicode', () => {
+  it('decodes unicode content back to the original string', () => {
     const text = 'привет 你好';
     assertEquals(base64ToText(textToBase64(text)), text);
   });
 });
 
 describe('jsonToDatauri', () => {
-  it('roundtrip', () => {
+  it('round-trips json through a data uri and back', () => {
     const payload = { mimeType: 'text/plain', content: 'dGVzdA==' };
     assertEquals(
       jsonToDatauri(datauriToJson(jsonToDatauri(payload))),
@@ -75,7 +75,7 @@ describe('jsonToDatauri', () => {
     );
   });
 
-  it('data uri prefix', () => {
+  it('emits the canonical data uri prefix', () => {
     assertEquals(
       jsonToDatauri({ mimeType: 'image/png', content: 'xxx' }),
       'data:image/png;base64,xxx',
@@ -84,7 +84,7 @@ describe('jsonToDatauri', () => {
 });
 
 describe('datauriToJson', () => {
-  it('roundtrip', () => {
+  it('round-trips a data uri through json and back', () => {
     const uri = 'data:text/plain;base64,YWI=';
     assertEquals(
       datauriToJson(jsonToDatauri(datauriToJson(uri))),
@@ -92,7 +92,7 @@ describe('datauriToJson', () => {
     );
   });
 
-  it('simple mime type', () => {
+  it('extracts mimeType and content from a simple data uri', () => {
     const datauri = 'data:application/json;base64,eyJhIjoxfQ==';
     assertEquals(datauriToJson(datauri), {
       mimeType: 'application/json',
@@ -100,7 +100,7 @@ describe('datauriToJson', () => {
     });
   });
 
-  it('mime type with extra parameters', () => {
+  it('drops extra mime-type parameters like charset', () => {
     const datauri = 'data:text/plain;charset=utf-8;base64,YWI=';
     assertEquals(datauriToJson(datauri), {
       mimeType: 'text/plain',
@@ -110,7 +110,7 @@ describe('datauriToJson', () => {
 });
 
 describe('jsonToFormdata', () => {
-  it('roundtrip', () => {
+  it('round-trips flat json through FormData and back', () => {
     const json = { x: '10', y: '20' };
     assertEquals(
       formdataToJson(jsonToFormdata(formdataToJson(jsonToFormdata(json)))),
@@ -118,21 +118,21 @@ describe('jsonToFormdata', () => {
     );
   });
 
-  it('nested object with sibling flat keys', () => {
+  it('encodes nested object keys using bracket notation', () => {
     const fd = jsonToFormdata({ pre: '1', outer: { inner: 'v' } });
     const j = formdataToJson(fd);
     assertEquals(j.pre, '1');
     assertEquals(j['outer[inner]'], 'v');
   });
 
-  it('top-level array', () => {
+  it('flattens a top-level array into FormData entries', () => {
     const fd = jsonToFormdata([{ a: '1' }, { b: '2' }]);
     const j = formdataToJson(fd);
     assertEquals(j.a, '1');
     assertEquals(j.b, '2');
   });
 
-  it('file under object key', () => {
+  it('keeps File instances intact when nested under a key', () => {
     const file = new File(['x'], 'inner.bin');
     const fd = jsonToFormdata({ attachment: file });
     assertEquals(formdataToJson(fd).attachment, file);
@@ -140,7 +140,7 @@ describe('jsonToFormdata', () => {
 });
 
 describe('formdataToJson', () => {
-  it('roundtrip', () => {
+  it('round-trips FormData through json and back', () => {
     const fd = new FormData();
     fd.set('a', '1');
     fd.set('b', '2');
@@ -151,14 +151,14 @@ describe('formdataToJson', () => {
     );
   });
 
-  it('single values', () => {
+  it('converts single-valued entries into scalar fields', () => {
     const fd = new FormData();
     fd.set('a', '1');
     fd.set('b', '2');
     assertEquals(formdataToJson(fd), { a: '1', b: '2' });
   });
 
-  it('duplicate keys become array', () => {
+  it('groups duplicate keys into an array', () => {
     const fd = new FormData();
     fd.append('k', 'x');
     fd.append('k', 'y');
@@ -167,7 +167,7 @@ describe('formdataToJson', () => {
 });
 
 describe('fileToBytes', () => {
-  it('roundtrip', async () => {
+  it('returns the raw byte contents of a File', async () => {
     const file = new File([new Uint8Array([9, 8, 7])], 'b.bin', {
       type: 'application/octet-stream',
       lastModified: 10,
@@ -181,7 +181,7 @@ describe('fileToBytes', () => {
     await assertFile(file, back, FILE_KEYS);
   });
 
-  it('empty file', async () => {
+  it('returns an empty byte array for an empty File', async () => {
     const file = new File([], 'e.dat');
     const bytes = await fileToBytes(file);
     assertEquals(bytes.length, 0);
@@ -191,7 +191,7 @@ describe('fileToBytes', () => {
 });
 
 describe('bytesToFile', () => {
-  it('accepts ArrayBuffer', async () => {
+  it('accepts an ArrayBuffer as input', async () => {
     const buf = new Uint8Array([1, 2, 3]).buffer;
     const f = bytesToFile(buf, 'a.bin', { type: 'application/octet-stream' });
     assertEquals([...(await fileToBytes(f))], [1, 2, 3]);
@@ -199,7 +199,7 @@ describe('bytesToFile', () => {
 });
 
 describe('fileToChunks', () => {
-  it('roundtrip', async () => {
+  it('round-trips a File through chunks back to an equivalent File', async () => {
     const bytes = new Uint8Array([9, 8, 7]);
     const source = new File([bytes], 'c.bin', {
       type: 'application/octet-stream',
@@ -212,7 +212,7 @@ describe('fileToChunks', () => {
     await assertFile(source, rebuilt, FILE_KEYS);
   });
 
-  it('custom chunk size', async () => {
+  it('splits data into chunks of the requested size', async () => {
     const data = new Uint8Array(500).fill(7);
     const file = new File([data], 'big.bin');
     const chunks = await collectChunks(file, 200);
@@ -222,19 +222,19 @@ describe('fileToChunks', () => {
     assertEquals(chunks[2].length, 100);
   });
 
-  it('default chunk size', async () => {
+  it('returns a single chunk when the default size exceeds the file', async () => {
     const file = new File([new Uint8Array(100)], 'h.bin');
     const chunks = await collectChunks(file);
     assertEquals(chunks.length, 1);
     assertEquals(chunks[0].length, 100);
   });
 
-  it('empty file', async () => {
+  it('yields no chunks for an empty File', async () => {
     const chunks = await collectChunks(new File([], 'z.bin'));
     assertEquals(chunks.length, 0);
   });
 
-  it('single-byte chunks', async () => {
+  it('emits one byte per chunk when chunk size is 1', async () => {
     const file = new File(['ab'], 't.txt', { type: 'text/plain' });
     const chunks = await collectChunks(file, 1);
     assertEquals(chunks.map((c) => c.length), [1, 1]);
@@ -242,7 +242,7 @@ describe('fileToChunks', () => {
 });
 
 describe('chunksToFile', () => {
-  it('roundtrip', async () => {
+  it('round-trips a File through two chunk cycles unchanged', async () => {
     const source = sampleFile();
     const once = await chunksToFile(fileToChunks(source, 2), source.name, {
       type: source.type,
@@ -255,7 +255,7 @@ describe('chunksToFile', () => {
     await assertFile(source, twice, FILE_KEYS);
   });
 
-  it('rebuilds file from fileToChunks iterable', async () => {
+  it('rebuilds a File from the iterable returned by fileToChunks', async () => {
     const source = sampleFile();
     const rebuilt = await chunksToFile(fileToChunks(source, 2), source.name, {
       type: source.type,
@@ -266,7 +266,7 @@ describe('chunksToFile', () => {
     await assertFile(source, rebuilt, FILE_KEYS);
   });
 
-  it('rebuilds file from async generator', async () => {
+  it('rebuilds a File from an async generator of chunks', async () => {
     const chunks = async function* () {
       yield new Uint8Array([9, 8]);
       await Promise.resolve();
@@ -282,7 +282,7 @@ describe('chunksToFile', () => {
     await assertFile(expected, rebuilt, FILE_KEYS);
   });
 
-  it('options', async () => {
+  it('applies the provided name, type and lastModified options', async () => {
     const body = new Uint8Array([1, 2, 3]);
     const name = 'custom.dat';
     const type = 'application/vnd.test';
@@ -298,7 +298,7 @@ describe('chunksToFile', () => {
 });
 
 describe('datauriToFile', () => {
-  it('roundtrip', async () => {
+  it('round-trips a File through a data uri and back', async () => {
     const expected = new File(['z'], 'n.txt', {
       type: 'text/plain',
       lastModified: 50_000,
@@ -317,7 +317,7 @@ describe('datauriToFile', () => {
     await assertFile(expected, f2, FILE_KEYS);
   });
 
-  it('options', async () => {
+  it('honors overrides for type and lastModified', async () => {
     for (const expected of [
       new File(['hi'], 'hello.txt', {
         type: 'text/plain',
@@ -337,7 +337,7 @@ describe('datauriToFile', () => {
     }
   });
 
-  it('default filename', async () => {
+  it('falls back to the default filename when none is provided', async () => {
     const body = ['z'];
     const uri = await fileToDatauri(new File(body, 'x.txt'));
     const file = await datauriToFile(uri);
@@ -350,7 +350,7 @@ describe('datauriToFile', () => {
 });
 
 describe('fileToDatauri', () => {
-  it('roundtrip', async () => {
+  it('round-trips a File through a data uri and back', async () => {
     const file = new File(['abc'], 'n.txt', {
       type: 'text/plain',
       lastModified: 987_654_321_000,
@@ -371,7 +371,7 @@ describe('fileToDatauri', () => {
 });
 
 describe('fileToJson', () => {
-  it('roundtrip', async () => {
+  it('round-trips a File through a json payload and back', async () => {
     const original = new File(['payload'], 'doc.bin', {
       type: 'application/octet-stream',
     });
@@ -382,7 +382,7 @@ describe('fileToJson', () => {
     await assertFile(original, restored, FILE_KEYS);
   });
 
-  it('string and number fields', async () => {
+  it('emits string mimeType/content fields and a numeric lastModified', async () => {
     const file = new File(['x'], 'f.txt', { type: 'text/plain' });
     const json = await fileToJson(file);
     assertExists(json.mimeType);
@@ -391,7 +391,7 @@ describe('fileToJson', () => {
     assertEquals(typeof json.lastModified, 'number');
   });
 
-  it('options', async () => {
+  it('preserves all metadata fields across the conversion', async () => {
     const original = new File(['meta'], 'capture.bin', {
       type: 'application/octet-stream',
       lastModified: 111_222_333_000,
@@ -404,7 +404,7 @@ describe('fileToJson', () => {
 });
 
 describe('jsonToFile', () => {
-  it('roundtrip', async () => {
+  it('round-trips a json payload through a File and back', async () => {
     const payload = {
       name: 'x.txt',
       mimeType: 'text/plain',
@@ -417,7 +417,7 @@ describe('jsonToFile', () => {
     await assertFile(f1, f2, FILE_KEYS);
   });
 
-  it('options', async () => {
+  it('applies explicit name, mime type and lastModified overrides', async () => {
     const expected = new File(['pdf-bytes'], 'doc.pdf', {
       type: 'application/pdf',
       lastModified: 98_765_432_100,
