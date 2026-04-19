@@ -61,7 +61,6 @@ export interface MethodStep {
   readonly name: string;
   readonly method: (...args: unknown[]) => Record<string, unknown>;
   readonly args: unknown[];
-  readonly reactive: boolean;
 }
 
 /** Materialized ctx propagated down the cell tree. */
@@ -105,7 +104,6 @@ export interface VisualsService {
 export interface ObjectCell {
   readonly kind: 'object';
   readonly obj: Record<string, unknown> | (() => Record<string, unknown>);
-  readonly reactive: boolean;
   readonly [key: symbol]: unknown;
 }
 
@@ -122,10 +120,16 @@ export interface ModCell {
   readonly [key: symbol]: unknown;
 }
 
+/** Emitted materialization task (reactivity decided lazily via `isStepReactive`). */
+export interface RuleTask {
+  readonly step: unknown;
+  readonly ctx: Ctx;
+}
+
 /** Synth cell produced by `v.Transition / v.Animation`. */
 export interface SynthCell {
   readonly kind: 'synth';
-  readonly emitFn: (ctx: Ctx, out: Array<{ step: unknown; ctx: Ctx; reactive: boolean }>) => void;
+  readonly emitFn: (ctx: Ctx, out: RuleTask[]) => void;
   readonly [key: symbol]: unknown;
 }
 

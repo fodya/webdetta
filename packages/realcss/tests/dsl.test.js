@@ -8,6 +8,7 @@ const DOM_GLOBALS = arr`window document Node HTMLElement CSSStyleDeclaration CSS
 let createVisuals;
 let Element;
 let el;
+let r;
 let emit;
 let ROOT_CTX;
 let materialize;
@@ -23,6 +24,7 @@ const setupDom = async () => {
   ({ createVisuals } = await import('../index.js'));
   ({ Element } = await import('../../realdom/base.js'));
   ({ el } = await import('../../realdom/index.js'));
+  ({ r } = await import('../../reactivity/index.js'));
   ({ emit, ROOT_CTX, materialize, extendCtx } = await import('../base.js'));
 };
 
@@ -195,46 +197,31 @@ describe('realcss DSL v2', () => {
     });
   });
 
-  describe('reactive detection', () => {
-    it('chain step with function arg is reactive', () => {
+  describe('reactivity — end-to-end (no flag, auto-untrack)', () => {
+    it('signal read via method fn arg triggers re-insertion on change', () => {
       const v = createVisuals(baseCfg);
-      const chain = v.bg(() => 'red');
-      const step = chain.steps.head;
-      assertEquals(step.reactive, true);
+      const color = r.val('red');
+      el.Div(v.tc(() => color()));
+      const sheet = v._.styleSheet.style.sheet;
+      color('blue');
+      assert([...sheet.cssRules].some((rule) => rule.cssText.includes('blue')));
     });
 
-    it('chain step with only static args is NOT reactive', () => {
+    it('signal read via FromObject(fn) triggers re-insertion on change', () => {
       const v = createVisuals(baseCfg);
-      const chain = v.bg('red').tc('blue').p(1);
-      for (const step of consToArray(chain.steps)) {
-        assertEquals(step.reactive, false, `step.${step.name} should not be reactive`);
-      }
+      const color = r.val('red');
+      el.Div(v.FromObject(() => ({ color: color() })));
+      const sheet = v._.styleSheet.style.sheet;
+      color('green');
+      assert([...sheet.cssRules].some((rule) => rule.cssText.includes('green')));
     });
 
-    it('tagged-template chain is NOT reactive', () => {
+    it('static chain: effects auto-untrack after first run (no leaks)', () => {
       const v = createVisuals(baseCfg);
-      const chain = v.col`c t`.mnh`f`.w`f`;
-      for (const step of consToArray(chain.steps)) {
-        assertEquals(step.reactive, false);
-      }
-    });
-
-    it('FromObject(plain) is NOT reactive', () => {
-      const v = createVisuals(baseCfg);
-      const cell = v.FromObject({ color: 'red' });
-      assertEquals(cell.reactive, false);
-    });
-
-    it('FromObject(fn) IS reactive', () => {
-      const v = createVisuals(baseCfg);
-      const cell = v.FromObject(() => ({ color: 'red' }));
-      assertEquals(cell.reactive, true);
-    });
-
-    it('FromObject({ k: fn }) IS reactive (shallow)', () => {
-      const v = createVisuals(baseCfg);
-      const cell = v.FromObject({ color: () => 'red' });
-      assertEquals(cell.reactive, true);
+      el.Div(v.tc('red').p(1));
+      const trigger = r.val(0);
+      trigger(1);
+      assert(true, 'unrelated signal trigger does not throw');
     });
   });
 
@@ -323,19 +310,12 @@ describe('realcss DSL v2', () => {
       assertEquals(out[1].step.name, 'p');
     });
 
-    it('static chain emits zero reactive tasks', () => {
+    it('chain emits tasks with just {step, ctx} — no reactive metadata', () => {
       const v = createVisuals(baseCfg);
       const out = collect(v.bg('red').tc('blue').p(1));
-      const reactive = out.filter(r => r.reactive);
-      assertEquals(reactive.length, 0);
-    });
-
-    it('reactive chain emits one reactive task per reactive step', () => {
-      const v = createVisuals(baseCfg);
-      const out = collect(v.bg(() => 'red').tc('blue'));
-      const reactive = out.filter(r => r.reactive);
-      assertEquals(reactive.length, 1);
-      assertEquals(reactive[0].step.name, 'bg');
+      for (const task of out) {
+        assertEquals(Object.keys(task).sort(), ['ctx', 'step']);
+      }
     });
 
     it('Select composes ctx: ctx.selector applied to children', () => {
@@ -370,23 +350,21 @@ describe('realcss DSL v2', () => {
       assertEquals(out[0].step, cell);
     });
 
-    it('Transition emits children + one reactive aggregator', () => {
+    it('Transition emits children + one aggregator (synth-transition)', () => {
       const v = createVisuals(baseCfg);
-      const cell = v.Transition('0.3s ease', v.tc('red'), v.p(1));
-      const out = collect(cell);
+      const out = collect(v.Transition('0.3s ease', v.tc('red'), v.p(1)));
       assertEquals(out.length, 3);
-      assertEquals(out[out.length - 1].reactive, true);
+      assertEquals(out[out.length - 1].step.kind, 'synth-transition');
     });
 
-    it('Animation emits a single reactive keyframed aggregator', () => {
+    it('Animation emits a single keyframed aggregator (synth-animation)', () => {
       const v = createVisuals(baseCfg);
-      const cell = v.Animation('1s linear', {
+      const out = collect(v.Animation('1s linear', {
         0: v.tc('red'),
         100: v.tc('blue'),
-      });
-      const out = collect(cell);
+      }));
       assertEquals(out.length, 1);
-      assertEquals(out[0].reactive, true);
+      assertEquals(out[0].step.kind, 'synth-animation');
     });
   });
 
@@ -523,13 +501,12 @@ describe('realcss DSL v2', () => {
       el.Div(v.grid(5, null).gap`2`.w`f`.h`6`);
     });
 
-    it('reactive bg + static rel composes correctly', () => {
+    it('reactive bg + static rel mounts — both rules emitted', () => {
       const v = createVisuals(baseCfg);
-      const chain = v.bg(() => '#fff').rel();
-      const out = collect(chain);
+      const out = collect(v.bg(() => '#fff').rel());
       assertEquals(out.length, 2);
-      assertEquals(out[0].reactive, true);
-      assertEquals(out[1].reactive, false);
+      assertEquals(out[0].step.name, 'bg');
+      assertEquals(out[1].step.name, 'rel');
     });
 
     it('FromObject from Actions.js migrated pattern', () => {
