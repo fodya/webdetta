@@ -1,43 +1,39 @@
-#!/usr/bin/env node
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+#!/usr/bin/env -S deno run -A
+import 'npm:zx/globals';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, '..');
-const packagesDir = path.join(rootDir, 'packages');
-const outputFile = path.join(rootDir, 'llms.txt');
+const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const packagesDir = path.join(root, 'packages');
+const outputFile = path.join(root, 'llms.txt');
 
-const packageNames = fs
-  .readdirSync(packagesDir)
-  .filter((name) => fs.statSync(path.join(packagesDir, name)).isDirectory())
+const names = (await fs.readdir(packagesDir))
+  .filter((n) => fs.statSync(path.join(packagesDir, n)).isDirectory())
   .sort();
 
 const merged = [];
 
-for (const pkg of packageNames) {
+for (const pkg of names) {
   const llmsFile = path.join(packagesDir, pkg, 'docs', 'llms.txt');
   if (!fs.existsSync(llmsFile)) continue;
 
-  const lines = fs.readFileSync(llmsFile, 'utf8').split(/\r?\n/);
+  const lines = (await fs.readFile(llmsFile, 'utf8')).split(/\r?\n/);
   const rewritten = [];
 
   for (const line of lines) {
     if (!line.trim()) continue;
-    let rewrittenLine = line.replace(/\]\(([^)]+)\)/g, (_, target) => {
-        if (!target.startsWith('.')) return `](${target})`;
-        const absoluteTarget = path.resolve(path.dirname(llmsFile), target);
-        const relativeTarget = path.relative(rootDir, absoluteTarget).replaceAll(path.sep, '/');
-        return `](${relativeTarget.startsWith('.') ? relativeTarget : `./${relativeTarget}`})`;
-      });
-    if (rewrittenLine.startsWith('- [') && rewrittenLine.includes('): ')) {
-      rewrittenLine = `${rewrittenLine.split('): ', 1)[0]})`;
+    let rl = line.replace(/\]\(([^)]+)\)/g, (_, t) => {
+      if (!t.startsWith('.')) return `](${t})`;
+      const abs = path.resolve(path.dirname(llmsFile), t);
+      const rel = path.relative(root, abs).replaceAll(path.sep, '/');
+      return `](${rel.startsWith('.') ? rel : `./${rel}`})`;
+    });
+    if (rl.startsWith('- [') && rl.includes('): ')) {
+      rl = `${rl.split('): ', 1)[0]})`;
     }
-    rewritten.push(rewrittenLine);
+    rewritten.push(rl);
   }
 
   if (!rewritten.length) continue;
   merged.push(`# ${pkg}`, '', ...rewritten, '');
 }
 
-fs.writeFileSync(outputFile, merged.join('\n').trim() + (merged.length ? '\n' : ''));
+await fs.writeFile(outputFile, merged.join('\n').trim() + (merged.length ? '\n' : ''));

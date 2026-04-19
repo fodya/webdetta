@@ -1,0 +1,39 @@
+# Publishes @webdetta/core to JSR with SLSA provenance (OIDC, no token secret).
+# Link the package to this repo: https://jsr.io/@webdetta/core → Settings → GitHub repository → Link
+#
+# Ref: https://jsr.io/docs/publishing-packages#github-actions
+
+name: Publish JSR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: publish-jsr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC for JSR (provenance)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Verify before publish
+        run: |
+          deno task check:types
+          deno check packages/
+          deno test packages/ --parallel --no-check
+
+      - name: Publish to JSR
+        run: deno publish

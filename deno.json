@@ -48,10 +48,12 @@
     ]
   },
   "tasks": {
-    "test": "bash tools/test.sh",
-    "check": "bash tools/check.sh",
-    "check:types": "bash tools/check-types.sh",
-    "coverage": "bash tools/coverage.sh",
-    "bump": "deno run --allow-read --allow-write tools/bump-version.js"
+    "test": "deno run -A tools/test.js",
+    "check": "deno run -A tools/check.js",
+    "check:types": "deno run -A tools/check-types.js",
+    "coverage": "deno run -A tools/coverage.js",
+    "bump": "deno run -A tools/bump-version.js",
+    "push": "deno run -A tools/push.js",
+    "generate-docs": "deno run -A tools/generate-docs.js"
   }
 }
