@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 export type MethodFn = (...args: any[]) => Record<string, unknown>;
 export type MethodsMap = Record<string, MethodFn>;
 

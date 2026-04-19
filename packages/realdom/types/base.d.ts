@@ -1,5 +1,4 @@
-/// <reference lib="dom" />
-import type { BuilderFn } from '../../builder/types/index.js';
+import type { BuilderFn } from '../../builder/types/index.d.ts';
 
 export type Stringifiable =
   | string

@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 export function kebab(s: string): string;
 
 export function copyText(text: string): Promise<void>;

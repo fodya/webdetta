@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-cd "$(git rev-parse --show-toplevel)"
+cd "$(dirname "$0")/.."
 
 bash tools/check-types.sh
-npx eslint .
-npm test
+deno check packages/
+bash tools/test.sh

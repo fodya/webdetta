@@ -1,2 +1,2 @@
-export * from './sync.js';
-export * from './async.js';
+export * from './sync.d.ts';
+export * from './async.d.ts';

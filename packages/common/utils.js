@@ -1,3 +1,4 @@
+// @ts-self-types="./types/utils.d.ts"
 // Syntax sugar
 
 export const arr = (...args) => String.raw(...args).match(/\S+/g) ?? [];

@@ -1,1 +1,1 @@
-export * from './handle-uncaught-errors.js';
+export * from './handle-uncaught-errors.d.ts';

@@ -1,15 +1,14 @@
-/// <reference lib="dom" />
-import type { Operator, ElementItem } from './base.js';
+import type { Operator, ElementItem } from './base.d.ts';
 import type {
   IfNode,
   createList,
   createSlot,
   createDynamic,
-} from './dynamic.js';
+} from './dynamic.d.ts';
 
-export { Context } from '../../context/types/sync.js';
-export type { Operator, OperatorFunc, ElementItem, Stringifiable, HookName } from './base.js';
-export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic.js';
+export { Context } from '../../context/types/sync.d.ts';
+export type { Operator, OperatorFunc, ElementItem, Stringifiable, HookName } from './base.d.ts';
+export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic.d.ts';
 
 export type TagFn = (...args: ElementItem[]) => Node;
 

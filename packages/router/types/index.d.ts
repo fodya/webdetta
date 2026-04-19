@@ -1,7 +1,7 @@
-import type { Router, RouteMap } from './base.js';
+import type { Router, RouteMap } from './base.d.ts';
 
-export * from './base.js';
-export * from './action.js';
+export * from './base.d.ts';
+export * from './action.d.ts';
 
 export interface PathnameRouterOptions {
   prefix?: string;

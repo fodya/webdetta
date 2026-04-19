@@ -1,3 +1,4 @@
+// @ts-self-types="./types/dom.d.ts"
 import { arr } from './utils.js';
 import { objectPick } from './utils.js';
 import { fileToDatauri } from '../convert/index.js';

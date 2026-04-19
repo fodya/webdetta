@@ -1,4 +1,5 @@
-﻿// Modified version of
+﻿// @ts-self-types="./types/index.d.ts"
+// Modified version of
 // https://github.com/frameorc/frameorc/blob/github/src/builder.js
 // Original author: Michael Lazarev
 

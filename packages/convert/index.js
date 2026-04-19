@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 // text <-> base64
 export const textToBase64 = text => {
   const bytes = new TextEncoder().encode(text);

@@ -1,4 +1,4 @@
-import type { SyncContext } from '../../context/types/sync.js';
+import type { SyncContext } from '../../context/types/sync.d.ts';
 
 export const currentEffect: SyncContext<Effect | undefined>;
 

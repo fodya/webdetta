@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 import Router from './base.js';
 
 const locationAttachment = {

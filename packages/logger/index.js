@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 import { isServerRuntime } from "../common/environment.js";
 
 const createContext = isServerRuntime

@@ -1,4 +1,5 @@
-﻿import { AsyncLocalStorage } from 'node:async_hooks';
+﻿// @ts-self-types="./types/async.d.ts"
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 export const Snapshot = () => AsyncLocalStorage.snapshot();
 

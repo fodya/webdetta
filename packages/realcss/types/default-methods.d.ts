@@ -1,5 +1,4 @@
-/// <reference lib="dom" />
-import type { MethodsMap } from './index.js';
+import type { MethodsMap } from './index.d.ts';
 
 export type MethodsResolver = (v: unknown) => unknown;
 

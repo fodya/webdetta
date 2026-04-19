@@ -1,3 +1,4 @@
+// @ts-self-types="./types/enable-polyfills.d.ts"
 const { hasOwnProperty } = Object.prototype;
 
 if (!Object.hasOwn) {

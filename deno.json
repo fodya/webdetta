@@ -1,0 +1,40 @@
+{
+  "name": "@webdetta/core",
+  "version": "0.1.260",
+  "license": "MIT",
+  "exports": {
+    "./common/dom": "./packages/common/dom.js",
+    "./common/environment": "./packages/common/environment.js",
+    "./common/utils": "./packages/common/utils.js",
+    "./config/enable-polyfills": "./packages/config/enable-polyfills.js",
+    "./config/handle-uncaught-errors": "./packages/config/handle-uncaught-errors.js",
+    "./context/sync": "./packages/context/sync.js",
+    "./context/async": "./packages/context/async.js",
+    "./builder": "./packages/builder/index.js",
+    "./convert": "./packages/convert/index.js",
+    "./execution": "./packages/execution/index.js",
+    "./i18n": "./packages/i18n/index.js",
+    "./logger": "./packages/logger/index.js",
+    "./reactivity": "./packages/reactivity/index.js",
+    "./realcss": "./packages/realcss/index.js",
+    "./realcss/realdom-adapter": "./packages/realcss/realdom-adapter.js",
+    "./realdom": "./packages/realdom/index.js",
+    "./router": "./packages/router/index.js",
+    "./router/realdom-adapter": "./packages/router/realdom-adapter.js",
+    "./rpc": "./packages/rpc/index.js",
+    "./templater": "./packages/templater/index.js"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable"]
+  },
+  "publish": {
+    "exclude": ["packages/*/README.md", "packages/*/tests", "packages/*/docs", "benchmarks", "examples", "tools", "_"]
+  },
+  "tasks": {
+    "test": "bash tools/test.sh",
+    "check": "bash tools/check.sh",
+    "check:types": "bash tools/check-types.sh",
+    "coverage": "bash tools/coverage.sh",
+    "bump": "deno run --allow-read --allow-write tools/bump-version.js"
+  }
+}

@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
-export * from './utils.js';
-export * from './environment.js';
-export * from './dom.js';
+export * from './utils.d.ts';
+export * from './environment.d.ts';
+export * from './dom.d.ts';

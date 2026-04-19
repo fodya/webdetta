@@ -1,4 +1,4 @@
-import type { Effect } from './base.js';
+import type { Effect } from './base.d.ts';
 
 export type ResourceHandlers<T> = {
   onLoading(value: boolean): void;

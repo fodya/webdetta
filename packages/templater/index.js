@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 import { isPlainObject } from '../common/utils.js';
 
 const Node = (operator) => ({ operator, args: [], nested: 0 });

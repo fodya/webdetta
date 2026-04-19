@@ -1,5 +1,4 @@
-/// <reference lib="dom" />
-import type { AdapterFactory } from './index.js';
+import type { AdapterFactory } from './index.d.ts';
 
 declare const realdomAdapter: AdapterFactory;
 export default realdomAdapter;

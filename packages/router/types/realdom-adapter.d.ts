@@ -1,6 +1,5 @@
-/// <reference lib="dom" />
-import type { SyncContext } from '../../context/types/sync.js';
-import type { Router } from './base.js';
+import type { SyncContext } from '../../context/types/sync.d.ts';
+import type { Router } from './base.d.ts';
 
 export interface RouterRealdomOptions<V = unknown> {
   router: Router<V>;

@@ -1,5 +1,4 @@
-/// <reference lib="dom" />
-import type { ElementItem } from './base.js';
+import type { ElementItem } from './base.d.ts';
 
 export type ListItemsSource<T> =
   | readonly T[]

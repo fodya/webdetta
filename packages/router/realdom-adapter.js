@@ -1,3 +1,4 @@
+// @ts-self-types="./types/realdom-adapter.d.ts"
 import { el } from '../realdom/index.js';
 import { r } from '../reactivity/index.js';
 import { Context } from '../context/sync.js';

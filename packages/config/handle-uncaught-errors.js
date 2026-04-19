@@ -1,3 +1,4 @@
+// @ts-self-types="./types/handle-uncaught-errors.d.ts"
 import { runtime, isClientRuntime } from '../common/environment.js';
 
 const handlers = {

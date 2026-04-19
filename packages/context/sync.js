@@ -1,3 +1,4 @@
+// @ts-self-types="./types/sync.d.ts"
 let snapshot = [];
 const Snapshot = () => {
   const values = [...snapshot];

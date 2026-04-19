@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 export const I18N = ({
   fallbackLang,
   translations,

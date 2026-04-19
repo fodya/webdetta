@@ -1,4 +1,5 @@
-﻿let globals;
+﻿// @ts-self-types="./types/environment.d.ts"
+let globals;
 try { globals = globalThis; }
 catch (e) { globals = this; }
 

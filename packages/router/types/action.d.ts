@@ -1,4 +1,4 @@
-import type { Router, RouterAction, RouterActionOptions } from './base.js';
+import type { Router, RouterAction, RouterActionOptions } from './base.d.ts';
 
 export function routerAction<V = unknown>(
   router: Router<V>,

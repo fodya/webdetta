@@ -6,10 +6,10 @@ const red = text => ansi(31, text);
 const white = text => ansi(37, text);
 
 const ansiRe = new RegExp(`${String.fromCharCode(0x1b)}\\[[\\d;]*m`, 'g');
-const text = (await new Response(process.stdin).text()).replace(ansiRe, '');
+const text = (await new Response(Deno.stdin.readable).text()).replace(ansiRe, '');
 if (!text.trim()) {
   console.error("test-reporter: empty stdin (deno test produced no output)");
-  process.exit(1);
+  Deno.exit(1);
 }
 
 const lines = { nodes: [], errors: [], failures: [] }
@@ -112,7 +112,7 @@ const errors = errorMap(lines.errors);
 console.log();
 if (errors.size == 0) {
   console.log(`${green(`[OK:${ms}ms]`)} ${passed} passed`);
-  process.exit(0);
+  Deno.exit(0);
 }
 
 console.log("---");
@@ -129,4 +129,4 @@ for (const [row, err] of errors.entries()) try {
   console.log("---");
 } catch (e) { console.error(err); }
 console.log(`${red(`[ERR:${ms}ms]`)} ${passed} passed | ${red(`${failed} failed`)}`);
-process.exit(1);
+Deno.exit(1);

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(dirname "$0")/.."
+
 if [ "$#" -eq 0 ]; then
   set -- packages
 else
@@ -17,4 +19,4 @@ fi
 deno test \
   --parallel --no-check \
   --reporter=pretty "$@" \
-  | node tools/test-reporter.js
+  | deno run tools/test-reporter.js

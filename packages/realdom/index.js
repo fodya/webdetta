@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 import { Element } from './base.js';
 import { kebab } from '../common/dom.js';
 import { unwrapFn } from '../common/utils.js';

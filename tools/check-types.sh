@@ -1,36 +1,35 @@
 #!/usr/bin/env bash
-# Verify every exported .js has a matching .d.ts and stub in types/.
-# Packages containing types/TODO* are skipped.
+# Verify every .js listed as a deno.json export has a matching .d.ts and an
+# @ts-self-types directive pointing at it.
 
 set -u
 fail=0
 
-for dir in packages/*/; do
-  pkg=$(basename "$dir")
-  types="${dir}types"
-  if ls "$types"/TODO* >/dev/null 2>&1; then continue; fi
-  if [ ! -d "$types" ]; then
-    echo "MISSING types dir: $types"
+cd "$(dirname "$0")/.."
+
+mapfile -t entries < <(
+  deno eval '
+    const p = JSON.parse(await Deno.readTextFile("deno.json"));
+    for (const v of Object.values(p.exports ?? {})) console.log(v);
+  '
+)
+
+for js in "${entries[@]}"; do
+  js="${js#./}"
+  [ -f "$js" ] || { echo "MISSING entry: $js"; fail=1; continue; }
+
+  pkg_dir="$(dirname "$js")"
+  name="$(basename "$js" .js)"
+  dts="$pkg_dir/types/$name.d.ts"
+
+  if [ ! -f "$dts" ]; then
+    echo "MISSING .d.ts: $dts"
     fail=1
-    continue
   fi
-  for js in "$dir"*.js; do
-    [ -f "$js" ] || continue
-    name=$(basename "$js" .js)
-    dts="$types/$name.d.ts"
-    stub="$types/$name.js"
-    if [ ! -f "$dts" ]; then
-      echo "MISSING .d.ts: $dts"
-      fail=1
-    fi
-    if [ ! -f "$stub" ]; then
-      echo "MISSING stub: $stub"
-      fail=1
-    elif ! grep -q '@ts-self-types' "$stub"; then
-      echo "MISSING @ts-self-types directive: $stub"
-      fail=1
-    fi
-  done
+  if ! grep -q '@ts-self-types' "$js"; then
+    echo "MISSING @ts-self-types directive: $js"
+    fail=1
+  fi
 done
 
 if [ "$fail" -ne 0 ]; then

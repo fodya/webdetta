@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 export function textToBase64(text: string): string;
 export function base64ToText(base64: string): string;
 

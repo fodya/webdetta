@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 import { err, isAsyncFunction, isPromise } from "../common/utils.js";
 
 export const safe = (f, onError=safe.defaultErrorHandler) => {

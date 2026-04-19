@@ -1,3 +1,4 @@
+// @ts-self-types="./types/index.d.ts"
 import { kebab } from '../common/dom.js';
 import { unwrapFn } from '../common/utils.js';
 import { splitSelector, styleStr, processMethodArgs, processNestedSelector, escape, combinedStyle, idStore } from './common.js';

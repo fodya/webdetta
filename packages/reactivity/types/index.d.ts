@@ -1,7 +1,7 @@
-export * from './base.js';
-export * from './resolve.js';
+export * from './base.d.ts';
+export * from './resolve.d.ts';
 
-import type { Effect, EffectHandler } from './base.js';
+import type { Effect, EffectHandler } from './base.d.ts';
 
 export type Accessor<T> = {
   (): T;
