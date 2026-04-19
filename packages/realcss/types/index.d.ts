@@ -2,7 +2,7 @@
  * Runtime CSS engine with a persistent cell DSL that materializes style rules
  * lazily and flushes them into a `<style>` sheet via realdom on mount.
  *
- * Grammar (v2 — breaking: `v` is not callable; use `v.FromObject(...)`):
+ * Grammar (v2 — breaking: `v` is not callable; use `v.Plain(...)`):
  * ```
  * v                                            // root
  * v.<method>                                   // start MethodChain
@@ -12,7 +12,7 @@
  * v.Query(query, ...Cell[])                    // mod operator
  * v.Important(...Cell[])                       // mod operator
  * v.Inline(...Cell[])                          // mod operator
- * v.FromObject(style | () => style)            // object cell
+ * v.Plain(style | () => style)                 // object cell
  * v.Transition(param, ...Cell[])               // synth
  * v.Animation(param, keyframes)                // synth
  * ```
@@ -31,8 +31,8 @@
  *
  * el.Div(v.tc('red').p(1));                            // chain
  * el.Div(v.Select('&:hover', v.Important(v.tc('red'))));
- * el.Div(v.FromObject({ color: 'red' }));              // raw object
- * el.Div(v.FromObject(() => ({ color: signal() })));   // reactive
+ * el.Div(v.Plain({ color: 'red' }));              // raw object
+ * el.Div(v.Plain(() => ({ color: signal() })));   // reactive
  * ```
  *
  * @module
@@ -100,7 +100,7 @@ export interface VisualsService {
   readonly mount: (cell: Cell) => unknown;
 }
 
-/** Object cell produced by `v.FromObject(...)`. */
+/** Object cell produced by `v.Plain(...)`. */
 export interface ObjectCell {
   readonly kind: 'object';
   readonly obj: Record<string, unknown> | (() => Record<string, unknown>);
@@ -154,7 +154,7 @@ export type MethodChainWithMethods<M extends MethodsMap> =
 export interface Root<M extends MethodsMap = MethodsMap> {
   readonly _: VisualsService;
 
-  FromObject(style: Record<string, unknown> | (() => Record<string, unknown>)): ObjectCell;
+  Plain(style: Record<string, unknown> | (() => Record<string, unknown>)): ObjectCell;
 
   Select(selector: string | ((parent: string) => string), ...children: Cell[]): ModCell;
   Query(query: string, ...children: Cell[]): ModCell;

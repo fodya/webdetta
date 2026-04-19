@@ -11,10 +11,10 @@ const queryId = idStore();
 const selectorId = idStore();
 const plainStyleId = idStore();
 
-export const validateFromObjectArg = (obj) => {
+export const validatePlainArg = (obj) => {
   if (typeof obj === 'function' || isPlainObject(obj)) return obj;
   throw new Error(
-    `FromObject expects plain object or function; got ${obj === null ? 'null' : typeof obj}`,
+    `Plain expects plain object or function; got ${obj === null ? 'null' : typeof obj}`,
   );
 };
 

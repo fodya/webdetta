@@ -85,9 +85,9 @@ describe('realcss DSL v2', () => {
       assertEquals(consToArray(chain.pending), ['tc']);
     });
 
-    it('exposes FromObject/Select/Query/Important/Inline/Transition/Animation', () => {
+    it('exposes Plain/Select/Query/Important/Inline/Transition/Animation', () => {
       const v = Visuals(baseCfg);
-      for (const name of ['FromObject', 'Select', 'Query', 'Important', 'Inline', 'Transition', 'Animation']) {
+      for (const name of ['Plain', 'Select', 'Query', 'Important', 'Inline', 'Transition', 'Animation']) {
         assertEquals(typeof v[name], 'function', `v.${name} must be a function`);
       }
     });
@@ -168,11 +168,11 @@ describe('realcss DSL v2', () => {
       assert(chain('ignored') === chain);
     });
 
-    it('operators and FromObject are NOT on the chain prototype', () => {
+    it('operators and Plain are NOT on the chain prototype', () => {
       const v = Visuals(baseCfg);
       const chain = v.tc;
       assertEquals(chain.Select, undefined);
-      assertEquals(chain.FromObject, undefined);
+      assertEquals(chain.Plain, undefined);
       assertEquals(chain.Important, undefined);
       assertEquals(chain.Query, undefined);
       assertEquals(chain.Transition, undefined);
@@ -207,10 +207,10 @@ describe('realcss DSL v2', () => {
       assert([...sheet.cssRules].some((rule) => rule.cssText.includes('blue')));
     });
 
-    it('signal read via FromObject(fn) triggers re-insertion on change', () => {
+    it('signal read via Plain(fn) triggers re-insertion on change', () => {
       const v = Visuals(baseCfg);
       const color = r.val('red');
-      el.Div(v.FromObject(() => ({ color: color() })));
+      el.Div(v.Plain(() => ({ color: color() })));
       const sheet = v._.styleSheet.style.sheet;
       color('green');
       assert([...sheet.cssRules].some((rule) => rule.cssText.includes('green')));
@@ -225,38 +225,38 @@ describe('realcss DSL v2', () => {
     });
   });
 
-  describe('FromObject validation', () => {
+  describe('Plain validation', () => {
     it('accepts plain object', () => {
       const v = Visuals(baseCfg);
-      const cell = v.FromObject({ color: 'red' });
+      const cell = v.Plain({ color: 'red' });
       assertEquals(cell.kind, 'object');
     });
 
     it('accepts function', () => {
       const v = Visuals(baseCfg);
       const fn = () => ({ color: 'red' });
-      const cell = v.FromObject(fn);
+      const cell = v.Plain(fn);
       assertEquals(cell.obj, fn);
     });
 
     it('rejects string', () => {
       const v = Visuals(baseCfg);
-      assertThrows(() => v.FromObject('nope'));
+      assertThrows(() => v.Plain('nope'));
     });
 
     it('rejects number', () => {
       const v = Visuals(baseCfg);
-      assertThrows(() => v.FromObject(42));
+      assertThrows(() => v.Plain(42));
     });
 
     it('rejects null', () => {
       const v = Visuals(baseCfg);
-      assertThrows(() => v.FromObject(null));
+      assertThrows(() => v.Plain(null));
     });
 
     it('rejects arrays (not plain objects)', () => {
       const v = Visuals(baseCfg);
-      assertThrows(() => v.FromObject([{ color: 'red' }]));
+      assertThrows(() => v.Plain([{ color: 'red' }]));
     });
   });
 
@@ -342,9 +342,9 @@ describe('realcss DSL v2', () => {
       assertEquals(out[0].ctx.important, true);
     });
 
-    it('FromObject emits exactly one task', () => {
+    it('Plain emits exactly one task', () => {
       const v = Visuals(baseCfg);
-      const cell = v.FromObject({ color: 'red' });
+      const cell = v.Plain({ color: 'red' });
       const out = collect(cell);
       assertEquals(out.length, 1);
       assertEquals(out[0].step, cell);
@@ -419,7 +419,7 @@ describe('realcss DSL v2', () => {
         v.Query('@media (min-width: 40em)', v.tc('red')),
         v.Important(v.tc('red')),
         v.Inline(v.tc('red')),
-        v.FromObject({ color: 'red' }),
+        v.Plain({ color: 'red' }),
         v.Transition('0.3s ease', v.tc('red')),
         v.Animation('1s linear', { 0: v.tc('red'), 100: v.tc('blue') }),
       ]) {
@@ -447,9 +447,9 @@ describe('realcss DSL v2', () => {
       assert(found, 'expected a rule joining :hover and color:red');
     });
 
-    it('FromObject(plain) inserts one rule', () => {
+    it('Plain(plain) inserts one rule', () => {
       const v = Visuals(baseCfg);
-      el.Div(v.FromObject({ pointerEvents: 'none' }));
+      el.Div(v.Plain({ pointerEvents: 'none' }));
       const sheet = v._.styleSheet.style.sheet;
       let found = false;
       for (const r of sheet.cssRules) {
@@ -509,11 +509,11 @@ describe('realcss DSL v2', () => {
       assertEquals(out[1].step.name, 'rel');
     });
 
-    it('FromObject from Actions.js migrated pattern', () => {
+    it('Plain from Actions.js migrated pattern', () => {
       const v = Visuals(baseCfg);
       el.Div(
         v.abs().il`0`,
-        v.FromObject({ pointerEvents: 'none' }),
+        v.Plain({ pointerEvents: 'none' }),
       );
     });
 
@@ -527,15 +527,15 @@ describe('realcss DSL v2', () => {
       assertEquals(out.length, 1);
     });
 
-    it('Select with reactive field selector + nested chain + FromObject', () => {
+    it('Select with reactive field selector + nested chain + Plain', () => {
       const v = Visuals(baseCfg);
       const cell = v.Select(
         '& > input:focus',
         v.w`f`.ph`2.5`,
-        v.FromObject({ background: '#fff' }),
+        v.Plain({ background: '#fff' }),
       );
       const out = collect(cell);
-      assert(out.length >= 3, 'at least w/ph + FromObject');
+      assert(out.length >= 3, 'at least w/ph + Plain');
       for (const { ctx } of out) assertEquals(ctx.selector, '& > input:focus');
     });
   });

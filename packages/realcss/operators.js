@@ -2,7 +2,7 @@
 import { kebab } from '../common/dom.js';
 import { unwrapFn } from '../common/utils.js';
 import { Element } from '../realdom/base.js';
-import { emit, materialize, ROOT_CTX, validateFromObjectArg } from './base.js';
+import { emit, materialize, ROOT_CTX, validatePlainArg } from './base.js';
 import { idStore, styleStr } from './utils.js';
 
 const transitionId = idStore();
@@ -61,7 +61,7 @@ export const makeOperators = (mount) => {
   };
 
   return {
-    FromObject: (obj) => wrap({ kind: 'object', obj: validateFromObjectArg(obj) }),
+    Plain: (obj) => wrap({ kind: 'object', obj: validatePlainArg(obj) }),
     Select: (val, ...children) => wrap({ kind: 'mod', mod: { selector: val }, children }),
     Query: (val, ...children) => wrap({ kind: 'mod', mod: { query: val }, children }),
     Important: (...children) => wrap({ kind: 'mod', mod: { important: true }, children }),
