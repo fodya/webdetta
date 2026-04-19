@@ -1,7 +1,7 @@
 ### Client
 
 ```javascript
-import { RpcClient } from 'webdetta/rpc/client';
+import { RpcClient } from 'webdetta/rpc';
 
 const client = RpcClient('ws://localhost:3000');
 

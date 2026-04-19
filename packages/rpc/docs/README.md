@@ -7,7 +7,7 @@ Remote Procedure Call library for realtime APIs using WebSockets.
 ### Client
 
 ```javascript
-import { RpcClient } from 'webdetta/rpc/client';
+import { RpcClient } from 'webdetta/rpc';
 
 const client = RpcClient('ws://localhost:3000');
 
@@ -21,7 +21,7 @@ client.cast('eventName', data);
 ### Server
 
 ```javascript
-import { RpcServer } from 'webdetta/rpc/server';
+import { RpcServer } from 'webdetta/rpc';
 
 const server = RpcServer({ PULSE: 60000 });
 

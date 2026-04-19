@@ -1,7 +1,1 @@
 - [README](./README.md)
-- [Methods()](./examples/methods.md)
-- [Inline Style Adapter](./examples/inline-style-adapter.md)
-- [Selector Operator](./examples/selector-operator.md)
-- [Transition and Animation](./examples/transition-and-animation.md)
-- [inspect()](./examples/inspect.md)
-- [realdom adapter](./examples/realdom-adapter.md)

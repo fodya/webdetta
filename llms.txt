@@ -64,9 +64,6 @@
 # logger
 
 - [README](./packages/logger/docs/README.md)
-- [Basic Logger Context](./packages/logger/docs/examples/basic-logger-context.md)
-- [Nested Formatters](./packages/logger/docs/examples/nested-formatters.md)
-- [Stop Formatter Propagation](./packages/logger/docs/examples/stop-formatter-propagation.md)
 
 # reactivity
 
@@ -81,30 +78,14 @@
 # realcss
 
 - [README](./packages/realcss/docs/README.md)
-- [Methods()](./packages/realcss/docs/examples/methods.md)
-- [Inline Style Adapter](./packages/realcss/docs/examples/inline-style-adapter.md)
-- [Selector Operator](./packages/realcss/docs/examples/selector-operator.md)
-- [Transition and Animation](./packages/realcss/docs/examples/transition-and-animation.md)
-- [inspect()](./packages/realcss/docs/examples/inspect.md)
-- [realdom adapter](./packages/realcss/docs/examples/realdom-adapter.md)
 
 # realdom
 
 - [README](./packages/realdom/docs/README.md)
-- [Create Elements with el](./packages/realdom/docs/examples/create-elements-with-el.md)
-- [Reactive Text Node](./packages/realdom/docs/examples/reactive-text-node.md)
-- [Element.append()](./packages/realdom/docs/examples/element-append.md)
-- [Operator()](./packages/realdom/docs/examples/operator.md)
-- [createList()](./packages/realdom/docs/examples/create-list.md)
-- [createIf()](./packages/realdom/docs/examples/create-if.md)
-- [createDynamic()](./packages/realdom/docs/examples/create-dynamic.md)
 
 # router
 
 - [README](./packages/router/docs/README.md)
-- [parsePath()](./packages/router/docs/examples/parse-path.md)
-- [makePath()](./packages/router/docs/examples/make-path.md)
-- [routeHref()](./packages/router/docs/examples/route-href.md)
 - [PathnameRouter()](./packages/router/docs/examples/pathname-router.md)
 - [HashRouter()](./packages/router/docs/examples/hash-router.md)
 - [router.href()](./packages/router/docs/examples/router-href.md)

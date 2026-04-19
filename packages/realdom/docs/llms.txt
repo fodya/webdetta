@@ -1,8 +1,1 @@
 - [README](./README.md)
-- [Create Elements with el](./examples/create-elements-with-el.md)
-- [Reactive Text Node](./examples/reactive-text-node.md)
-- [Element.append()](./examples/element-append.md)
-- [Operator()](./examples/operator.md)
-- [createList()](./examples/create-list.md)
-- [createIf()](./examples/create-if.md)
-- [createDynamic()](./examples/create-dynamic.md)

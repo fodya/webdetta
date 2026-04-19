@@ -1,7 +1,7 @@
 ### Server
 
 ```javascript
-import { RpcServer } from 'webdetta/rpc/server';
+import { RpcServer } from 'webdetta/rpc';
 
 const server = RpcServer({ PULSE: 60000 });
 
