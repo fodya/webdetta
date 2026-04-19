@@ -8,7 +8,7 @@ name: Publish JSR
 on:
   push:
     branches:
-      - main
+      - tmp
   workflow_dispatch:
 
 concurrency:
