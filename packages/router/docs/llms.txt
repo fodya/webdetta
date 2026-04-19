@@ -1,0 +1,7 @@
+- [README](./README.md)
+- [parsePath()](./examples/parse-path.md)
+- [makePath()](./examples/make-path.md)
+- [routeHref()](./examples/route-href.md)
+- [PathnameRouter()](./examples/pathname-router.md)
+- [HashRouter()](./examples/hash-router.md)
+- [router.href()](./examples/router-href.md)

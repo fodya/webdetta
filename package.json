@@ -1,0 +1,78 @@
+{
+  "name": "webdetta",
+  "version": "0.1.256",
+  "author": "Fedot Kriutchenko <fodyadev@gmail.com>",
+  "description": "",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "bash tools/test.sh",
+    "coverage": "bash tools/coverage.sh"
+  },
+  "exports": {
+    "./*": {
+      "types": "./packages/*/types/index.d.ts",
+      "default": "./packages/*/index.js"
+    },
+    "./context/*": {
+      "types": "./packages/context/types/*.d.ts",
+      "default": "./packages/context/*.js"
+    },
+    "./convert/*": {
+      "types": "./packages/convert/types/*.d.ts",
+      "default": "./packages/convert/*.js"
+    },
+    "./execution/*": {
+      "types": "./packages/execution/types/*.d.ts",
+      "default": "./packages/execution/*.js"
+    },
+    "./i18n/*": {
+      "types": "./packages/i18n/types/*.d.ts",
+      "default": "./packages/i18n/*.js"
+    },
+    "./logger/*": {
+      "types": "./packages/logger/types/*.d.ts",
+      "default": "./packages/logger/*.js"
+    },
+    "./reactivity/*": {
+      "types": "./packages/reactivity/types/*.d.ts",
+      "default": "./packages/reactivity/*.js"
+    },
+    "./realcss/*": {
+      "types": "./packages/realcss/types/*.d.ts",
+      "default": "./packages/realcss/*.js"
+    },
+    "./realdom/*": {
+      "types": "./packages/realdom/types/*.d.ts",
+      "default": "./packages/realdom/*.js"
+    },
+    "./router/*": {
+      "types": "./packages/router/types/*.d.ts",
+      "default": "./packages/router/*.js"
+    },
+    "./rpc/*": {
+      "types": "./packages/rpc/types/*.d.ts",
+      "default": "./packages/rpc/*.js"
+    },
+    "./templater/*": {
+      "types": "./packages/templater/types/*.d.ts",
+      "default": "./packages/templater/*.js"
+    },
+    "./common/*": {
+      "types": "./packages/common/types/*.d.ts",
+      "default": "./packages/common/*.js"
+    },
+    "./config/*": {
+      "types": "./packages/config/types/*.d.ts",
+      "default": "./packages/config/*.js"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "eslint": "^9.24.0",
+    "express": "^4.19.2",
+    "globals": "^16.0.0",
+    "jsdom": "^27.0.1",
+    "mitata": "^1.0.34"
+  }
+}

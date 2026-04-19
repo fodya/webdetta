@@ -1,0 +1,8 @@
+- [README](./README.md)
+- [Text and Base64](./examples/text-and-base64.md)
+- [Data URI and JSON](./examples/data-uri-and-json.md)
+- [FormData and JSON](./examples/formdata-and-json.md)
+- [File and Bytes](./examples/file-and-bytes.md)
+- [File Chunks](./examples/file-chunks.md)
+- [File and Data URI](./examples/file-and-data-uri.md)
+- [File and JSON](./examples/file-and-json.md)

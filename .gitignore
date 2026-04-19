@@ -1,0 +1,9 @@
+*/**/.git
+dist/*
+benchmarks/
+node_modules
+package-lock.json
+deno.lock
+.coverage/
+_
+.GUIDELINES
