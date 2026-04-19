@@ -1,6 +1,5 @@
 */**/.git
-dist/*
+dist
 benchmarks/
 .coverage/
 _
-.GUIDELINES

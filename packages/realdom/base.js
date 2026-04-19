@@ -9,13 +9,18 @@ export const toString = (...args) => {
 }
 
 const isFragment = node => node.nodeType === 11;
+
 export const processItem = (item, processOperator, processNode, flattenFragments=false) => {
+  const isObj = typeof item == 'object';
+  const isFunc = typeof item == 'function';
   if (item === false || item === undefined || item === null) {
 
-  } else if (Array.isArray(item)) {
+  } else if (isObj && Array.isArray(item)) {
     for (const d of item) processItem(d, processOperator, processNode, flattenFragments);
-  } else if (Operator.isOperator(item)) {
+  } else if (isFunc && Operator.isOperator(item)) {
     processOperator(item);
+  } else if ((isObj || isFunc) && Element.toNodes in item) {
+    processItem(item[Element.toNodes](), processOperator, processNode, flattenFragments);
   } else {
     const node = Element.from(item);
     if (flattenFragments && isFragment(node)) {
@@ -26,6 +31,7 @@ export const processItem = (item, processOperator, processNode, flattenFragments
   }
 }
 
+
 export const Element = (ns, tag, ...args) => {
   const node = (
     tag === '!' ? document.createComment('') :
@@ -35,6 +41,8 @@ export const Element = (ns, tag, ...args) => {
   );
   return Element.append(node, templateCallToArray(args));
 }
+
+Element.toNodes = Symbol('Element.toNodes');
 Element.from = arg => {
   if (arg instanceof Node) return arg;
   if (typeof arg == 'function') {

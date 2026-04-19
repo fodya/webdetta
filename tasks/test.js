@@ -19,7 +19,7 @@ if (modules.length === 0) {
 }
 
 const deno = new Deno.Command('deno', {
-  args: ['test', '--parallel', '--no-check', '--reporter=pretty', ...targets],
+  args: ['test', '-A', '--parallel', '--no-check', '--reporter=pretty', ...targets],
   stdout: 'piped',
   stderr: 'inherit',
 }).spawn();

@@ -1,206 +1,65 @@
 // @ts-self-types="./types/index.d.ts"
-import { kebab } from '../common/dom.js';
-import { unwrapFn } from '../common/utils.js';
-import { splitSelector, styleStr, processMethodArgs, processNestedSelector, escape, combinedStyle, idStore } from './common.js';
+import { Element } from '../realdom/base.js';
+import { MethodChain, makeMount } from './base.js';
+import { Methods } from './methods.js';
+import { makeOperators } from './operators.js';
 
-const atId = idStore();
-const selectorId = idStore();
-const cssStyleId = idStore();
-const transitionId = idStore();
-const keyframeId = idStore();
-const animationId = idStore();
-
-const NODES = Symbol('VCSS_NODES');
-export const inspect = obj => {
-  if (typeof obj != 'function' && typeof obj != 'object') return null;
-  const wrapped = obj && NODES in obj;
-  return wrapped ? inspect(obj[NODES]) : obj;
-}
-const unwrapStyle = obj => {
-  const res = {};
-  for (const [k, v] of Object.entries(obj)) res[k] = unwrapFn(v);
-  return res;
-}
-const unwrap = obj => (
-  (obj = inspect(obj)) &&
-  Array.isArray(obj) ? obj.flatMap(unwrap).filter(d => d)
-  : obj instanceof Node ? obj
-  : StyleNode(obj)
-);
-
+// StyleSheet stores materialized rules by cls. Recalculate preserves each
+// rule's identity (same WeakMap cache hit on re-mount); only `.css` is refreshed.
 class StyleSheet {
   processedNodes = new Map();
-  constructor(style) {
-    this.style = style;
-  }
-  insertNode(node) {
-    const { cls, css, additionalCss } = node;
-    if (this.processedNodes.has(cls)) return;
+  constructor(style) { this.style = style; }
+  insertNode(rule) {
+    const { cls, css, additionalCss } = rule;
+    if (!cls || this.processedNodes.has(cls)) return;
     const stylesheet = this.style.sheet;
-    this.processedNodes.set(cls, node);
+    this.processedNodes.set(cls, rule);
     if (css) {
       try { stylesheet.insertRule(css, stylesheet.cssRules.length); }
       catch (e) {}
     }
     if (additionalCss) {
       try { stylesheet.insertRule(additionalCss, stylesheet.cssRules.length); }
-      catch (e) { }
+      catch (e) {}
     }
   }
   recalculate() {
     this.style.innerText = '';
-    const nodes = [...this.processedNodes.values()];
+    const rules = [...this.processedNodes.values()];
     this.processedNodes.clear();
-    for (const node of nodes) {
-      node.calculate();
-      this.insertNode(node);
+    for (const rule of rules) {
+      rule.rebuild();
+      this.insertNode(rule);
     }
   }
 }
 
-class Node {
-  selector = ''
-  query = ''
-  important = false
-  inline = false
-  classname = null
-  css = null
-  additionalCss = null
-  style = {}
-  cls = null
+export const createVisuals = (cfg) => {
+  const styleElem = document.createElement('style');
+  document.head.appendChild(styleElem);
+  const styleSheet = new StyleSheet(styleElem);
+  const { methods } = Methods(cfg);
+  const mount = makeMount(styleSheet);
+  const chain = MethodChain(methods);
+  chain.proto[Element.toNodes] = function () { return mount(this); };
 
-  updates = []
-  constructor(...updates) {
-    this.updates = updates;
-  }
-  fork(...updates) {
-    return new Node(...this.updates, ...updates);
-  }
-  calculate() {
-    this.css = null;
-    for (const update of this.updates) update.call(this);
-    if (!this.style) return;
-    this.prevCls = this.cls;
-    this.cls = escape(
-      (this.query ? '＠' + atId(this.query) + ':' : '') +
-      (this.selector ? '𝕊' + selectorId(this.selector) + ':' : '') +
-      (this.classname ? this.classname : '') +
-      (this.important ? 'ǃ' : '')
-    );
+  const operators = makeOperators(mount);
 
-    const sel = processNestedSelector(this.selector, '.' + this.cls);
-    const str = sel + styleStr(this.style, this.important);
-    this.css = this.query ? `${this.query} {${str}}` : str;
-  }
-}
-
-const StyleNode = (...args_) => new Node(function() {
-  const args = args_.map(unwrapFn);
-  if (args.length === 1) {
-    this.style = unwrapStyle(args[0]);
-    this.classname = '𝕀' + cssStyleId(JSON.stringify(this.style)) + ':';
-  } else {
-    this.style = unwrapStyle(args[1]);
-    this.classname = args[0];
-  }
-});
-const MethodNode = (methods, name, args_) => {
-  if (!methods[name]) throw new Error('method not found: ' + name);
-  return new Node(function() {
-    const args = processMethodArgs(args_);
-    this.classname = name + '(' + args.join(',') + ')';
-    this.style = methods[name](...args);
-  });
-}
-
-const operators = {
-  Sel: (selStr, ...args) => {
-    const nodes = unwrap(args);
-    return splitSelector(selStr).flatMap(selStr =>
-      nodes.map(node => node.fork(function() {
-        this.selector = node.selector
-          ? processNestedSelector(selStr, node.selector)
-          : selStr;
-      }))
-    );
-  },
-  Query: (query, ...args) =>
-    unwrap(args).map(node => node.fork(function() {
-      this.query = query;
-    })),
-  Important: (...args) =>
-    unwrap(args).map(node => node.fork(function() {
-      this.important = true;
-    })),
-  Inline: (...args) =>
-    unwrap(args).map(node => node.fork(function() {
-      this.inline = true;
-    })),
-  Transition: (param, ...args) => {
-    const nodes = unwrap(args);
-    return nodes.concat(new Node(function() {
-      const keys = Object.keys(combinedStyle(nodes));
-      const param_ = unwrapFn(param);
-      this.classname = '𝕋' + transitionId(param_ + keys.join(',')) + ':';
-      this.style = {
-        transition: keys.map(k => param_ + ' ' + kebab(k)).join(',')
-      };
-    }));
-  },
-  Animation: (param, keyframes) => [new Node(function() {
-    const str = Object.entries(keyframes).map(([ident, nodes]) => {
-      nodes = unwrap(nodes);
-      for (const node of nodes) node.calculate();
-      const style = combinedStyle(nodes);
-      return ident + '% ' + styleStr(style, false);
-    }).join('\n');
-    const kfId = keyframeId(str);
-    const param_ = unwrapFn(param);
-    const aId = animationId(param_ + kfId);
-    this.classname = '𝔸' + aId + ':';
-    this.additionalCss = `@keyframes 𝔸${kfId} {\n${str}\n}`;
-    this.style = { animation: param_ + ' 𝔸' + kfId };
-  })],
-}
-
-const Stack = (wrap, methods) => {
-  const style = (...args) => stack([],
-    [StyleNode(...args)]
-  );
-  const operator = (name) => (...args) => stack([],
-    operators[name](...args)
-  );
-  const method = (nodes, props) => (...args) => stack([],
-    nodes.concat(props.map(name => MethodNode(methods, name, args)))
-  );
-
-  const stack = (props, nodes) => {
-    nodes = unwrap(nodes);
-    const res =
-      props.length ? method(nodes, props)
-      : !nodes.length ? style
-      : wrap(nodes);
-    return new Proxy(res, {
-      has: (_, name) =>
-        name == NODES || name in methods || name in operators || name in res,
-      get: (_, name) =>
-        typeof name == 'symbol'
-        ? name == NODES ? nodes : res[name]
-        : name in operators
-        ? nodes.length == 0 && props.length == 0 ? operator(name) : null
-        : stack(props.concat(name), nodes)
+  const rootProto = {};
+  rootProto._ = {
+    recalculate: () => styleSheet.recalculate(),
+    styleSheet,
+    mount,
+  };
+  for (const name of Object.keys(methods)) {
+    Object.defineProperty(rootProto, name, {
+      enumerable: true,
+      get() { return chain.seed(name); },
     });
   }
-  return stack([], []);
-}
+  for (const [name, operator] of Object.entries(operators)) {
+    rootProto[name] = operator;
+  }
 
-export const Adapter = (wrapper) => ({ methods }) => {
-  const style = document.createElement('style');
-  document.head.appendChild(style);
-
-  const styleSheet = new StyleSheet(style);
-  const recalculate = styleSheet.recalculate;
-  const v = Stack(wrapper.bind(null, styleSheet), methods);
-
-  return { v, recalculate };
-}
+  return Object.create(rootProto);
+};

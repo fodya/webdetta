@@ -1,3 +1,4 @@
+// @ts-self-types="./types/methods.d.ts"
 // vendetta default methods
 // MIT License
 // (c) 2023 Fedot Kryutchenko

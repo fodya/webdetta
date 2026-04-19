@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.262",
+  "version": "0.1.263",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",
@@ -17,7 +17,6 @@
     "./logger": "./packages/logger/index.js",
     "./reactivity": "./packages/reactivity/index.js",
     "./realcss": "./packages/realcss/index.js",
-    "./realcss/realdom-adapter": "./packages/realcss/realdom-adapter.js",
     "./realdom": "./packages/realdom/index.js",
     "./router": "./packages/router/index.js",
     "./router/realdom-adapter": "./packages/router/realdom-adapter.js",
@@ -33,15 +32,15 @@
     ]
   },
   "exclude": [
-    ".GUIDELINES"
+    "dist"
   ],
   "publish": {
     "exclude": [
-      ".GUIDELINES",
       "benchmarks",
       "examples",
       "tasks",
       "_",
+      "dist",
       "packages/*/README.md",
       "packages/*/tests",
       "packages/*/docs"
@@ -54,6 +53,7 @@
     "coverage": "deno run -A tasks/coverage.js",
     "bump": "deno run -A tasks/bump-version.js",
     "push": "deno run -A tasks/push.js",
-    "generate-docs": "deno run -A tasks/generate-docs.js"
+    "generate-docs": "deno run -A tasks/generate-docs.js",
+    "build:npm": "deno run -A tasks/build-npm.js"
   }
 }
