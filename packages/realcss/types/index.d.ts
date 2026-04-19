@@ -24,10 +24,10 @@
  *
  * @example
  * ```js
- * import { createVisuals } from '@webdetta/core/realcss';
+ * import { Visuals } from '@webdetta/core/realcss';
  * import { el } from '@webdetta/core/realdom';
  *
- * const v = createVisuals({ unit: [1, 'rem'] });
+ * const v = Visuals({ unit: [1, 'rem'] });
  *
  * el.Div(v.tc('red').p(1));                            // chain
  * el.Div(v.Select('&:hover', v.Important(v.tc('red'))));
@@ -175,6 +175,6 @@ export type RootWithMethods<M extends MethodsMap> =
  * sheet, and returns the root `v`. Mount any cell via realdom; call
  * `v._.recalculate()` to rebuild all cached rules after config changes.
  */
-export function createVisuals<M extends MethodsMap = MethodsMap>(
+export function Visuals<M extends MethodsMap = MethodsMap>(
   cfg: MethodsConfig,
 ): RootWithMethods<M>;

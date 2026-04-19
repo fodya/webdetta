@@ -43,6 +43,19 @@ export function constrainedZoomValue(options: {
   aspectRatio?: number;
 }): number;
 
+/**
+ * Walks ancestors of `node` and returns the nearest element that is scrollable
+ * (overflow `auto`/`scroll`/`overlay` and content exceeds client size).
+ * Falls back to `document.scrollingElement` / `document.documentElement`.
+ */
+export function getScrollContainer(node: Node | null | undefined): Element;
+
+/**
+ * Walks ancestors of `node` and returns the nearest numeric `z-index` value.
+ * Returns `0` if none is found.
+ */
+export function getZIndex(node: Node | null | undefined): number;
+
 /** Resolves when the window `load` event fires (or immediately if already loaded). */
 export const L: Promise<Event | void>;
 /** Resolves when `DOMContentLoaded` fires (or immediately if already fired). */

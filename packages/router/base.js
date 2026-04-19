@@ -1,5 +1,3 @@
-import { routerAction } from './action.js';
-
 const splitPath = path =>
   path.replace(/\//g, ' ').trim().split(/\s+/);
 
@@ -10,7 +8,6 @@ export const parsePath = (routepath, pathname) => {
   if (pathname == undefined) return null;
   pathname = splitPath(pathname).map(decodeURIComponent);
   routepath = splitPath(routepath).map((v, i) => [v, i]);
-  // if (pathname.length != routepath.length) return null;
   const params = {};
   for (const [part, i] of routepath) {
     const pathPart = pathname[i];
@@ -41,7 +38,17 @@ export const routeHref = (routepath, params={}) => (
   ))
 ).replace(/\?$/, '');
 
-const currentRoute = (routesList, loc) => {
+export const parseRoutes = (routes) => {
+  const parsed = {};
+  for (const [key, arr] of Object.entries(routes)) {
+    if (!Array.isArray(arr) || arr.length != 2 || typeof arr[0] != 'string')
+      throw new Error('Invalid route');
+    parsed[key] = { key, path: arr[0], value: arr[1] };
+  }
+  return parsed;
+};
+
+export const currentRoute = (routesList, loc) => {
   let depth = 0;
   const res = { key: null, path: null, value: null, params: {}, location: loc };
   for (const route of routesList) {
@@ -61,49 +68,4 @@ const currentRoute = (routesList, loc) => {
     new URLSearchParams(loc.search).entries()
   ));
   return res;
-}
-
-const Router = (routes, driver) => {
-  routes = {...routes};
-  for (const [key, arr] of Object.entries(routes)) {
-    if (!Array.isArray(arr) || arr.length != 2 || typeof arr[0] != 'string')
-      throw new Error('Invalid route');
-    routes[key] = { key, path: arr[0], value: arr[1] }
-  }
-
-  const handlers = [];
-  const listen = (h) => {
-    handlers.push(h);
-    h(current());
-    return () => {
-      const i = handlers.indexOf(h);
-      if (i >= 0) handlers.splice(i, 1);
-    };
-  }
-
-  const update = () => {
-    const curr = current();
-    handlers.forEach(h => h(curr));
-  }
-  const attach = () => driver.attach(update);
-  const detach = () => driver.detach(update);
-
-  const go = v => driver.go(v);
-  const href = (key, params={}) => routeHref(routes[key].path, { ...params });
-  const navigate = (key, params={}) =>
-    driver.set({ url: href(key, params), replace: false });
-  const replace = (key, params={}) =>
-    driver.set({ url: href(key, params), replace: true });
-
-  const current = () => currentRoute(Object.values(routes), driver.get());
-  const action = (options) => routerAction(self, options);
-
-  let self; return self = {
-    attach, detach, listen,
-    routes, current, href,
-    go, navigate, replace,
-    action
-  };
-}
-
-export default Router;
+};

@@ -28,7 +28,7 @@ class StyleSheet {
   }
 }
 
-export const createVisuals = (cfg) => {
+export const Visuals = (cfg) => {
   const styleElem = document.head.appendChild(document.createElement('style'));
   const styleSheet = new StyleSheet(styleElem);
   const { methods } = Methods(cfg);

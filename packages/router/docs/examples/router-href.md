@@ -1,10 +1,13 @@
 # router.href()
 
 ```javascript
-import { PathnameRouter } from 'webdetta/router';
+import { Router } from 'webdetta/router';
 
-const router = PathnameRouter({
-  article: ['/articles/:slug', null],
+const router = Router({
+  mode: 'history',
+  routes: {
+    article: ['/articles/:slug', null],
+  },
 });
 
 console.log(router.href('article', { slug: 'intro', ref: 'docs' }));

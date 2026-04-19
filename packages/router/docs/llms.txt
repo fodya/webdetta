@@ -1,4 +1,3 @@
 - [README](./README.md)
-- [PathnameRouter()](./examples/pathname-router.md)
-- [HashRouter()](./examples/hash-router.md)
+- [Router()](./examples/create-router.md)
 - [router.href()](./examples/router-href.md)

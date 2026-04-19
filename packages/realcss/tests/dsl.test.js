@@ -5,7 +5,7 @@ import { arr, objectPick } from '../../common/utils.js';
 
 const DOM_GLOBALS = arr`window document Node HTMLElement CSSStyleDeclaration CSS`;
 
-let createVisuals;
+let Visuals;
 let Element;
 let el;
 let r;
@@ -21,7 +21,7 @@ const setupDom = async () => {
   for (const k of DOM_GLOBALS) origGlobals[k] = globalThis[k];
   Object.assign(globalThis, objectPick(window, DOM_GLOBALS));
   if (!globalThis.CSS) globalThis.CSS = { escape: (s) => String(s).replace(/[^\w-]/g, '_') };
-  ({ createVisuals } = await import('../index.js'));
+  ({ Visuals } = await import('../index.js'));
   ({ Element } = await import('../../realdom/base.js'));
   ({ el } = await import('../../realdom/index.js'));
   ({ r } = await import('../../reactivity/index.js'));
@@ -58,26 +58,26 @@ describe('realcss DSL v2', () => {
 
   describe('root (v)', () => {
     it('exposes service handle under _', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assert(typeof v._.recalculate === 'function');
       assert(v._.styleSheet);
       assert(typeof v._.mount === 'function');
     });
 
     it('is not callable — typeof v is object', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertEquals(typeof v, 'object');
       assertThrows(() => v({ color: 'red' }), TypeError);
       assertThrows(() => v(() => ({ color: 'red' })), TypeError);
     });
 
     it('does NOT expose v.Sel (breaking: use v.Select)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertEquals(v.Sel, undefined);
     });
 
     it('methods are getters returning callable chains', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc;
       assertEquals(typeof chain, 'function');
       assertEquals(chain.kind, 'chain');
@@ -86,26 +86,26 @@ describe('realcss DSL v2', () => {
     });
 
     it('exposes FromObject/Select/Query/Important/Inline/Transition/Animation', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       for (const name of ['FromObject', 'Select', 'Query', 'Important', 'Inline', 'Transition', 'Animation']) {
         assertEquals(typeof v[name], 'function', `v.${name} must be a function`);
       }
     });
 
     it('root does NOT expose Element.toNodes', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertEquals(v[Element.toNodes], undefined);
     });
   });
 
   describe('methodChain — persistence', () => {
     it('v.<method> births a FRESH chain every access', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assert(v.tc !== v.tc, 'each root getter access yields a new chain');
     });
 
     it('fork: a = v.tc; b = a.p; c = a.m — distinct instances, shared prefix', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const a = v.tc;
       const b = a.p;
       const c = a.m;
@@ -116,7 +116,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('getters do not mutate the source chain', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const a = v.tc;
       const aPending = a.pending;
       a.p;
@@ -125,14 +125,14 @@ describe('realcss DSL v2', () => {
     });
 
     it('O(1) fork: getter allocates exactly one cons for pending', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const a = v.tc;
       const b = a.p;
       assert(b.pending.tail === a.pending, 'new pending shares tail with source');
     });
 
     it('call-per-step: v.tc("red").p(1) accumulates two steps', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc('red').p(1);
       const steps = consToArray(chain.steps);
       assertEquals(steps.length, 2);
@@ -143,7 +143,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('accumulator: v.tc.p("red") flushes both names with same args', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc.p('red');
       const steps = consToArray(chain.steps);
       assertEquals(steps.length, 2);
@@ -155,7 +155,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('mixed: v.tc("red").p.m(1) — immediate then accumulator', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc('red').p.m(1);
       const steps = consToArray(chain.steps);
       assertEquals(steps.length, 3);
@@ -163,13 +163,13 @@ describe('realcss DSL v2', () => {
     });
 
     it('calling with empty pending is a no-op (returns self)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc('red');
       assert(chain('ignored') === chain);
     });
 
     it('operators and FromObject are NOT on the chain prototype', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc;
       assertEquals(chain.Select, undefined);
       assertEquals(chain.FromObject, undefined);
@@ -179,7 +179,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('tagged-template call works: v.col`c t`', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.col`c t`;
       const steps = consToArray(chain.steps);
       assertEquals(steps.length, 1);
@@ -187,7 +187,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('factory reuse: each btnBase() call yields an independent chain', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const btnBase = () => v.row`c c`.flex`1`.mnh`6`.ph`4`;
       const a = btnBase();
       const b = btnBase();
@@ -199,7 +199,7 @@ describe('realcss DSL v2', () => {
 
   describe('reactivity — end-to-end (no flag, auto-untrack)', () => {
     it('signal read via method fn arg triggers re-insertion on change', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const color = r.val('red');
       el.Div(v.tc(() => color()));
       const sheet = v._.styleSheet.style.sheet;
@@ -208,7 +208,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('signal read via FromObject(fn) triggers re-insertion on change', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const color = r.val('red');
       el.Div(v.FromObject(() => ({ color: color() })));
       const sheet = v._.styleSheet.style.sheet;
@@ -217,7 +217,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('static chain: effects auto-untrack after first run (no leaks)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(v.tc('red').p(1));
       const trigger = r.val(0);
       trigger(1);
@@ -227,42 +227,42 @@ describe('realcss DSL v2', () => {
 
   describe('FromObject validation', () => {
     it('accepts plain object', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.FromObject({ color: 'red' });
       assertEquals(cell.kind, 'object');
     });
 
     it('accepts function', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const fn = () => ({ color: 'red' });
       const cell = v.FromObject(fn);
       assertEquals(cell.obj, fn);
     });
 
     it('rejects string', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertThrows(() => v.FromObject('nope'));
     });
 
     it('rejects number', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertThrows(() => v.FromObject(42));
     });
 
     it('rejects null', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertThrows(() => v.FromObject(null));
     });
 
     it('rejects arrays (not plain objects)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assertThrows(() => v.FromObject([{ color: 'red' }]));
     });
   });
 
   describe('operators — shape', () => {
     it('Select wraps children into a mod cell', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Select('& > a', v.tc('red'));
       assertEquals(cell.kind, 'mod');
       assertEquals(cell.mod.selector, '& > a');
@@ -270,27 +270,27 @@ describe('realcss DSL v2', () => {
     });
 
     it('Query wraps children under an at-rule', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Query('@media (min-width: 40em)', v.tc('red'));
       assertEquals(cell.kind, 'mod');
       assertEquals(cell.mod.query, '@media (min-width: 40em)');
     });
 
     it('Important marks children', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Important(v.tc('red'), v.p(1));
       assertEquals(cell.mod.important, true);
       assertEquals(cell.children.length, 2);
     });
 
     it('Inline marks children', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Inline(v.tc('red'));
       assertEquals(cell.mod.inline, true);
     });
 
     it('operator O(1): Select with N child chains keeps N refs (no walk)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chains = [];
       for (let i = 0; i < 100; i++) chains.push(v.tc('c' + i));
       const cell = v.Select('&', ...chains);
@@ -303,7 +303,7 @@ describe('realcss DSL v2', () => {
 
   describe('emit — lazy O(n) materialization', () => {
     it('chain emits one task per step, in insertion order', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const out = collect(v.tc('red').p(1));
       assertEquals(out.length, 2);
       assertEquals(out[0].step.name, 'tc');
@@ -311,7 +311,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('chain emits tasks with just {step, ctx} — no reactive metadata', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const out = collect(v.bg('red').tc('blue').p(1));
       for (const task of out) {
         assertEquals(Object.keys(task).sort(), ['ctx', 'step']);
@@ -319,7 +319,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('Select composes ctx: ctx.selector applied to children', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Select('& > a', v.tc('red'), v.p(1));
       const out = collect(cell);
       assertEquals(out.length, 2);
@@ -327,14 +327,14 @@ describe('realcss DSL v2', () => {
     });
 
     it('Important composes ctx: ctx.important = true', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Important(v.tc('red'));
       const out = collect(cell);
       assertEquals(out[0].ctx.important, true);
     });
 
     it('nested: Select(":hover", Important(chain)) composes both', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Select('&:hover', v.Important(v.tc('red')));
       const out = collect(cell);
       assertEquals(out.length, 1);
@@ -343,7 +343,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('FromObject emits exactly one task', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.FromObject({ color: 'red' });
       const out = collect(cell);
       assertEquals(out.length, 1);
@@ -351,14 +351,14 @@ describe('realcss DSL v2', () => {
     });
 
     it('Transition emits children + one aggregator (synth-transition)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const out = collect(v.Transition('0.3s ease', v.tc('red'), v.p(1)));
       assertEquals(out.length, 3);
       assertEquals(out[out.length - 1].step.kind, 'synth-transition');
     });
 
     it('Animation emits a single keyframed aggregator (synth-animation)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const out = collect(v.Animation('1s linear', {
         0: v.tc('red'),
         100: v.tc('blue'),
@@ -383,7 +383,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('materialize(step, ctx) returns identity-stable StyleRule', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc('red');
       const { step, ctx } = collect(chain)[0];
       const r1 = materialize(step, ctx);
@@ -392,7 +392,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('rebuild mutates in place — StyleRule identity preserved', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc('red');
       const { step, ctx } = collect(chain)[0];
       const rule = materialize(step, ctx);
@@ -406,14 +406,14 @@ describe('realcss DSL v2', () => {
 
   describe('Element.toNodes — mountability', () => {
     it('chain is mountable', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       assert(Element.toNodes in v.tc('red'));
       const div = el.Div(v.tc('red'));
       assert(div instanceof globalThis.Node);
     });
 
     it('operator cells are mountable', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       for (const cell of [
         v.Select('& > a', v.tc('red')),
         v.Query('@media (min-width: 40em)', v.tc('red')),
@@ -430,14 +430,14 @@ describe('realcss DSL v2', () => {
 
   describe('mounting — inserts CSS rules into the stylesheet', () => {
     it('static chain: appending to a div inserts rules', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(v.tc('red').p(1));
       const sheet = v._.styleSheet.style.sheet;
       assert(sheet.cssRules.length >= 2, 'at least 2 rules inserted');
     });
 
     it('Select: inserts one rule with combined selector', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(v.Select('&:hover', v.tc('red')));
       const sheet = v._.styleSheet.style.sheet;
       let found = false;
@@ -448,7 +448,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('FromObject(plain) inserts one rule', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(v.FromObject({ pointerEvents: 'none' }));
       const sheet = v._.styleSheet.style.sheet;
       let found = false;
@@ -459,7 +459,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('Inline: writes properties to element.style instead of stylesheet', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const div = el.Div(v.Inline(v.tc('red')));
       assertEquals(div.style.getPropertyValue('color'), 'red');
     });
@@ -467,7 +467,7 @@ describe('realcss DSL v2', () => {
 
   describe('_.recalculate — identity-preserving rebuild', () => {
     it('keeps StyleRule identity, refreshes .css', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const chain = v.tc('red');
       const { step, ctx } = collect(chain)[0];
       const ruleBefore = materialize(step, ctx);
@@ -481,7 +481,7 @@ describe('realcss DSL v2', () => {
 
   describe('quiz-view real-world smoke', () => {
     it('btnBase factory chain builds', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const btnBase = () => v
         .row`c c`.flex`1`.mnh`6`.ph`4`.tt`u`.ts`14px`.tw`600`.tl`1.2`
         .tws`nw`.sel`n`.ptr().r`1.5`.tf('main');
@@ -492,17 +492,17 @@ describe('realcss DSL v2', () => {
     });
 
     it('col + template + size chain mounts', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(v.col`c t`.mnh`f`.w`f`.tc`t-main`);
     });
 
     it('grid + span + rel chain mounts', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(v.grid(5, null).gap`2`.w`f`.h`6`);
     });
 
     it('reactive bg + static rel mounts — both rules emitted', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const out = collect(v.bg(() => '#fff').rel());
       assertEquals(out.length, 2);
       assertEquals(out[0].step.name, 'bg');
@@ -510,7 +510,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('FromObject from Actions.js migrated pattern', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       el.Div(
         v.abs().il`0`,
         v.FromObject({ pointerEvents: 'none' }),
@@ -518,7 +518,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('Animation keyframes with chain cells (Root.js pattern)', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Animation('420ms ease-out forwards', {
         0: [v.op`0`],
         100: [v.op`1`],
@@ -528,7 +528,7 @@ describe('realcss DSL v2', () => {
     });
 
     it('Select with reactive field selector + nested chain + FromObject', () => {
-      const v = createVisuals(baseCfg);
+      const v = Visuals(baseCfg);
       const cell = v.Select(
         '& > input:focus',
         v.w`f`.ph`2.5`,

@@ -123,6 +123,30 @@ export const constrainedZoomValue = ({
   return 1;
 }
 
+const overflowRegex = /(auto|scroll|overlay)/;
+export const getScrollContainer = (node) => {
+  while (node && node !== document.body) {
+    if (node.nodeType === 1) {
+      const s = getComputedStyle(node);
+      if (overflowRegex.test(s.overflowY) && node.scrollHeight > node.clientHeight) return node;
+      if (overflowRegex.test(s.overflowX) && node.scrollWidth > node.clientWidth) return node;
+    }
+    node = node.parentNode;
+  }
+  return document.scrollingElement ?? document.documentElement;
+};
+
+export const getZIndex = (node) => {
+  while (node && node !== document.body) {
+    if (node.nodeType === 1) {
+      const z = +getComputedStyle(node).zIndex;
+      if (!Number.isNaN(z)) return z;
+    }
+    node = node.parentNode;
+  }
+  return 0;
+};
+
 export const L = new Promise(resolve => {
   globalThis?.window?.addEventListener('load', resolve);
 });

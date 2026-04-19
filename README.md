@@ -5,17 +5,7 @@ A collection of small, focused modules for building web applications: reactive s
 ## Example
 
 ```js
-import { r } from '@webdetta/core/reactivity';
-import { el } from '@webdetta/core/realdom';
-
-const count = r.val(0);
-
-document.body.append(
-  el.Button(
-    el.on.click(() => count(count() + 1)),
-    () => `clicked ${count()} times`
-  ),
-);
+// TODO
 ```
 
 ## Modules list

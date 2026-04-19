@@ -84,8 +84,7 @@
 # router
 
 - [README](./packages/router/docs/README.md)
-- [PathnameRouter()](./packages/router/docs/examples/pathname-router.md)
-- [HashRouter()](./packages/router/docs/examples/hash-router.md)
+- [Router()](./packages/router/docs/examples/create-router.md)
 - [router.href()](./packages/router/docs/examples/router-href.md)
 
 # rpc

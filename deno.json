@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.265",
+  "version": "0.1.266",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",
@@ -19,7 +19,6 @@
     "./realcss": "./packages/realcss/index.js",
     "./realdom": "./packages/realdom/index.js",
     "./router": "./packages/router/index.js",
-    "./router/realdom-adapter": "./packages/router/realdom-adapter.js",
     "./rpc": "./packages/rpc/index.js",
     "./templater": "./packages/templater/index.js"
   },
