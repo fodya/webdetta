@@ -20,8 +20,6 @@
 # config
 
 - [README](./packages/config/docs/README.md)
-- [webdetta/config/enable-http-modules](./packages/config/docs/examples/webdetta-config-enable-http-modules.md)
-- [webdetta/config/enable-websockets-node](./packages/config/docs/examples/webdetta-config-enable-websockets-node.md)
 - [webdetta/config/handle-uncaught-errors](./packages/config/docs/examples/webdetta-config-handle-uncaught-errors.md)
 
 # context

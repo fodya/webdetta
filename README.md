@@ -52,12 +52,6 @@ General-purpose utilities for throttling, memoization, error handling, data form
 
 ### Configuration modules
 
-[webdetta/config/enable-http-modules](./packages/config/docs/README.md)\
-Enables NodeJS http(s) imports.
-
-[webdetta/config/enable-websockets-node](./packages/config/docs/README.md)\
-Enables NodeJS websocket client support.
-
 [webdetta/config/handle-uncaught-errors](./packages/config/docs/README.md)\
 Automatically handles global uncaught errors and logs them to console.\
 Prevents a NodeJS process from exiting on an unhandled promise rejection.

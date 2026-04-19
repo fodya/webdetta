@@ -4,28 +4,6 @@ Configuration modules that modify global behavior. These modules do not export a
 
 ## Modules
 
-### `webdetta/config/enable-http-modules`
-
-Enables NodeJS http(s) imports.
-
-```javascript
-import 'webdetta/config/enable-http-modules';
-
-// Now you can import from HTTP/HTTPS URLs
-import module from 'https://example.com/module.js';
-```
-
-### `webdetta/config/enable-websockets-node`
-
-Enables NodeJS websocket client support.
-
-```javascript
-import 'webdetta/config/enable-websockets-node';
-
-// WebSocket is now available in Node.js
-const ws = new WebSocket('ws://localhost:3000');
-```
-
 ### `webdetta/config/handle-uncaught-errors`
 
 Automatically handles global uncaught errors and logs them to console. Prevents a NodeJS process from exiting on an unhandled promise rejection.
@@ -82,4 +60,3 @@ handleUncaught({
 ```
 
 </details>
-
