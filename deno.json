@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.260",
+  "version": "0.1.261",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",
@@ -25,13 +25,26 @@
     "./templater": "./packages/templater/index.js"
   },
   "compilerOptions": {
-    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable"]
+    "lib": [
+      "deno.ns",
+      "deno.unstable",
+      "dom",
+      "dom.iterable"
+    ]
   },
-  "exclude": [".GUIDELINES"],
+  "exclude": [
+    ".GUIDELINES"
+  ],
   "publish": {
     "exclude": [
-      ".GUIDELINES", "benchmarks", "examples", "tools", "_",
-      "packages/*/README.md", "packages/*/tests", "packages/*/docs"
+      ".GUIDELINES",
+      "benchmarks",
+      "examples",
+      "tools",
+      "_",
+      "packages/*/README.md",
+      "packages/*/tests",
+      "packages/*/docs"
     ]
   },
   "tasks": {
