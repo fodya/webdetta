@@ -75,6 +75,10 @@ const Router = (routes, driver) => {
   const listen = (h) => {
     handlers.push(h);
     h(current());
+    return () => {
+      const i = handlers.indexOf(h);
+      if (i >= 0) handlers.splice(i, 1);
+    };
   }
 
   const update = () => {

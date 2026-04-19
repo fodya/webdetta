@@ -1,3 +1,5 @@
+import { DCL } from "../common/dom.js";
+
 const pref = '_ra-';
 const rand = () => Math.random().toString(16).slice(2, 10);
 const keys = new Set();
@@ -20,7 +22,7 @@ export const routerAction = (router, {
   onEnd
 }={}) => {
   keys.add(key);
-  const isActive = () => !!router.current().params[key];
+  const isActive = () => key in router.current().params;
 
   const begin = () => {
     if (isActive()) return;
@@ -29,12 +31,14 @@ export const routerAction = (router, {
   }
   const end = () => {
     if (!isActive()) return;
-    router.go(-1);
+    const { key: route, params } = router.current();
+    const { [key]: _drop, ...rest } = params;
+    router.replace(route, rest);
   }
 
   let prevRoute;
   let prevActive;
-  router.listen(({ key: route }) => {
+  const unsubscribe = router.listen(({ key: route }) => {
     const active = isActive();
     if (prevRoute && prevRoute != route && endOnRouteChange) {
       end();
@@ -46,9 +50,13 @@ export const routerAction = (router, {
     prevRoute = route;
   });
 
-  window.addEventListener('load', () => setTimeout(() => {
+  DCL.then(() => setTimeout(() => {
     removeUnusedKeys(router, router.current());
   }));
 
-  return { begin, end };
+  const destroy = () => {
+    unsubscribe();
+  };
+
+  return { begin, end, destroy };
 }

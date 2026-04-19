@@ -38,12 +38,13 @@ export interface RouterActionOptions {
 export interface RouterAction {
   begin(): void;
   end(): void;
+  destroy(): void;
 }
 
 export interface Router<V = unknown> {
   attach(): void;
   detach(): void;
-  listen(handler: (route: RouteMatch<V>) => void): void;
+  listen(handler: (route: RouteMatch<V>) => void): () => void;
   routes: Record<string, { key: string; path: string; value: V }>;
   current(): RouteMatch<V>;
   href(key: string, params?: RouteParams): string;
