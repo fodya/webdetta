@@ -20,4 +20,4 @@ if (modules.length === 0) {
   targets = modules.map((m) => `packages/${m}`);
 }
 
-await $`deno test --parallel --no-check --coverage=.coverage ${targets}`.quiet();
+await $`deno test -A --parallel --no-check --coverage=.coverage ${targets}`.quiet();

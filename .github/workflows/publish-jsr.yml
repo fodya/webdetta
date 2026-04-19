@@ -33,7 +33,7 @@ jobs:
         run: |
           deno task check:types
           deno check packages/
-          deno test packages/ --parallel --no-check
+          deno test -A packages/ --parallel --no-check
 
       - name: Publish to JSR
         run: deno publish
