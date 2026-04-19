@@ -1,5 +1,23 @@
 ## Webdetta — web application building blocks
 
+A collection of small, focused modules for building web applications: reactive state, DOM manipulation, routing, RPC, CSS-in-JS, templating, i18n, builders, contexts and utilities.
+
+## Example
+
+```js
+import { r } from '@webdetta/core/reactivity';
+import { el } from '@webdetta/core/realdom';
+
+const count = r.val(0);
+
+document.body.append(
+  el.Button(
+    el.on.click(() => count(count() + 1)),
+    () => `clicked ${count()} times`
+  ),
+);
+```
+
 ## Modules list
 
 ### Core modules
@@ -7,7 +25,7 @@
 [webdetta/builder](./packages/builder/docs/README.md)\
 Implements expressive, chainable DSL syntax using [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern).
 
-[webdetta/context](./packages/context/docs/README.md) \
+[webdetta/context](./packages/context/docs/README.md)\
 A flexible way of handling scoped variables. Supports sync, async and reactive contexts.
 
 [webdetta/convert](./packages/convert/docs/README.md)\

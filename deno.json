@@ -27,8 +27,12 @@
   "compilerOptions": {
     "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable"]
   },
+  "exclude": [".GUIDELINES"],
   "publish": {
-    "exclude": ["packages/*/README.md", "packages/*/tests", "packages/*/docs", "benchmarks", "examples", "tools", "_"]
+    "exclude": [
+      ".GUIDELINES", "benchmarks", "examples", "tools", "_",
+      "packages/*/README.md", "packages/*/tests", "packages/*/docs"
+    ]
   },
   "tasks": {
     "test": "bash tools/test.sh",
