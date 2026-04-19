@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.261",
+  "version": "0.1.262",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",
@@ -40,7 +40,7 @@
       ".GUIDELINES",
       "benchmarks",
       "examples",
-      "tools",
+      "tasks",
       "_",
       "packages/*/README.md",
       "packages/*/tests",
@@ -48,12 +48,12 @@
     ]
   },
   "tasks": {
-    "test": "deno run -A tools/test.js",
-    "check": "deno run -A tools/check.js",
-    "check:types": "deno run -A tools/check-types.js",
-    "coverage": "deno run -A tools/coverage.js",
-    "bump": "deno run -A tools/bump-version.js",
-    "push": "deno run -A tools/push.js",
-    "generate-docs": "deno run -A tools/generate-docs.js"
+    "test": "deno run -A tasks/test.js",
+    "check": "deno run -A tasks/check.js",
+    "check:types": "deno run -A tasks/check-types.js",
+    "coverage": "deno run -A tasks/coverage.js",
+    "bump": "deno run -A tasks/bump-version.js",
+    "push": "deno run -A tasks/push.js",
+    "generate-docs": "deno run -A tasks/generate-docs.js"
   }
 }

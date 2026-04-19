@@ -25,7 +25,7 @@ const deno = new Deno.Command('deno', {
 }).spawn();
 
 const reporter = new Deno.Command('deno', {
-  args: ['run', '-A', 'tools/test-reporter.js'],
+  args: ['run', '-A', 'tasks/test-reporter.js'],
   stdin: 'piped',
   stdout: 'inherit',
   stderr: 'inherit',

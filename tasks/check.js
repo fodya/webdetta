@@ -4,6 +4,6 @@ import 'npm:zx/globals';
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 cd(root);
 
-await $`deno run -A tools/check-types.js`;
+await $`deno run -A tasks/check-types.js`;
 await $`deno check packages/`;
-await $`deno run -A tools/test.js`;
+await $`deno run -A tasks/test.js`;
