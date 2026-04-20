@@ -1,5 +1,5 @@
 // @ts-self-types="./types/index.d.ts"
-import { Element } from './base.js';
+import { Element, Lazy } from './base.js';
 import { kebab } from '../common/dom.js';
 import { unwrapFn } from '../common/utils.js';
 import { Context } from '../context/sync.js';
@@ -26,6 +26,7 @@ api.if = (cond, ...args) => createIf().elif(cond, args);
 api.list = createList;
 api.slot = createSlot;
 api.dynamic = createDynamic;
+api.lazy = (fn) => new Lazy(fn);
 
 api.attr = Operator((node, names, args) => {
   const value = toString(...args);
@@ -103,4 +104,4 @@ api.NS_SVG = namespace('http://www.w3.org/2000/svg');
 api.NS_MATH = namespace('http://www.w3.org/1998/Math/MathML');
 
 export const el = namespace(null);
-export { Context };
+export { Context, Lazy };

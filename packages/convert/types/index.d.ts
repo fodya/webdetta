@@ -4,10 +4,11 @@
  *
  * @example
  * ```js
- * import { textToBase64, base64ToText } from '@webdetta/core/convert';
+ * import { textToBase64, base64ToText, bytesToBase64, base64ToBytes } from '@webdetta/core/convert';
  *
  * textToBase64('hi'); // 'aGk='
  * base64ToText('aGk='); // 'hi'
+ * bytesToBase64(new Uint8Array([1, 2, 3])); // 'AQID'
  * ```
  *
  * @module
@@ -17,6 +18,11 @@
 export function textToBase64(text: string): string;
 /** Decodes a base64 string back to a UTF-8 string. */
 export function base64ToText(base64: string): string;
+
+/** Encodes arbitrary bytes to a standard base64 string (chunked for large buffers). */
+export function bytesToBase64(bytes: Uint8Array | ArrayBuffer | ArrayLike<number>): string;
+/** Decodes a base64 string to raw bytes. */
+export function base64ToBytes(base64: string): Uint8Array;
 
 /** Parsed representation of a `data:` URI. */
 export type DatauriJson = { mimeType: string; content: string };

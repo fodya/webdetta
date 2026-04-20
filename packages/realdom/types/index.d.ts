@@ -16,7 +16,7 @@
  *
  * @module
  */
-import type { Operator, ElementItem } from './base.d.ts';
+import type { Operator, ElementItem, Lazy } from './base.d.ts';
 import type {
   IfNode,
   createList,
@@ -26,6 +26,7 @@ import type {
 
 export { Context } from '../../context/types/sync.d.ts';
 export type { Operator, OperatorFunc, ElementItem, Stringifiable, HookName } from './base.d.ts';
+export { Lazy } from './base.d.ts';
 export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic.d.ts';
 
 /** Function that creates a DOM element for a specific tag name. */
@@ -49,6 +50,8 @@ export interface ElNamespaceBase {
   readonly slot: typeof createSlot;
   /** Creates a reactive dynamic subtree node. */
   readonly dynamic: typeof createDynamic;
+  /** Deferred child: evaluated when processed by the tree builder. */
+  readonly lazy: (fn: () => ElementItem) => Lazy;
   /** Operator for setting attributes. */
   readonly attr: Operator;
   /** Operator for registering lifecycle hooks. */

@@ -1,7 +1,7 @@
 import { isIterable, isObject, callFn } from '../common/utils.js';
 import { once } from '../execution/index.js';
 import { r } from '../reactivity/index.js';
-import { Element, Operator, processItem } from './base.js';
+import { Element, Lazy, Operator, processItem } from './base.js';
 
 const listItemKey = (d, i) => {
   if (typeof d == 'number' || typeof d == 'string') return d;
@@ -107,6 +107,8 @@ export const createSlot = (content) => {
   return root;
 }
 
+const toLazy = (arg) => (typeof arg === 'function' ? new Lazy(arg) : arg);
+
 export const createIf = () => {
   const conditions = [];
   const node = createSlot(() =>
@@ -114,11 +116,11 @@ export const createIf = () => {
   );
 
   node.elif = (cond, ...args) => {
-    conditions.push({ cond, value: args });
+    conditions.push({ cond, value: args.map(toLazy) });
     return node;
   }
   node.else = (...args) => {
-    conditions.push({ cond: true, value: args });
+    conditions.push({ cond: true, value: args.map(toLazy) });
     delete node.elif;
     delete node.else;
     return node;

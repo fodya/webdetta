@@ -1,6 +1,15 @@
 import { Builder } from '../builder/index.js';
-import { unwrapFn, templateCallToArray } from '../common/utils.js';
+import { unwrapFn, templateCallToArray, callFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
+
+export class Lazy {
+  constructor(fn) {
+    this.fn = fn;
+  }
+  static isLazy(item) {
+    return item instanceof Lazy;
+  }
+}
 
 export const toString = (...args) => {
   let str = '';
@@ -19,6 +28,8 @@ export const processItem = (item, processOperator, processNode, flattenFragments
     for (const d of item) processItem(d, processOperator, processNode, flattenFragments);
   } else if (isFunc && Operator.isOperator(item)) {
     processOperator(item);
+  } else if (isObj && Lazy.isLazy(item)) {
+    processItem(callFn(item.fn), processOperator, processNode, flattenFragments);
   } else if ((isObj || isFunc) && Element.toNodes in item) {
     processItem(item[Element.toNodes](), processOperator, processNode, flattenFragments);
   } else {
@@ -30,7 +41,6 @@ export const processItem = (item, processOperator, processNode, flattenFragments
     }
   }
 }
-
 
 export const Element = (ns, tag, ...args) => {
   const node = (

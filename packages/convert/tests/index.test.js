@@ -2,6 +2,7 @@ import { describe, it } from 'jsr:@std/testing/bdd';
 import { assert, assertEquals, assertExists } from 'jsr:@std/assert';
 import {
   textToBase64, base64ToText,
+  bytesToBase64, base64ToBytes,
   datauriToJson, jsonToDatauri,
   formdataToJson, jsonToFormdata,
   chunksToFile, fileToChunks,
@@ -9,12 +10,6 @@ import {
   fileToJson, jsonToFile,
   fileToBytes, bytesToFile,
 } from '../index.js';
-
-const bytesToBase64 = (bytes) => {
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-};
 
 const FILE_KEYS = ['mimeType', 'size', 'content', 'name', 'lastModified'];
 
@@ -63,6 +58,23 @@ describe('base64ToText', () => {
   it('decodes unicode content back to the original string', () => {
     const text = 'привет 你好';
     assertEquals(base64ToText(textToBase64(text)), text);
+  });
+});
+
+describe('bytesToBase64 / base64ToBytes', () => {
+  it('round-trips arbitrary bytes', () => {
+    const bytes = new Uint8Array([0, 1, 255, 128, 64]);
+    assertEquals(base64ToBytes(bytesToBase64(bytes)), bytes);
+  });
+
+  it('round-trips empty buffer', () => {
+    const bytes = new Uint8Array(0);
+    assertEquals(base64ToBytes(bytesToBase64(bytes)), bytes);
+  });
+
+  it('accepts ArrayBuffer for bytesToBase64', () => {
+    const buf = new Uint8Array([7, 8, 9]).buffer;
+    assertEquals([...base64ToBytes(bytesToBase64(buf))], [7, 8, 9]);
   });
 });
 

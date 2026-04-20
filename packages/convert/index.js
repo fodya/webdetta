@@ -1,4 +1,5 @@
 // @ts-self-types="./types/index.d.ts"
+
 // text <-> base64
 export const textToBase64 = text => {
   const bytes = new TextEncoder().encode(text);
@@ -10,6 +11,24 @@ export const base64ToText = base64 => {
   const bytes = Uint8Array.from(str, m => m.codePointAt(0));
   return new TextDecoder().decode(bytes);
 }
+
+// bytes <-> base64
+export const bytesToBase64 = (bytes) => {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < u8.length; i += chunk) {
+    binary += String.fromCharCode(...u8.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+};
+
+export const base64ToBytes = (base64) => {
+  const binary = atob(base64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+};
 
 // datauri <-> json
 export const datauriToJson = (datauri) => {
@@ -73,21 +92,14 @@ export const chunksToFile = async (chunks, name = 'unnamed', options = {}) => {
 // datauri <-> file
 export const datauriToFile = async (datauri, filename = 'unnamed', options = {}) => {
   const { mimeType, content } = datauriToJson(datauri);
-  const binary = atob(content);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const bytes = base64ToBytes(content);
   return new File([bytes], filename, { type: mimeType, ...options });
 }
 
 export const fileToDatauri = async (file) => {
   const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
   const mimeType = file.type || 'application/octet-stream';
-  return jsonToDatauri({ mimeType, content: btoa(binary) });
+  return jsonToDatauri({ mimeType, content: bytesToBase64(bytes) });
 }
 
 // file <-> json
@@ -107,14 +119,8 @@ export const fileToJson = async (file) => {
 
   const bytes = new Uint8Array(await file.arrayBuffer());
 
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-
   result.mimeType = file.type;
-  result.content = btoa(binary);
+  result.content = bytesToBase64(bytes);
   result.size = bytes.length;
   return result;
 };

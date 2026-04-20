@@ -31,6 +31,13 @@ export type OperatorFunc = (
 /** Lifecycle hook names registerable via {@link ElementFn.registerHook}. */
 export type HookName = 'beforeAppend' | 'afterAppend' | 'beforeRemove' | 'afterRemove';
 
+/** Deferred subtree: `fn` runs when processed by {@link processItem}. */
+export class Lazy {
+  constructor(fn: () => ElementItem);
+  fn: () => ElementItem;
+  static isLazy(item: unknown): item is Lazy;
+}
+
 /** Any value accepted as a child/operator/attribute item in element builders. */
 export type ElementItem =
   | Node
@@ -40,6 +47,7 @@ export type ElementItem =
   | null
   | undefined
   | Operator
+  | Lazy
   | (() => Stringifiable)
   | ElementItem[];
 
