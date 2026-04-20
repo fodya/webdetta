@@ -9,6 +9,13 @@ export const kebab = cached(s =>
   s.replaceAll(regexAZ, c => '-' + c.toLowerCase())
 );
 
+export const setThemeColor = (color) => {
+  const c = String(color ?? '').trim();
+  if (!c) return;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', c);
+};
+
 export const copyText = async text => {
   try {
     await navigator.clipboard.writeText(text);

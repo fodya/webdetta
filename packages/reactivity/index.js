@@ -88,21 +88,27 @@ r.resource = (source, func, { initial } = {}) => {
   const error = r.val(null);
   const loading = r.dval(false);
 
+  /** Set after `r.effect` returns — avoids TDZ if Task reads `effect` synchronously. */
+  const effectRef = { current: undefined };
   const effect = r.effect(() => {
     const sourceValue = source();
     r.untrack(() => {
       const task = Task(() => func(sourceValue), {
-        effect,
-        onLoading: val => { loading(val); effect.handleLoading(val); },
+        effect: effectRef.current,
+        onLoading: val => {
+          loading(val);
+          effectRef.current?.handleLoading(val);
+        },
         onError: err => {
           loading(false); value(null); error(err);
-          effect.handleError(err);
+          effectRef.current?.handleError(err);
         },
         onValue: val => { loading(false); value(val); error(null); },
       });
       return task.destroy;
     });
   }, { writes: false });
+  effectRef.current = effect;
 
   return Object.assign(value, { error, loading });
 }

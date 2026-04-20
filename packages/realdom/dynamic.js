@@ -16,7 +16,7 @@ const listItemsToEntries = (items, keyFn) => new Map(
 );
 
 const lastNodes = new WeakMap();
-const createContainer = (content) => {
+const createContainer = (content, { track=true }) => {
   let startNode;
 
   const nodes = [], operators = [];
@@ -32,11 +32,11 @@ const createContainer = (content) => {
       nodes.length = 0;
       operators.length = 0;
     }
-  }, { writes: false, attach: false, track: true, run: false });
+  }, { writes: false, attach: false, track: track, run: false });
   
   const operatorsEffect = r.effect(() => {
     for (const o of operators) Operator.apply(startNode.parentNode, o);
-  }, { writes: false, attach: false, track: true, run: false });
+  }, { writes: false, attach: false, track: track, run: false });
 
   const initContent = once(contentEffect.run.bind(contentEffect));
   const appendAfter = (newStartNode) => {
@@ -79,9 +79,9 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
     let last = root, i = 0;
     for (const [k, v] of entries) {
       let container = containers.get(k);
-      if (!container) containers.set(k, container = createContainer(
-        () => renderItem(v, i, items, k)
-      ));
+      if (!container) containers.set(k,
+        container = createContainer(() => renderItem(v, i, items, k), { track: false })
+      );
       last = container.appendAfter(last);
       i++;
     }
@@ -99,7 +99,7 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
 
 export const createSlot = (content) => {
   const root = document.createTextNode('');
-  const container = createContainer(content);
+  const container = createContainer(content, { track: true });
   Element.registerHook(root, 'afterAppend', () => {
     lastNodes.set(root, container.appendAfter(root));
   });
