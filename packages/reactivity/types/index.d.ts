@@ -16,7 +16,7 @@
  * @module
  */
 export * from './base.d.ts';
-export * from './resolve.d.ts';
+export * from './task.d.ts';
 
 import type { Effect, EffectHandler } from './base.d.ts';
 
@@ -42,6 +42,14 @@ export type ResourceOptions<T> = { initial?: T };
 export type Resource<T> = Accessor<T | undefined> & {
   error: Accessor<unknown>;
   loading: Accessor<boolean>;
+};
+
+/** Imperative async task with reactive status tracking. */
+export type Action<A extends unknown[], R> = {
+  run: (...args: A) => Promise<R>;
+  lastResult: Accessor<R | undefined>;
+  loading: Accessor<boolean>;
+  error: Accessor<unknown>;
 };
 
 /** Options for `r.store()` and `r.proxy()`. */
@@ -70,9 +78,13 @@ export const r: {
   /** Creates a {@link Resource} driven by an async/iterable producer. */
   readonly resource: <T, S>(
     source: () => S,
-    func: (this: unknown, sourceValue: S) => T | AsyncIterable<T>,
-    options: ResourceOptions<T>
+    func: (this: unknown, sourceValue: S) => T | Promise<T> | AsyncIterable<T>,
+    options?: ResourceOptions<T>
   ) => Resource<T>;
+  /** Creates an imperative {@link Action} with reactive status tracking. */
+  readonly action: <A extends unknown[], R>(
+    func: (...args: A) => R | Promise<R>
+  ) => Action<A, R>;
   /** Wraps an object in a reactive store with deep tracking. */
   readonly store: <T extends object>(target: T | (() => T), options?: StoreOptions) => ReactiveStore<T>;
   /** Like {@link r.store}, but exposes each property as an accessor. */

@@ -1,7 +1,7 @@
 // @ts-self-types="./types/index.d.ts"
 import { isPlainFunction, isAsyncFunction, isAsyncGeneratorFunction } from '../common/utils.js';
 import { Signal, Effect, currentEffect } from './base.js';
-import { resolveResource } from './resolve.js';
+import { Task } from './task.js';
 
 const assertFunction = (errorPrefix, func) => {
   if (typeof func == 'function') return;
@@ -80,7 +80,7 @@ r.computed = (func, { initial }={}) => {
   return signal.accessor;
 }
 
-r.resource = (source, func, { initial }) => {
+r.resource = (source, func, { initial } = {}) => {
   assertSyncFunction('r.resource `source`', source);
   assertFunction('r.resource `func`', func);
 
@@ -88,29 +88,50 @@ r.resource = (source, func, { initial }) => {
   const error = r.val(null);
   const loading = r.dval(false);
 
-  const resourceHandlers = {
-    onLoading: val => {
-      loading(val);
-      effect.handleLoading(val);
-    },
-    onError: err => {
-      loading(false); value(null); error(err);
-      effect.handleError(err);
-    },
-    onValue: val => {
-      loading(false); value(val); error(null);
-    }
-  }
-
   const effect = r.effect(() => {
-    const boundFunc = func.bind(this, source());
-    r.effect(() => {
-      const res = resolveResource(effect, boundFunc, resourceHandlers);
-      return res.destroy
-    }, { track: false });
-  }, { track: true, writes: false });
+    const sourceValue = source();
+    r.untrack(() => {
+      const task = Task(() => func(sourceValue), {
+        effect,
+        onLoading: val => { loading(val); effect.handleLoading(val); },
+        onError: err => {
+          loading(false); value(null); error(err);
+          effect.handleError(err);
+        },
+        onValue: val => { loading(false); value(val); error(null); },
+      });
+      return task.destroy;
+    });
+  }, { writes: false });
 
   return Object.assign(value, { error, loading });
+}
+
+r.action = (func) => {
+  assertFunction('r.action `func`', func);
+
+  const lastResult = r.val();
+  const error = r.val(null);
+  const loading = r.dval(false);
+  
+  let destroy = null;
+  const run = (...args) => new Promise((resolve, reject) => {
+    destroy?.();
+    let task;
+    r.untrack(() => {
+      task = Task(func.bind(null, ...args), {
+        onLoading: val => loading(val),
+        onError: err => { loading(false); error(err); reject(err); },
+        onValue: val => { loading(false); lastResult(val); error(null); resolve(val); },
+      });
+    }, { attach: false });
+    destroy = () => {
+      task.destroy();
+      reject(new Error('ACTION_CANCELLED'));
+    };
+  });
+
+  return { run, lastResult, loading, error };
 }
 
 // Stores
