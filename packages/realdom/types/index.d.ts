@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 /**
  * Lightweight DOM manipulation library. Exposes {@link el} — a proxy that
  * produces DOM elements via any tag name, with operators for attributes,
@@ -20,6 +22,7 @@ import type { Operator, ElementItem, Lazy } from './base.d.ts';
 import type {
   IfNode,
   createList,
+  createPick,
   createSlot,
   createDynamic,
 } from './dynamic.d.ts';
@@ -32,8 +35,18 @@ export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic
 /** Function that creates a DOM element for a specific tag name. */
 export type TagFn = (...args: ElementItem[]) => Node;
 
-/** Core members of the {@link el} namespace. */
-export interface ElNamespaceBase {
+/** Single uppercase ASCII letter (PascalCase prefix for {@link el} tag keys). */
+export type UppercaseLetter =
+  | "A" | "B" | "C" | "D" | "E" | "F" | "G"
+  | "H" | "I" | "J" | "K" | "L" | "M" | "N"
+  | "O" | "P" | "Q" | "R" | "S" | "T" | "U"
+  | "V" | "W" | "X" | "Y" | "Z";
+
+/** Tag proxy key: starts with A–Z, then any suffix (e.g. `Div`, `CustomTag`). */
+export type TagName = Capitalize<keyof HTMLElementTagNameMap>;
+
+/** The `el` namespace: core members plus PascalCase tag keys → {@link TagFn}. */
+export type ElNamespace = {
   /** Operator that captures a reference to a created node. */
   readonly ref: Operator;
   /** Parses an HTML/XML string into an array of elements. */
@@ -46,6 +59,11 @@ export interface ElNamespaceBase {
   if(cond: unknown | (() => unknown), ...args: ElementItem[]): IfNode;
   /** Creates a reactive keyed list node. */
   readonly list: typeof createList;
+  /**
+   * Keyed list: mounts {@link ListRenderFn} output only where row key `===`
+   * `callFn(selectedKey)`. See {@link createPick}.
+   */
+  readonly pick: typeof createPick;
   /** Creates a reactive slot node. */
   readonly slot: typeof createSlot;
   /** Creates a reactive dynamic subtree node. */
@@ -68,10 +86,9 @@ export interface ElNamespaceBase {
   readonly NS_SVG: ElNamespace;
   /** Sub-namespace bound to the MathML namespace. */
   readonly NS_MATH: ElNamespace;
-}
-
-/** The `el` namespace: core members plus arbitrary tag names resolving to tag factories. */
-export type ElNamespace = ElNamespaceBase & Record<string, any>;
+} & {
+  [K in TagName]: TagFn;
+};
 
 /** The shared {@link ElNamespace} instance. */
 export const el: ElNamespace;

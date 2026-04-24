@@ -17,10 +17,10 @@ document.body.append(router.node);
 router.navigate('user', { id: '42' });
 ```
 
-`Router({ routes, mode, prefix?, scrollContainer? })` returns:
+`Router({ routes, mode, prefix? })` returns:
 
 - `node` — anchor `Text` node; pages attach as siblings after it.
-- `current()`, `listen(h)` — read/observe the current match.
+- `current()`, `onChange(h)` — read/observe the current match.
 - `navigate`, `replace`, `go`, `href`, `detach` — navigation primitives.
 - `action(opts)` — scoped actions tied to a route match.
 
@@ -33,6 +33,6 @@ during page renders. Descendants can read it via `Router.Ctx()`.
 When the active route changes, the previous page is removed from the DOM and
 the next one is inserted via `node.after(nextDom)`. Pages are rendered once
 and cached, so their internal state survives navigation. Scroll position is
-saved per route and restored on return. If `scrollContainer` is omitted, the
-nearest scrollable ancestor of `node` is discovered lazily per swap via
-`getScrollContainer` from `webdetta/common/dom`.
+saved per route and restored on return. The nearest scrollable ancestor of
+`node` is discovered lazily per swap via `getScrollContainer` from
+`webdetta/common/dom`.

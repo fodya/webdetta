@@ -1,6 +1,7 @@
 import { Builder } from '../builder/index.js';
 import { unwrapFn, templateCallToArray, callFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
+import { createText } from "./dynamic.js";
 
 export class Lazy {
   constructor(fn) {
@@ -23,7 +24,7 @@ export const processItem = (item, processOperator, processNode, flattenFragments
   const isObj = typeof item == 'object';
   const isFunc = typeof item == 'function';
   if (item === false || item === undefined || item === null) {
-
+    //
   } else if (isObj && Array.isArray(item)) {
     for (const d of item) processItem(d, processOperator, processNode, flattenFragments);
   } else if (isFunc && Operator.isOperator(item)) {
@@ -33,11 +34,11 @@ export const processItem = (item, processOperator, processNode, flattenFragments
   } else if ((isObj || isFunc) && Element.toNodes in item) {
     processItem(item[Element.toNodes](), processOperator, processNode, flattenFragments);
   } else {
-    const node = Element.from(item);
-    if (flattenFragments && isFragment(node)) {
-      for (const child of node.childNodes) processNode(child);
+    const itemNode = Element.from(item);
+    if (flattenFragments && isFragment(itemNode)) {
+      for (const child of itemNode.childNodes) processNode(child);
     } else {
-      processNode(node);
+      processNode(itemNode);
     }
   }
 }
@@ -51,16 +52,10 @@ export const Element = (ns, tag, ...args) => {
   );
   return Element.append(node, templateCallToArray(args));
 }
-
 Element.toNodes = Symbol('Element.toNodes');
 Element.from = arg => {
   if (arg instanceof Node) return arg;
-  if (typeof arg == 'function') {
-    const text = document.createTextNode('');
-    r.effect(() => { text.textContent = toString(arg); });
-    return text;
-  }
-  return document.createTextNode(arg);
+  return createText(arg);
 }
 
 const hooks = {
@@ -68,7 +63,7 @@ const hooks = {
   afterAppend: new WeakMap(),
   beforeRemove: new WeakMap(),
   afterRemove: new WeakMap(),
-}
+};
 Element.registerHook = (node, hook, handler) => {
   const map = hooks[hook];
   const prev = map.get(node);
@@ -76,8 +71,8 @@ Element.registerHook = (node, hook, handler) => {
 }
 
 const performAppend = (node, method, item) => {
-  const itemNode = Element.from(item);
   const { beforeAppend, afterAppend } = hooks;
+  const itemNode = Element.from(item);
   beforeAppend.get(itemNode)?.();
   node[method](itemNode);
   afterAppend.get(itemNode)?.();

@@ -18,19 +18,28 @@
 export * from './base.d.ts';
 export * from './task.d.ts';
 
-import type { Effect, EffectHandler } from './base.d.ts';
+import type { Effect, EffectHandler, Writes } from './base.d.ts';
 
 /** Callable reactive value: read with no args, write with one argument. */
 export type Accessor<T> = {
   (): T;
   (value: T): T;
+  /** Callback runs untracked; subscribe to deps outside `update` if needed. */
+  update(fn: (prev: T) => T): T;
+  trigger(): void;
+};
+
+/** {@link r.computed} accessor: same as {@link Accessor} plus imperative re-run of the derivation. */
+export type ComputedAccessor<T> = Accessor<T> & {
+  /** Re-runs backing effect and refreshes cached value (in addition to dependency-driven updates). */
+  recompute(): void;
 };
 
 /** Options for `r.effect()` and related helpers. */
 export type ReactiveEffectOptions = {
   track?: boolean;
   attach?: boolean;
-  writes?: boolean;
+  writes?: Writes;
   run?: boolean;
   onError?: (err: unknown) => void;
 };
@@ -38,10 +47,12 @@ export type ReactiveEffectOptions = {
 /** Options for `r.resource()`. */
 export type ResourceOptions<T> = { initial?: T };
 
-/** Async-value accessor with `loading` and `error` sub-accessors. */
+/** Async-value accessor with `loading`, `error`, and imperative refresh. */
 export type Resource<T> = Accessor<T | undefined> & {
   error: Accessor<unknown>;
   loading: Accessor<boolean>;
+  /** Re-runs source effect and producer (same as dependency-driven refresh). */
+  recompute(): void;
 };
 
 /** Imperative async task with reactive status tracking. */
@@ -74,7 +85,7 @@ export const r: {
   /** Registers an effect that does not track reads (runs only on explicit writes). */
   readonly untrack: (handler: EffectHandler, options?: Omit<ReactiveEffectOptions, 'track'>) => Effect;
   /** Creates a derived accessor whose value is recomputed when dependencies change. */
-  readonly computed: <T>(func: () => T, options?: { initial?: T }) => Accessor<T>;
+  readonly computed: <T>(func: () => T, options?: { initial?: T }) => ComputedAccessor<T>;
   /** Creates a {@link Resource} driven by an async/iterable producer. */
   readonly resource: <T, S>(
     source: () => S,

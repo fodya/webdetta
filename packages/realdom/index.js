@@ -1,11 +1,18 @@
 // @ts-self-types="./types/index.d.ts"
 import { Element, Lazy } from './base.js';
 import { kebab } from '../common/dom.js';
-import { unwrapFn } from '../common/utils.js';
+import { callFn } from '../common/utils.js';
 import { Context } from '../context/sync.js';
 import { cached } from '../execution/index.js';
 import { Operator, toString } from './base.js';
-import { createIf, createList, createSlot, createDynamic } from './dynamic.js';
+import {
+  createText,
+  createIf,
+  createList,
+  createPick,
+  createSlot,
+  createDynamic,
+} from './dynamic.js';
 
 const api = {};
 
@@ -22,9 +29,11 @@ api.parse = (...args) => {
 api.append = (node, ...args) => Element.append(node, args);
 api.remove = Element.remove;
 
-api.if = (cond, ...args) => createIf().elif(cond, args);
+api.text = createText;
+api.if = (cond, ...args) => createIf().elif(cond, ...args);
 api.list = createList;
 api.slot = createSlot;
+api.pick = createPick;
 api.dynamic = createDynamic;
 api.lazy = (fn) => new Lazy(fn);
 
@@ -67,7 +76,7 @@ api.on = Operator((node, names, args) => {
 });
 
 api.class = Operator((node, names, args) => {
-  const value = Boolean(unwrapFn(args[0]));
+  const value = Boolean(callFn(args[0]));
   if (!value) return;
   node.classList.add(...names.map(kebab));
   return () => {
@@ -86,7 +95,7 @@ api.style = Operator((node, names, args) => {
 });
 
 api.prop = Operator((node, names, args) => {
-  const value = unwrapFn(args[0]);
+  const value = callFn(args[0]);
   for (const name of names) node[name] = value;
   return () => {
     for (const name of names) delete node[name];

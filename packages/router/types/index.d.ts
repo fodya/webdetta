@@ -60,11 +60,6 @@ export interface RouterOptions<V = unknown> {
   mode: RouterMode;
   /** Optional path prefix (only used when `mode === 'history'`). */
   prefix?: string;
-  /**
-   * Explicit scroll container (element or getter). If omitted, the nearest
-   * scrollable ancestor of the router's `node` is discovered lazily per swap.
-   */
-  scrollContainer?: Element | (() => Element | null | undefined) | null;
 }
 
 /** Options for a scoped {@link RouterAction}. */
@@ -93,7 +88,42 @@ export interface Router<V = unknown> {
   /** Current route match. */
   current(): RouteMatch<V>;
   /** Subscribes to route matches; handler fires immediately with current. Returns unsubscribe. */
-  listen(handler: (route: RouteMatch<V>) => void): () => void;
+  onChange(handler: (route: RouteMatch<V>) => void): () => void;
+  /**
+   * Invokes `callback` when the active key becomes `routeKey` (first notification if it
+   * already matches, or after a transition onto it). If `routeKey` is omitted, uses
+   * {@link Router#current}().key at subscribe time. Returns unsubscribe.
+   */
+  onEnter(
+    callback: (route: RouteMatch<V>) => void | Promise<void>,
+  ): () => void;
+  onEnter(
+    routeKey: string,
+    callback: (route: RouteMatch<V>) => void | Promise<void>,
+  ): () => void;
+  /**
+   * Invokes `callback` when leaving `routeKey`. If `routeKey` is omitted, uses current
+   * key at subscribe time. Returns unsubscribe.
+   */
+  onLeave(
+    callback: (route: RouteMatch<V>) => void | Promise<void>,
+  ): () => void;
+  onLeave(
+    routeKey: string,
+    callback: (route: RouteMatch<V>) => void | Promise<void>,
+  ): () => void;
+  /**
+   * Same condition as {@link Router#onEnter} for the captured `routeKey` (first paint on
+   * that key or transition onto it). If `routeKey` is omitted, uses current key at
+   * subscribe time. Returns unsubscribe.
+   */
+  onReturn(
+    callback: (route: RouteMatch<V>) => void | Promise<void>,
+  ): () => void;
+  onReturn(
+    routeKey: string,
+    callback: (route: RouteMatch<V>) => void | Promise<void>,
+  ): () => void;
   /** Navigates history by a relative delta. */
   go(delta: number): void;
   /** Pushes a new URL for the given route key and parameters. */

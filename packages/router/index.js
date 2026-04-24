@@ -1,69 +1,84 @@
 // @ts-self-types="./types/index.d.ts"
 import { DCL, getScrollContainer } from '../common/dom.js';
-import { callFn } from '../common/utils.js';
 import { Context } from '../context/sync.js';
 import { r } from '../reactivity/index.js';
 import { Element } from '../realdom/base.js';
 import { currentRoute, parseRoutes, routeHref } from './base.js';
+import { makeDriver } from './drivers.js';
 
 export { parsePath, makePath, routeHref } from './base.js';
 
-// ─── Drivers ──────────────────────────────────────────────────────────────
+// ─── Route lifecycle ──────────────────────────────────────────────────────
 
-const locationAttach = {
-  attach: (h) => {
-    window.addEventListener(':router:', h);
-    window.addEventListener('popstate', h);
-    window.addEventListener('hashchange', h);
-  },
-  detach: (h) => {
-    window.removeEventListener(':router:', h);
-    window.removeEventListener('popstate', h);
-    window.removeEventListener('hashchange', h);
-  },
-};
+function enteredRoute(routeKey, prevKey, currentKey) {
+  return currentKey === routeKey && (prevKey === null || prevKey !== routeKey);
+}
 
-const emitRouterEvent = () =>
-  window.dispatchEvent(new CustomEvent(':router:'));
+function saveScrollPosition(scrollContainer, scrollMap, routeKey) {
+  if (!scrollContainer) return;
+  scrollMap.set(routeKey, {
+    top: scrollContainer.scrollTop,
+    left: scrollContainer.scrollLeft,
+  });
+}
 
-const hashDriver = () => ({
-  ...locationAttach,
-  go: (v) => window.history.go(v),
-  get: () => {
-    const [pathname, search] = window.location.hash.replace('#', '').split('?');
-    return { pathname, search: search ?? '' };
-  },
-  set: ({ url, replace }) => {
-    const u = Object.assign(new URL(window.location), { hash: url });
-    window.history[replace ? 'replaceState' : 'pushState']({}, null, u);
-    emitRouterEvent();
-  },
-});
+function restoreScrollPosition(scrollContainer, scrollMap, routeKey) {
+  if (!scrollContainer) return;
+  const saved = scrollMap.get(routeKey) ?? { top: 0, left: 0 };
+  scrollContainer.scrollTop = saved.top;
+  scrollContainer.scrollLeft = saved.left;
+}
 
-const historyDriver = (prefix = '') => {
-  prefix = prefix.replace(/\/$/, '');
-  return {
-    ...locationAttach,
-    go: (v) => window.history.go(v),
-    get: () => {
-      const loc = { ...window.location };
-      loc.pathname = loc.pathname.replace(prefix, '');
-      return loc;
-    },
-    set: ({ url, replace }) => {
-      url = prefix + '/' + url.replace(/^\//, '');
-      window.history[replace ? 'replaceState' : 'pushState'](null, null, url);
-      emitRouterEvent();
-    },
-  };
-};
+function createRouteHooks(onChange, currentKey) {
+  function normalizeArgs() {
+    const argv = Array.prototype.slice.call(arguments, 0);
+    let routeKey;
+    let callback;
+    if (argv.length === 1 && typeof argv[0] === 'function') {
+      callback = argv[0];
+      routeKey = currentKey();
+    } else if (argv.length === 2) {
+      routeKey = argv[0];
+      callback = argv[1];
+    }
+    if (typeof routeKey !== 'string' || typeof callback !== 'function') {
+      throw new Error('Router: invalid arguments, expected (callback) or (routeKey, callback)');
+    }
+    return { routeKey, callback };
+  }
 
-const makeDriver = (mode, { prefix } = {}) => {
-  if (mode && typeof mode === 'object') return mode;
-  if (mode === 'hash') return hashDriver();
-  if (mode === 'history') return historyDriver(prefix);
-  throw new Error(`Router: unknown mode '${mode}' (expected 'hash' | 'history' | driver object)`);
-};
+  function onEnter() {
+    const { routeKey, callback } = normalizeArgs(...arguments);
+    let prevKey = null;
+    return onChange((match) => {
+      const k = match.key;
+      if (enteredRoute(routeKey, prevKey, k)) callback(match);
+      prevKey = k;
+    });
+  }
+
+  function onLeave() {
+    const { routeKey, callback } = normalizeArgs(...arguments);
+    let prevKey = null;
+    return onChange((match) => {
+      const k = match.key;
+      if (prevKey === routeKey && k !== routeKey) callback(match);
+      prevKey = k;
+    });
+  }
+
+  function onReturn() {
+    const { routeKey, callback } = normalizeArgs(...arguments);
+    let prevKey = null;
+    return onChange((match) => {
+      const k = match.key;
+      if (enteredRoute(routeKey, prevKey, k)) callback(match);
+      prevKey = k;
+    });
+  }
+
+  return { onEnter, onLeave, onReturn };
+}
 
 // ─── Action ───────────────────────────────────────────────────────────────
 
@@ -105,7 +120,7 @@ const routerAction = (router, {
 
   let prevRoute;
   let prevActive;
-  const unsubscribe = router.listen(({ key: route }) => {
+  const unsubscribe = router.onChange(({ key: route }) => {
     const active = isActive();
     if (prevRoute && prevRoute != route && endOnRouteChange) {
       end();
@@ -128,7 +143,7 @@ const routerAction = (router, {
 
 // ─── Router ───────────────────────────────────────────────────────────────
 
-export const Router = ({ routes, mode, prefix, scrollContainer } = {}) => {
+export const Router = ({ routes, mode, prefix } = {}) => {
   if (!routes) throw new Error('Router: `routes` is required');
   const parsed = parseRoutes(routes);
   const driver = makeDriver(mode, { prefix });
@@ -142,39 +157,36 @@ export const Router = ({ routes, mode, prefix, scrollContainer } = {}) => {
   let activeKey = null;
   let activeDom = null;
 
-  const resolveScrollContainer = () => {
-    return callFn(scrollContainer) ?? getScrollContainer(node.parentNode);
-  };
+  const api = {};
 
-  const swapPage = ({ key, value: page, params }) => {
+  const setPage = (key, page, params) => {
     const paramKeys = Object.keys({ ...params, ...(paramVals[key] ?? {}) });
     for (const p of paramKeys) paramVal(key, p)(params[p]);
 
     if (key && page && !cache.has(key)) {
       const proxy = new Proxy({}, { get: (_, p) => paramVal(key, p) });
-      const dom = Router.Ctx.run(self, () => page(proxy));
+      const dom = Router.Ctx.run(api, () => page(proxy));
       cache.set(key, dom);
     }
+    
     const nextDom = key ? cache.get(key) : null;
     if (nextDom === activeDom) return;
-
     if (activeDom) {
-      const sc = resolveScrollContainer();
-      if (sc) scrollMap.set(activeKey, { top: sc.scrollTop, left: sc.scrollLeft });
+      saveScrollPosition(getScrollContainer(node.parentNode), scrollMap, activeKey);
       Element.remove(activeDom);
     }
     if (nextDom) {
       Element.appendAfter(node, nextDom);
-      const sc = resolveScrollContainer();
-      const saved = scrollMap.get(key) ?? { top: 0, left: 0 };
-      if (sc) { sc.scrollTop = saved.top; sc.scrollLeft = saved.left; }
+      restoreScrollPosition(getScrollContainer(node.parentNode), scrollMap, key);
     }
     activeKey = key;
     activeDom = nextDom;
   };
 
+  const current = () => currentRoute(Object.values(parsed), driver.get());
+
   const handlers = [];
-  const listen = (h) => {
+  const onChange = (h) => {
     handlers.push(h);
     h(current());
     return () => {
@@ -183,37 +195,37 @@ export const Router = ({ routes, mode, prefix, scrollContainer } = {}) => {
     };
   };
 
-  const current = () => currentRoute(Object.values(parsed), driver.get());
+  const currentKey = () => current().key;
+  const { onEnter, onLeave, onReturn } = createRouteHooks(
+    onChange,
+    currentKey,
+  );
 
   const update = () => {
     const match = current();
-    r.untrack(() => swapPage(match));
+    r.untrack(() => setPage(match.key, match.value, match.params));
     for (const h of handlers) h(match);
   };
 
-  const href = (key, params = {}) =>
-    routeHref(parsed[key].path, { ...params });
-  const navigate = (key, params = {}) =>
-    driver.set({ url: href(key, params), replace: false });
-  const replace = (key, params = {}) =>
-    driver.set({ url: href(key, params), replace: true });
-  const go = (v) => driver.go(v);
-  const detach = () => driver.detach(update);
-  const action = (options) => routerAction(self, options);
-
-  let self;
-  self = {
-    routes: parsed,
-    current, listen,
-    go, navigate, replace, href,
-    detach, action,
-    node,
-  };
+  api.routes = parsed;
+  api.node = node;
+  api.current = current;
+  api.onChange = onChange;
+  api.onEnter = onEnter;
+  api.onLeave = onLeave;
+  api.onReturn = onReturn;
+  api.href = (key, params = {}) => routeHref(parsed[key].path, { ...params });
+  api.navigate = (key, params = {}) => driver.set({ url: api.href(key, params), replace: false });
+  api.replace = (key, params = {}) => driver.set({ url: api.href(key, params), replace: true });
+  api.go = (v) => driver.go(v);
+  api.detach = () => driver.detach(update);
+  api.action = (options) => routerAction(api, options);
 
   driver.attach(update);
   Element.registerHook(node, 'afterAppend', update);
 
-  return self;
+  Object.freeze(api);
+  return api;
 };
 
 Router.Ctx = Context();

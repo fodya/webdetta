@@ -2,6 +2,13 @@ import { Context } from '../context/sync.js';
 
 export const currentEffect = Context();
 
+const allowedToWrite = (effect, signal) => {
+  const d = effect?.writes;
+  if (d === undefined || d === true) return true;
+  if (d === false) return false;
+  return d === signal;
+};
+
 const flush = (obj, key, cb) => {
   const queue = obj[key];
   if (!queue) return;
@@ -15,8 +22,9 @@ export class Signal {
   constructor({ get, set }) {
     this.getter = get.bind(this);
     this.setter = set.bind(this);
-    this.accessor = this.accessor.bind(this);
     this.trigger = this.trigger.bind(this);
+    this.accessor = this.accessor.bind(this);
+    Object.setPrototypeOf(this.accessor, this);
   }
 
   effects = new Set();
@@ -45,13 +53,23 @@ export class Signal {
 
   set(...args) {
     const effect = currentEffect();
-    if (effect?.readonly) throw new Error('Cannot write to signals in readonly scope');
+    if (!allowedToWrite(effect, this)) {
+      throw new Error('Cannot write to signal in this effect scope');
+    }
     return this.setter(...args);
   }
 
   accessor(...args) {
     if (args.length === 0) return this.get();
-    else return this.set(...args);
+    return this.set(...args);
+  }
+
+  update(fn) {
+    if (typeof fn !== 'function') throw new Error('Signal.update: function expected');
+    new Effect({
+      parent: null, tracking: false, writes: this,
+      handler: () => this.set(fn(this.getter())),
+    }).run();
   }
 }
 
@@ -61,19 +79,19 @@ export class Effect {
   errorHandler = null;
   loadingHandler = null;
   tracking = false;
-  readonly = false;
+  writes = undefined;
   destroyed = false;
   children = null;
   oncleanup = null;
   queued = null;
   signals = null;
-  constructor({ parent, tracking, readonly, handler, errorHandler, loadingHandler }) {
+  constructor({ parent, tracking, writes, handler, errorHandler, loadingHandler }) {
     this.parent = parent;
     this.handler = handler;
     this.errorHandler = errorHandler;
     this.loadingHandler = loadingHandler;
     this.tracking = tracking;
-    this.readonly = readonly;
+    this.writes = writes;
     if (parent) {
       this.errorHandler ??= parent.errorHandler;
       (parent.children ??= []).push(this);

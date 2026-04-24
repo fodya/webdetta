@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 /**
  * Reactive DOM control flow: conditional branches (`if/elif/else`), keyed
  * lists, slots and dynamic subtrees that react to dependency changes.
@@ -30,6 +32,29 @@ export type ListRenderFn<T> = (
 /** Creates a reactive keyed list anchored at a text node. */
 export function createList<T>(
   itemsFn: (() => ListItemsSource<T>) | ListItemsSource<T>,
+  renderItem: ListRenderFn<T>,
+  keyFn?: ListKeyFn<T>
+): Text;
+
+/**
+ * Keyed list that mounts {@link ListRenderFn} output only for the row whose key
+ * strictly equals `callFn(selectedKey)`. Other rows render an empty branch
+ * until their key matches (useful for heavy per-item editors / pick-one UIs).
+ *
+ * @example
+ * ```js
+ * const selectedId = r.val('b-1');
+ * el.pick(
+ *   selectedId,
+ *   () => blocks(),
+ *   (block) => BlockEditor({ block }),
+ *   (b) => b.id,
+ * );
+ * ```
+ */
+export function createPick<T>(
+  selectedKey: unknown | (() => unknown),
+  items: (() => ListItemsSource<T>) | ListItemsSource<T>,
   renderItem: ListRenderFn<T>,
   keyFn?: ListKeyFn<T>
 ): Text;

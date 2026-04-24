@@ -15,22 +15,43 @@ const listItemsToEntries = (items, keyFn) => new Map(
   : null
 );
 
+export const createText = arg => {
+  if (typeof arg == 'function') {
+    const node = document.createTextNode('');
+    r.effect(() => node.textContent = callFn(arg));
+    return node;
+  } else {
+    return document.createTextNode(String(arg));
+  }
+}
+
 const lastNodes = new WeakMap();
+const removeNodes = new WeakSet();
 const createContainer = (content, { track=true }) => {
   let startNode;
 
-  const nodes = [], operators = [];
+  let nodes = [], prevNodes = [], operators = [];
   const contentEffect = r.effect(() => {
     const items = callFn(content);
-    processItem(items, o => operators.push(o), c => nodes.push(c), true);
+    processItem(items,
+      o => operators.push(o),
+      c => { nodes.push(c); removeNodes.delete(c); },
+      true
+    );
+
+    for (const child of prevNodes) {
+      if (removeNodes.has(child)) Element.remove(child);
+    }
+    prevNodes = [];
+
     if (startNode) {
       operatorsEffect.run();
       appendAfter(startNode);
     }
     return () => {
-      for (const child of nodes) Element.remove(child);
-      nodes.length = 0;
-      operators.length = 0;
+      for (const child of (prevNodes = nodes)) removeNodes.add(child);
+      nodes = [];
+      operators = [];
     }
   }, { writes: false, attach: false, track: track, run: false });
   
@@ -46,27 +67,33 @@ const createContainer = (content, { track=true }) => {
     if (parentChanged) operatorsEffect.run();
     for (const node of nodes) {
       if (lastNode.nextSibling !== node) Element.appendAfter(lastNode, node);
+
+      // Use registered fragment tail when chaining inserts; otherwise the node itself.
       lastNode = lastNodes.get(node) ?? node;
     }
     return lastNode;
   };
 
   const remove = () => {
+    for (const child of nodes) Element.remove(child);
     contentEffect.cleanup();
     operatorsEffect.cleanup();
   }
   const destroy = () => {
+    for (const child of nodes) Element.remove(child);
     contentEffect.destroy();
     operatorsEffect.destroy();
   }
 
-  return { nodes, appendAfter, remove, destroy };
+  return { appendAfter, remove, destroy };
 }
 
 export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
   const root = document.createTextNode('');
   const containers = new Map();
-  Element.registerHook(root, 'afterAppend', () => effect.run());
+  Element.registerHook(root, 'afterAppend', () => {
+    effect.run();
+  });
   Element.registerHook(root, 'beforeRemove', () => {
     for (const c of containers.values()) c.remove();
     containers.clear();
@@ -80,7 +107,7 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
     for (const [k, v] of entries) {
       let container = containers.get(k);
       if (!container) containers.set(k,
-        container = createContainer(() => renderItem(v, i, items, k), { track: false })
+        container = createContainer(() => renderItem(v, i, items, k), { track: true })
       );
       last = container.appendAfter(last);
       i++;
@@ -103,7 +130,9 @@ export const createSlot = (content) => {
   Element.registerHook(root, 'afterAppend', () => {
     lastNodes.set(root, container.appendAfter(root));
   });
-  Element.registerHook(root, 'beforeRemove', () => container.remove());
+  Element.registerHook(root, 'beforeRemove', () => {
+    container.remove();
+  });
   return root;
 }
 
@@ -127,7 +156,18 @@ export const createIf = () => {
   }
 
   return node;
-}
+};
+
+export const createPick = (selectedKey, list, renderFn, keyFn) =>
+  createList(
+    list,
+    (item, index, arr, key) =>
+      createIf().elif(
+        () => key === callFn(selectedKey),
+        () => renderFn(item, index, arr, key),
+      ),
+    keyFn,
+  );
 
 export const createDynamic = (deps, func) => {
   const content = r.val();

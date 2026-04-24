@@ -1,6 +1,7 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
 import { assertEquals, assertThrows } from 'jsr:@std/assert';
 import { Signal, Effect, currentEffect } from '../base.js';
+import { r } from '../index.js';
 
 const valueSignal = (value = 0) => new Signal({
   get() { return value; },
@@ -517,6 +518,77 @@ describe('leak', () => {
     for (const signal of all) {
       assertEquals(signal.effects?.size, 0);
     }
+  });
+});
+
+describe('writes', () => {
+  it('false blocks set', () => {
+    const a = valueSignal(0);
+    const eff = new Effect({
+      handler: () => { a.set(1); },
+      tracking: false,
+      writes: false,
+    });
+    assertThrows(() => eff.run(), Error, 'effect scope');
+  });
+
+  it('true allows set', () => {
+    const a = valueSignal(0);
+    const eff = new Effect({
+      handler: () => { a.set(1); },
+      tracking: false,
+      writes: true,
+    });
+    eff.run();
+    assertEquals(a.get(), 1);
+  });
+
+  it('undefined allows set', () => {
+    const a = valueSignal(0);
+    const eff = new Effect({
+      handler: () => { a.set(1); },
+      tracking: false,
+    });
+    eff.run();
+    assertEquals(a.get(), 1);
+  });
+
+  it('single signal ref allows only that signal', () => {
+    const a = valueSignal(0);
+    const b = valueSignal(0);
+    const eff = new Effect({
+      handler: () => { a.set(1); b.set(2); },
+      tracking: false,
+      writes: a,
+    });
+    assertThrows(() => eff.run(), Error, 'effect scope');
+  });
+
+  it('single signal ref allows that signal', () => {
+    const a = valueSignal(0);
+    const eff = new Effect({
+      handler: () => { a.set(7); },
+      tracking: false,
+      writes: a,
+    });
+    eff.run();
+    assertEquals(a.get(), 7);
+  });
+
+  it('Signal.update writes to signal', () => {
+    const a = valueSignal(5);
+    a.update(x => x + 1);
+    assertEquals(a.get(), 6);
+  });
+
+  it('writes: accessor is not accepted (only Signal instance)', () => {
+    const cell = r.val(0);
+    const eff = new Effect({
+      handler: () => { cell(3); },
+      tracking: false,
+      writes: cell,
+    });
+    assertThrows(() => eff.run(), Error, 'effect scope');
   });
 });
 

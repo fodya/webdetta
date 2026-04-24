@@ -56,7 +56,7 @@ r.effect = (handler, {
     handler,
     errorHandler: onError,
     tracking: track,
-    readonly: writes === undefined ? undefined : !writes
+    writes,
   });
   if (run) effect.run();
   return effect;
@@ -68,16 +68,19 @@ r.untrack = (handler, options) => r.effect(handler, { ...options, track: false }
 
 r.computed = (func, { initial }={}) => {
   assertSyncFunction('r.computed `func`', func);
-  let value = initial;
+  let val = initial;
   const signal = new Signal({
-    get() { return value; },
-    set(v) { value = v; this.trigger(); return value; }
+    get() { return val; },
+    set(v) { val = v; this.trigger(); return val; }
   });
-  r.effect(() => {
-    value = func();
+  const effect = r.effect(() => {
+    val = func();
     signal.trigger();
   }, { track: true, writes: false });
-  return signal.accessor;
+
+  const value = signal.accessor;
+  value.recompute = effect.run.bind(effect);
+  return value;
 }
 
 r.resource = (source, func, { initial } = {}) => {
@@ -88,29 +91,30 @@ r.resource = (source, func, { initial } = {}) => {
   const error = r.val(null);
   const loading = r.dval(false);
 
-  /** Set after `r.effect` returns — avoids TDZ if Task reads `effect` synchronously. */
-  const effectRef = { current: undefined };
   const effect = r.effect(() => {
     const sourceValue = source();
     r.untrack(() => {
       const task = Task(() => func(sourceValue), {
-        effect: effectRef.current,
+        effect,
         onLoading: val => {
           loading(val);
-          effectRef.current?.handleLoading(val);
+          effect.handleLoading(val);
         },
         onError: err => {
           loading(false); value(null); error(err);
-          effectRef.current?.handleError(err);
+          effect.handleError(err);
         },
         onValue: val => { loading(false); value(val); error(null); },
       });
       return task.destroy;
     });
-  }, { writes: false });
-  effectRef.current = effect;
+  }, { writes: false, run: false });
+  effect.run();
 
-  return Object.assign(value, { error, loading });
+  value.error = error;
+  value.loading = loading;
+  value.recompute = effect.run.bind(effect);
+  return value;
 }
 
 r.action = (func) => {
@@ -192,7 +196,7 @@ export { r };
 
 /* draft
 const status = source => {
-  const effect = r.effect(source, { readonly: true });
+  const effect = r.effect(source, { writes: false });
   const value = r.computed(() => {
     eff.run();
     let loading = false;

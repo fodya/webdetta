@@ -31,19 +31,32 @@ export class Signal<T = unknown> {
   get(): T;
   /** Writes the value and triggers subscribed effects. */
   set(value: T): T;
-  /** Callable form combining {@link Signal.get} and {@link Signal.set}. */
-  accessor(): T;
-  accessor(value: T): T;
+  /**
+   * Functional update: reads previous value via untracked getter, then {@link Signal.set}.
+   * Callback and {@link Signal.set} run inside `currentEffect.run(undefined, …)` so reads in the callback
+   * do not subscribe, and `trigger` does not see the outer effect (avoids self-recursion when the caller
+   * also tracks this signal). Track dependencies outside {@link Signal.update} if the effect must re-run on them.
+   */
+  update(fn: (prev: T) => T): T;
+  /** Callable form combining {@link Signal.get} and {@link Signal.set}; inherits {@link Signal.update} and {@link Signal.trigger}. */
+  accessor: (() => T) & ((value: T) => T);
 }
 
 /** Handler run by an {@link Effect}; may return a cleanup function. */
 export type EffectHandler = () => void | (() => void);
 
+/**
+ * Write policy while effect runs: any signal (`true` / omit), none (`false`),
+ * or exactly one {@link Signal} instance (not the callable accessor).
+ */
+export type Writes = boolean | Signal;
+
 /** Options accepted by the {@link Effect} constructor. */
 export type EffectOptions = {
   parent?: Effect | null;
   tracking?: boolean;
-  readonly?: boolean;
+  /** When a {@link Signal}, must be the cell instance, not `signal.accessor`. */
+  writes?: Writes;
   handler: EffectHandler;
   errorHandler?: (err: unknown) => void;
   loadingHandler?: (effect: Effect, value: boolean) => void;
@@ -57,7 +70,7 @@ export class Effect {
   errorHandler: ((err: unknown) => void) | undefined;
   loadingHandler: ((effect: Effect, value: boolean) => void) | undefined;
   tracking: boolean;
-  readonly: boolean;
+  writes: Writes | undefined;
   destroyed: boolean;
   children: Effect[] | null;
   oncleanup: Array<() => void> | null;

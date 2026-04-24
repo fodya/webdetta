@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 /**
  * DOM-specific utility functions: text measurement, color conversion,
  * clipboard, blob download, autogrow inputs, and document-lifecycle promises.

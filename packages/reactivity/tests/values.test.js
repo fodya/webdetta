@@ -177,13 +177,13 @@ describe('computed', () => {
     assertEquals(runs, 3);
   });
 
-  it('readonly enforcement', () => {
+  it('writes: computed cannot write other signals', () => {
     const source = r.val(1);
     const target = r.val(0);
     assertThrows(
       () => r.computed(() => target(source())),
       Error,
-      'readonly',
+      'effect scope',
     );
   });
 

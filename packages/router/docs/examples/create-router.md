@@ -13,7 +13,7 @@ const router = Router({
 
 document.body.append(router.node);
 
-router.listen((route) => console.log(route.key, route.params));
+router.onChange((route) => console.log(route.key, route.params));
 router.navigate('user', { id: 42 });
 ```
 
