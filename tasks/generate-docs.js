@@ -9,31 +9,15 @@ const names = (await fs.readdir(packagesDir))
   .filter((n) => fs.statSync(path.join(packagesDir, n)).isDirectory())
   .sort();
 
-const merged = [];
+const merged = [
+  'Canonical API surface lives in TypeScript declaration files under each package.',
+  '',
+];
 
 for (const pkg of names) {
-  const llmsFile = path.join(packagesDir, pkg, 'docs', 'llms.txt');
-  if (!fs.existsSync(llmsFile)) continue;
-
-  const lines = (await fs.readFile(llmsFile, 'utf8')).split(/\r?\n/);
-  const rewritten = [];
-
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    let rl = line.replace(/\]\(([^)]+)\)/g, (_, t) => {
-      if (!t.startsWith('.')) return `](${t})`;
-      const abs = path.resolve(path.dirname(llmsFile), t);
-      const rel = path.relative(root, abs).replaceAll(path.sep, '/');
-      return `](${rel.startsWith('.') ? rel : `./${rel}`})`;
-    });
-    if (rl.startsWith('- [') && rl.includes('): ')) {
-      rl = `${rl.split('): ', 1)[0]})`;
-    }
-    rewritten.push(rl);
-  }
-
-  if (!rewritten.length) continue;
-  merged.push(`# ${pkg}`, '', ...rewritten, '');
+  const typesIndex = path.join(packagesDir, pkg, 'types', 'index.d.ts');
+  if (!fs.existsSync(typesIndex)) continue;
+  merged.push(`# ${pkg}`, '', `- [types](./packages/${pkg}/types/index.d.ts)`, '');
 }
 
-await fs.writeFile(outputFile, merged.join('\n').trim() + (merged.length ? '\n' : ''));
+await fs.writeFile(outputFile, merged.join('\n').trim() + '\n');

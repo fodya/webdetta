@@ -8,4 +8,9 @@ await $`deno run -A tasks/check.js`;
 await $`deno run -A tasks/bump-version.js`;
 
 const scriptsBin = path.resolve(root, '..', 'webdetta-scripts', 'bin', 'push-package.sh');
-await $`bash ${scriptsBin} ${root} ${process.argv.slice(2)}`;
+// zx defaults to piped stdin; interactive commit prompt needs real TTY.
+await $`bash ${scriptsBin} ${root} ${process.argv.slice(2)}`.stdio(
+  'inherit',
+  'inherit',
+  'inherit',
+);

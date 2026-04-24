@@ -1,5 +1,3 @@
-/// <reference lib="dom" />
-
 /**
  * Lightweight DOM manipulation library. Exposes {@link el} — a proxy that
  * produces DOM elements via any tag name, with operators for attributes,

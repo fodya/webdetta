@@ -1,7 +1,0 @@
-- [README](./README.md)
-- [Basic Example](./examples/basic-example.md)
-- [DOM Operator Example (Real-world usage)](./examples/dom-operator-example-real-world-usage.md)
-- [Style Operator Example](./examples/style-operator-example.md)
-- [Event Handler Builder](./examples/event-handler-builder.md)
-- [Nested Property Access](./examples/nested-property-access.md)
-- [Checking if a Function is a Builder](./examples/checking-if-a-function-is-a-builder.md)

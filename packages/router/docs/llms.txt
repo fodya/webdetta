@@ -1,3 +1,0 @@
-- [README](./README.md)
-- [Router()](./examples/create-router.md)
-- [router.href()](./examples/router-href.md)

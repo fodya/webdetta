@@ -1,5 +1,3 @@
-/// <reference lib="dom" />
-
 /**
  * Low-level realdom building blocks: stringification, operator factories and
  * the `Element` primitive used by the `el` namespace to construct DOM trees.

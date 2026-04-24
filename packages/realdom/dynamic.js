@@ -1,4 +1,4 @@
-import { isIterable, isObject, callFn } from '../common/utils.js';
+import { isIterable, isObject, callFn, templateCallToArray } from '../common/utils.js';
 import { once } from '../execution/index.js';
 import { r } from '../reactivity/index.js';
 import { Element, Lazy, Operator, processItem } from './base.js';
@@ -8,17 +8,25 @@ const listItemKey = (d, i) => {
   if (d && Object.hasOwn(d, 'id')) return d.id;
   return i;
 };
-const listItemsToEntries = (items, keyFn) => new Map(
+const listItemsToEntries = (items, keyFn) => (
   Array.isArray(items) ? items.map((d, i, a) => [keyFn(d, i, a), d])
   : isIterable(items) ? Array.from(items.entries())
   : isObject(items) ? Object.entries(items)
   : null
 );
 
+export const toString = (...args) => {
+  let str = '';
+  for (const a of templateCallToArray(args)) str += callFn(a);
+  return str;
+}
+export const textContent = arg => Operator(node => {
+  node.textContent = toString(arg);
+});
 export const createText = arg => {
   if (typeof arg == 'function') {
     const node = document.createTextNode('');
-    r.effect(() => node.textContent = callFn(arg));
+    Operator.apply(node, textContent(arg));
     return node;
   } else {
     return document.createTextNode(String(arg));
@@ -31,7 +39,7 @@ const createContainer = (content, { track=true }) => {
   let startNode;
 
   let nodes = [], prevNodes = [], operators = [];
-  const contentEffect = r.effect(() => {
+  const contentEffect = r.detach(() => {
     const items = callFn(content);
     processItem(items,
       o => operators.push(o),
@@ -53,11 +61,11 @@ const createContainer = (content, { track=true }) => {
       nodes = [];
       operators = [];
     }
-  }, { writes: false, attach: false, track: track, run: false });
+  }, { track: track, writes: false, run: false });
   
-  const operatorsEffect = r.effect(() => {
+  const operatorsEffect = r.detach(() => {
     for (const o of operators) Operator.apply(startNode.parentNode, o);
-  }, { writes: false, attach: false, track: track, run: false });
+  }, { track: track, writes: false, run: false });
 
   const initContent = once(contentEffect.run.bind(contentEffect));
   const appendAfter = (newStartNode) => {
@@ -101,13 +109,13 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
 
   const effect = r.effect(() => {
     const items = callFn(itemsFn);
-    const entries = listItemsToEntries(items, keyFn);
+    const entries = new Map(listItemsToEntries(items, keyFn));
 
     let last = root, i = 0;
     for (const [k, v] of entries) {
       let container = containers.get(k);
       if (!container) containers.set(k,
-        container = createContainer(() => renderItem(v, i, items, k), { track: true })
+        container = createContainer(() => renderItem(v, i, items, k), { track: false })
       );
       last = container.appendAfter(last);
       i++;
@@ -138,8 +146,8 @@ export const createSlot = (content) => {
 
 const toLazy = (arg) => (typeof arg === 'function' ? new Lazy(arg) : arg);
 
-export const createIf = () => {
-  const conditions = [];
+export const createIf = (cond, ...args) => {
+  const conditions = [{ cond, value: args.map(toLazy) }];
   const node = createSlot(() =>
     conditions.find(d => callFn(d.cond))?.value
   );
@@ -158,17 +166,6 @@ export const createIf = () => {
   return node;
 };
 
-export const createPick = (selectedKey, list, renderFn, keyFn) =>
-  createList(
-    list,
-    (item, index, arr, key) =>
-      createIf().elif(
-        () => key === callFn(selectedKey),
-        () => renderFn(item, index, arr, key),
-      ),
-    keyFn,
-  );
-
 export const createDynamic = (deps, func) => {
   const content = r.val();
   r.effect(() => {
@@ -176,4 +173,26 @@ export const createDynamic = (deps, func) => {
     r.effect(() => content(func(arg)), { track: false })
   });
   return createSlot(content);
-}
+};
+
+export const createPick = (selectedKey, list, renderFn, keyFn = listItemKey) => {
+  const cache = { key: undefined, val: undefined };
+  return createSlot(() => {
+    const items = callFn(list);
+    const selected = callFn(selectedKey);
+    const entries = listItemsToEntries(items, keyFn) ?? [];
+
+    const index = entries.findIndex(([key]) => Object.is(key, selected));
+    if (index < 0) return;
+
+    const [key, item] = entries[index];
+    if (!Object.is(cache.key, key)) {
+      cache?.effect?.destroy();
+      cache.key = key;
+      cache.effect = r.detach(() => {
+        cache.val = renderFn(item, index, items, key);
+      });
+    }
+    return cache.val;
+  });
+};

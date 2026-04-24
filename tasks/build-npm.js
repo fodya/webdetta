@@ -35,6 +35,11 @@ await build({
   },
   async postBuild() {
     await fs.copyFile(path.join(root, 'LICENSE'), path.join(outDir, 'LICENSE'));
-    await fs.copyFile(path.join(root, 'README.md'), path.join(outDir, 'README.md'));
+    const readme = path.join(root, 'README.md');
+    try {
+      await fs.copyFile(readme, path.join(outDir, 'README.md'));
+    } catch {
+      // optional: monorepo ships without root README
+    }
   },
 });

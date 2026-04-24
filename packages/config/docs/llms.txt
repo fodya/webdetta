@@ -1,2 +1,0 @@
-- [README](./README.md)
-- [webdetta/config/handle-uncaught-errors](./examples/webdetta-config-handle-uncaught-errors.md)

@@ -1,27 +1,39 @@
-/// <reference lib="dom" />
-
 /**
- * Reactive DOM control flow: conditional branches (`if/elif/else`), keyed
- * lists, slots and dynamic subtrees that react to dependency changes.
+ * Conditional branches, lists, keyed selection, replaceable regions, and subtrees driven by changing inputs.
  *
  * @module
  */
 import type { ElementItem } from './base.d.ts';
 
-/** Source of items for a keyed list: array, key/value iterable, or record. */
+/**
+ * Collection you can map over: plain array, iterable of `[key, item]` pairs, or string-keyed record.
+ */
 export type ListItemsSource<T> =
   | readonly T[]
   | Iterable<[unknown, T]>
   | Record<string, T>;
 
-/** Derives a stable key for an item in a keyed list. */
+/**
+ * Produces a stable identifier for a row when diffing lists.
+ *
+ * @param item Current row value.
+ * @param index Position within the collection.
+ * @param all Full collection snapshot being rendered.
+ */
 export type ListKeyFn<T> = (
   item: T,
   index: number,
   all: ListItemsSource<T>
 ) => unknown;
 
-/** Renders an item in a keyed list. */
+/**
+ * Builds the DOM fragment for one row.
+ *
+ * @param item Row value.
+ * @param index Row index.
+ * @param all Entire collection currently rendered.
+ * @param key Stable key returned by {@link ListKeyFn} or the default strategy.
+ */
 export type ListRenderFn<T> = (
   item: T,
   index: number,
@@ -29,7 +41,14 @@ export type ListRenderFn<T> = (
   key: unknown
 ) => ElementItem;
 
-/** Creates a reactive keyed list anchored at a text node. */
+/**
+ * Renders every row in `itemsFn`, reusing DOM when keys match previous output.
+ *
+ * @param itemsFn Current collection or a function returning it whenever inputs change.
+ * @param renderItem Builds the subtree for a single row.
+ * @param keyFn Optional stable key extractor; defaults to sensible guesses for primitives and `{ id }` objects.
+ * @returns Anchor text node the reconciler uses as the list boundary.
+ */
 export function createList<T>(
   itemsFn: (() => ListItemsSource<T>) | ListItemsSource<T>,
   renderItem: ListRenderFn<T>,
@@ -37,18 +56,26 @@ export function createList<T>(
 ): Text;
 
 /**
- * Keyed list that mounts {@link ListRenderFn} output only for the row whose key
- * strictly equals `callFn(selectedKey)`. Other rows render an empty branch
- * until their key matches (useful for heavy per-item editors / pick-one UIs).
+ * Renders only the row whose key equals the current selection.
+ *
+ * @param selectedKey Selected key value, or a function returning it when dependencies change.
+ * @param items Collection or supplier evaluated like {@link createList}.
+ * @param renderItem Builds the subtree for the matching row.
+ * @param keyFn Optional stable key extractor for rows.
+ * @returns Anchor text node used as the mount point.
  *
  * @example
  * ```js
- * const selectedId = r.val('b-1');
- * el.pick(
+ * const selectedId = () => 'b';
+ * const tabs = [
+ *   { id: 'a', label: 'Alpha' },
+ *   { id: 'b', label: 'Bravo' },
+ * ];
+ * createPick(
  *   selectedId,
- *   () => blocks(),
- *   (block) => BlockEditor({ block }),
- *   (b) => b.id,
+ *   () => tabs,
+ *   (tab) => el.Div(tab.label),
+ *   (tab) => tab.id,
  * );
  * ```
  */
@@ -59,21 +86,47 @@ export function createPick<T>(
   keyFn?: ListKeyFn<T>
 ): Text;
 
-/** Creates a reactive slot anchored at a text node. */
+/**
+ * Mount point whose children can be replaced later by calling the returned updater APIs.
+ *
+ * @param content Initial subtree or a function returning it whenever upstream data changes.
+ * @returns Anchor text node representing the slot.
+ */
 export function createSlot(content: ElementItem | (() => ElementItem)): Text;
 
-/** Anchor node for a reactive `if` block, extended with `elif`/`else` chaining. */
+/**
+ * Conditional branch node chaining `elif` / `else`.
+ */
 export interface IfNode extends Text {
-  /** Adds an `else if` branch. */
+  /**
+   * Adds another branch evaluated when previous branches were falsy.
+   *
+   * @param cond Boolean or supplier evaluated like the first branch.
+   * @param args Content rendered when `cond` is truthy.
+   */
   elif(cond: unknown | (() => unknown), ...args: ElementItem[]): IfNode;
-  /** Adds an `else` branch. */
+
+  /**
+   * Final fallback rendered when every earlier branch was falsy.
+   */
   else(...args: ElementItem[]): IfNode;
 }
 
-/** Creates an empty {@link IfNode} to be populated with branches. */
-export function createIf(): IfNode;
+/**
+ * Renders the first branch whose condition is truthy.
+ */
+export function createIf(
+  cond: unknown | (() => unknown),
+  ...args: ElementItem[]
+): IfNode;
 
-/** Creates a reactive subtree derived from dependencies. */
+/**
+ * Rebuilds a subtree whenever `deps()` returns a new value (reference inequality).
+ *
+ * @param deps Function returning the current dependency bundle.
+ * @param func Maps the dependency value to DOM content.
+ * @returns Anchor text node for the subtree boundary.
+ */
 export function createDynamic<D>(
   deps: () => D,
   func: (dep: D) => ElementItem

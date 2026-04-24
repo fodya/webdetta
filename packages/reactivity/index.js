@@ -62,7 +62,15 @@ r.effect = (handler, {
   return effect;
 }
 
-r.untrack = (handler, options) => r.effect(handler, { ...options, track: false });
+r.untrack = (handler, options) => r.effect(handler, {
+  ...options,
+  track: false,
+});
+r.detach = (handler, options) => r.effect(handler, {
+  track: false,
+  ...options,
+  attach: false,
+});
 
 // Derived
 

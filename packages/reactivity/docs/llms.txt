@@ -1,7 +1,0 @@
-- [README](./README.md)
-- [r.val(initialValue?)](./examples/r-val-initialvalue.md)
-- [r.dval(initialValue?)](./examples/r-dval-initialvalue.md)
-- [r.effect(func)](./examples/r-effect-func.md)
-- [r.computed(func, { initial }?)](./examples/r-computed-func-initial.md)
-- [r.store(target)](./examples/r-store-target.md)
-- [r.proxy(target)](./examples/r-proxy-target.md)

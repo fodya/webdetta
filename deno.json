@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.272",
+  "version": "0.1.288",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",
@@ -40,9 +40,7 @@
       "tasks",
       "_",
       "dist",
-      "packages/*/README.md",
-      "packages/*/tests",
-      "packages/*/docs"
+      "packages/*/tests"
     ]
   },
   "tasks": {

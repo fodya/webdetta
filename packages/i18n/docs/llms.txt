@@ -1,2 +1,0 @@
-- [README](./README.md)
-- [Custom onNotFound Handler](./examples/custom-onnotfound-handler.md)

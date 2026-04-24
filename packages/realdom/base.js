@@ -1,5 +1,5 @@
 import { Builder } from '../builder/index.js';
-import { unwrapFn, templateCallToArray, callFn } from '../common/utils.js';
+import { templateCallToArray, callFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
 import { createText } from "./dynamic.js";
 
@@ -10,12 +10,6 @@ export class Lazy {
   static isLazy(item) {
     return item instanceof Lazy;
   }
-}
-
-export const toString = (...args) => {
-  let str = '';
-  for (const a of templateCallToArray(args)) str += unwrapFn(a);
-  return str;
 }
 
 const isFragment = node => node.nodeType === 11;
@@ -45,6 +39,7 @@ export const processItem = (item, processOperator, processNode, flattenFragments
 
 export const Element = (ns, tag, ...args) => {
   const node = (
+    tag === '' ? document.createTextNode('') :
     tag === '!' ? document.createComment('') :
     tag === ':' ? document.createDocumentFragment() :
     ns ? document.createElementNS(ns, tag) :
@@ -66,16 +61,21 @@ const hooks = {
 };
 Element.registerHook = (node, hook, handler) => {
   const map = hooks[hook];
-  const prev = map.get(node);
-  map.set(node, function hook() { prev?.(); handler(); });
+  let set = map.get(node);
+  if (!set) map.set(node, set = new Set());
+  set.add(handler);
+}
+const triggerHook = (node, hook) => {
+  const set = hooks[hook].get(node);
+  if (!set) return;
+  for (const handler of set) handler();
 }
 
 const performAppend = (node, method, item) => {
-  const { beforeAppend, afterAppend } = hooks;
   const itemNode = Element.from(item);
-  beforeAppend.get(itemNode)?.();
+  triggerHook(itemNode, 'beforeAppend');
   node[method](itemNode);
-  afterAppend.get(itemNode)?.();
+  triggerHook(itemNode, 'afterAppend');
 }
 Element.append = (node, item) => {
   processItem(item,
@@ -89,10 +89,9 @@ Element.appendBefore = (node, sibling) => performAppend(node, 'before', sibling)
 Element.appendAfter = (node, sibling) => performAppend(node, 'after', sibling);
 
 Element.remove = (node) => {
-  const { beforeRemove, afterRemove } = hooks;
-  beforeRemove.get(node)?.();
+  triggerHook(node, 'beforeRemove');
   node.remove();
-  afterRemove.get(node)?.();
+  triggerHook(node, 'afterRemove');
 }
 
 export const Operator = (func, { track=true }={}) => Builder((tasks, node) => {

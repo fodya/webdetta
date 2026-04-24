@@ -4,14 +4,15 @@ import { kebab } from '../common/dom.js';
 import { callFn } from '../common/utils.js';
 import { Context } from '../context/sync.js';
 import { cached } from '../execution/index.js';
-import { Operator, toString } from './base.js';
+import { Operator } from './base.js';
 import {
-  createText,
+  toString,
   createIf,
   createList,
   createPick,
   createSlot,
   createDynamic,
+  textContent,
 } from './dynamic.js';
 
 const api = {};
@@ -29,8 +30,8 @@ api.parse = (...args) => {
 api.append = (node, ...args) => Element.append(node, args);
 api.remove = Element.remove;
 
-api.text = createText;
-api.if = (cond, ...args) => createIf().elif(cond, ...args);
+api.textContent = textContent;
+api.if = createIf;
 api.list = createList;
 api.slot = createSlot;
 api.pick = createPick;
@@ -104,7 +105,7 @@ api.prop = Operator((node, names, args) => {
 
 const namespace = ns => new Proxy(api, {
   get: cached((target, key) => (
-    key == '!' || key == ':' || key[0] >= 'A' && key[0] <= 'Z'
+    key == '' || key == '!' || key == ':' || key[0] >= 'A' && key[0] <= 'Z'
     ? Element.bind(null, ns, key[0].toLowerCase() + kebab(key.slice(1)))
     : target[key]
   ), (_, key) => key + ns)
