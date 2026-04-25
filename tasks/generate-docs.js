@@ -10,7 +10,6 @@ const names = (await fs.readdir(packagesDir))
   .sort();
 
 const merged = [
-  'Canonical API surface lives in TypeScript declaration files under each package.',
   '',
 ];
 

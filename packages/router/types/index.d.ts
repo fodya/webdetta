@@ -16,10 +16,21 @@
  *   routes: {
  *     home: ['/', Home],
  *     user: ['/user/:id', User],
+ *     settings: ['/settings', () => el.Div('Settings')],
  *   },
  * });
- * document.body.append(router.node);
- * router.navigate('user', { id: '42' });
+ *
+ * document.body.append(
+ *   el.Nav(
+ *     el.A(el.attr.href(router.href('home')), 'Home'),
+ *     el.A(el.attr.href(router.href('user', { id: '42', tab: 'orders' })), 'User 42'),
+ *     el.A(el.attr.href(router.href('settings')), 'Settings'),
+ *   ),
+ *   router.node
+ * );
+ *
+ * router.navigate('user', { id: '42', tab: 'orders' });
+ * router.replace('settings');
  * ```
  *
  * @module

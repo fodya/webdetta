@@ -298,5 +298,10 @@
       "integrity": "sha512-SNgDF5L0gfN7FwVOdEFguY3orU5AkfFZm9B5YSHog/UDHv+lvmd82ZAsOenOkQixigwH2+yyH198AwNdKhj+RA==",
       "bin": true
     }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:zx@*"
+    ]
   }
 }

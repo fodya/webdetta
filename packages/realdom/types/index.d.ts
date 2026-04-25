@@ -6,12 +6,30 @@
  * @example
  * ```js
  * import { el } from '@webdetta/core/realdom';
+ * import { r } from '@webdetta/core/reactivity';
  *
- * const button = el.Button(
- *   el.on.click(() => console.log('clicked')),
- *   'Press me',
+ * const items = r.val([{ id: 1, title: 'Buy milk', done: false }]);
+ *
+ * const toggle = (id) => items(items().map((x) =>
+ *   x.id === id ? { ...x, done: !x.done } : x
+ * ));
+ *
+ * const view = el.Section(
+ *   el.H2('Tasks'),
+ *   el.list(items, (row) =>
+ *     el.Label(
+ *       el.Input(
+ *         el.attr.type('checkbox'),
+ *         el.prop.checked(() => row.done),
+ *         el.on.change(() => toggle(row.id)),
+ *       ),
+ *       el.Span(el.class.done(() => row.done), row.title),
+ *     )
+ *   , (row) => row.id
+ *   ),
  * );
- * document.body.append(button);
+ *
+ * document.body.append(view);
  * ```
  *
  * @module
@@ -33,8 +51,13 @@ export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic
 /** Function that creates a DOM element for a specific tag name. */
 export type TagFn = (...args: ElementItem[]) => Node;
 
-/** Tag proxy key: starts with A–Z, then any suffix (e.g. `Div`, `CustomTag`). */
-export type TagName = Capitalize<keyof HTMLElementTagNameMap>;
+/**
+ * Maps each PascalCase builder name on {@link ElNamespace} (`Div`, `Button`, …)
+ * to the DOM interface for the element that call produces (`HTMLDivElement`, …).
+ */
+type ElTagElementTypes = {
+  [K in keyof HTMLElementTagNameMap as Capitalize<K & string>]: HTMLElementTagNameMap[K];
+};
 
 /** The `el` namespace: core members plus PascalCase tag keys → {@link TagFn}. */
 export type ElNamespace = {
@@ -78,7 +101,7 @@ export type ElNamespace = {
   /** Sub-namespace bound to the MathML namespace. */
   readonly NS_MATH: ElNamespace;
 } & {
-  [K in TagName]: TagFn;
+  [P in keyof ElTagElementTypes]: (...args: ElementItem[]) => ElTagElementTypes[P];
 };
 
 /** The shared {@link ElNamespace} instance. */

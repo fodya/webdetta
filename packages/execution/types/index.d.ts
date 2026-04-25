@@ -4,11 +4,19 @@
  *
  * @example
  * ```js
- * import { debounce, sleep } from '@webdetta/core/execution';
+ * import { debounce, safe, backoff, cached } from '@webdetta/core/execution';
  *
- * const save = debounce(300, async (value) => { await api.save(value); });
- * save('a'); save('ab'); save('abc'); // only final call runs
- * await sleep(1000);
+ * const formatDraft = cached((text) => text.trim().replaceAll(/\s+/g, ' '));
+ *
+ * const saveDraft = debounce(400, safe(async (raw) => {
+ *   const body = formatDraft(raw);
+ *   await backoff(
+ *     { retries: 3, delay: { base: 200, factor: 2 }, jitter: 'equal' },
+ *     () => api.saveDraft({ body })
+ *   );
+ * }));
+ *
+ * editor.onChange((text) => saveDraft(text));
  * ```
  *
  * @module

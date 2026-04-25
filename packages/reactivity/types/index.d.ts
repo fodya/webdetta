@@ -8,9 +8,22 @@
  * ```js
  * import { r } from '@webdetta/core/reactivity';
  *
- * const n = r.val(0);
- * r.effect(() => console.log('n =', n()));
- * n(1); // logs "n = 1"
+ * const query = r.val('');
+ * const page = r.val(1);
+ * const endpoint = r.computed(() => `/api/products?q=${query()}&page=${page()}`);
+ *
+ * const products = r.resource(
+ *   () => endpoint(),
+ *   async (url) => (await fetch(url)).json(),
+ *   { initial: [] }
+ * );
+ *
+ * r.effect(() => {
+ *   history.replaceState(null, '', `#${endpoint()}`);
+ *   renderProducts(products(), products.loading(), products.error());
+ * });
+ *
+ * searchInput.oninput = (e) => { query(e.target.value); page(1); };
  * ```
  *
  * @module

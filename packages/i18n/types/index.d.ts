@@ -8,31 +8,53 @@
  * const t = I18N({
  *   fallbackLang: 'en',
  *   translations: {
- *     en: { hello: 'Hello, {0}' },
- *     fr: { hello: 'Bonjour, {0}' },
+ *     en: {
+ *       checkout: {
+ *         title: 'Checkout',
+ *         total: (amount) => `Total: $${amount}`,
+ *       },
+ *     },
+ *     fr: {
+ *       checkout: {
+ *         title: 'Paiement',
+ *         total: (amount) => `Total : ${amount} €`,
+ *       },
+ *     },
+ *   },
+ *   onNotFound: (key) => {
+ *     console.warn('missing translation', key);
+ *     return key;
  *   },
  * });
  * t.lang('fr');
- * t('hello', 'world'); // 'Bonjour, world'
+ *
+ * titleNode.textContent = t('checkout.title');
+ * totalNode.textContent = t('checkout.total', 42);
  * ```
  *
  * @module
  */
 
 /** Configuration for an {@link I18N} instance. */
+export type TranslationLeaf = string | ((...args: unknown[]) => unknown);
+export type TranslationNode = {
+  [key: string]: TranslationLeaf | TranslationNode;
+};
+
+/** Configuration for an {@link I18N} instance. */
 export type I18NOptions = {
   /** Language used when the current language has no translation for a key. */
   fallbackLang: string;
   /** Nested translation map: `{ [lang]: { [key]: value } }`. */
-  translations: Record<string, any>;
+  translations: Record<string, TranslationNode>;
   /** Handler invoked when a key is missing in both the current and fallback language. */
-  onNotFound?: (key: string) => any;
+  onNotFound?: (key: string) => unknown;
 };
 
 /** Callable translator: look up a key (with positional args) or use as a tagged template. */
 export type I18NInstance = {
-  (key: string, ...args: any[]): any;
-  (strings: TemplateStringsArray, ...args: any[]): any;
+  (key: string, ...args: unknown[]): unknown;
+  (strings: TemplateStringsArray, ...args: unknown[]): unknown;
   /** Gets or sets the current language. */
   lang(v?: string): string | undefined;
 };

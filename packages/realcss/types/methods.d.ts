@@ -5,7 +5,7 @@
  */
 
 /** A method that, given user arguments, returns a partial style object. */
-export type MethodFn = (...args: any[]) => Record<string, unknown>;
+export type MethodFn = (...args: unknown[]) => Record<string, unknown>;
 
 /** Map of named style methods. */
 export type MethodsMap = Record<string, MethodFn>;

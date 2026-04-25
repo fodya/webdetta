@@ -6,12 +6,32 @@
  * ```js
  * import { Builder } from '@webdetta/core/builder';
  *
- * const op = Builder((tasks) => tasks);
- * const tasks = Builder.launch(op.foo.bar(1, 2).baz('x'));
- * // tasks === [
- * //   { names: ['foo', 'bar'], args: [1, 2] },
- * //   { names: ['baz'],        args: ['x'] },
- * // ]
+ * const operators = {
+ *   where: (rows, field, value) => rows.filter((x) => x?.[field] === value),
+ *   sort: (rows, field, direction = 'asc') =>
+ *     [...rows].sort((a, b) => {
+ *       const av = a?.[field];
+ *       const bv = b?.[field];
+ *       if (av === bv) return 0;
+ *       const base = av > bv ? 1 : -1;
+ *       return direction === 'desc' ? -base : base;
+ *     }),
+ *   limit: (rows, n) => rows.slice(0, n),
+ * };
+ *
+ * const queryDsl = Builder((tasks, rows) =>
+ *   tasks.reduce((acc, step) => {
+ *     const [first] = step.names;
+ *     const op = operators[first];
+ *     return typeof op === 'function' ? op(acc, ...step.args) : acc;
+ *   }, rows)
+ * );
+ *
+ * const result = Builder.launch(
+ *   queryDsl.where('status', 'active').sort('createdAt', 'desc').limit(20),
+ *   rows
+ * );
+ *
  * ```
  *
  * @module

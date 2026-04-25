@@ -4,11 +4,24 @@
  *
  * @example
  * ```js
- * import { textToBase64, base64ToText, bytesToBase64, base64ToBytes } from '@webdetta/core/convert';
+ * import {
+ *   fileToDatauri,
+ *   datauriToJson,
+ *   jsonToDatauri,
+ *   datauriToFile,
+ * } from '@webdetta/core/convert';
  *
- * textToBase64('hi'); // 'aGk='
- * base64ToText('aGk='); // 'hi'
- * bytesToBase64(new Uint8Array([1, 2, 3])); // 'AQID'
+ * // Browser upload pipeline: preview -> JSON payload
+ * const photo = input.files[0];
+ * const datauri = await fileToDatauri(photo);
+ * preview.src = datauri;
+ *
+ * const payload = fileToJson(photo); // { mimeType, content(base64) }
+ * await fetch('/api/profile/photo', {
+ *   method: 'POST',
+ *   body: JSON.stringify(payload),
+ * });
+ *
  * ```
  *
  * @module

@@ -2,25 +2,20 @@
  * Runtime CSS engine with a persistent cell DSL that materializes style rules
  * lazily and flushes them into a `<style>` sheet via realdom on mount.
  *
- * Grammar (v2 — breaking: `v` is not callable; use `v.Plain(...)`):
+ * Grammar
  * ```
- * v                                            // root
- * v.<method>                                   // start MethodChain
- * MethodChain.<method>                         // getter: O(1) fork
- * MethodChain(...args)                         // flush pending → O(k) new chain
- * v.Select(selector, ...Cell[])                // mod operator
- * v.Query(query, ...Cell[])                    // mod operator
- * v.Important(...Cell[])                       // mod operator
- * v.Inline(...Cell[])                          // mod operator
- * v.Plain(style | () => style)                 // object cell
- * v.Transition(param, ...Cell[])               // synth
- * v.Animation(param, keyframes)                // synth
+ * v                                            
+ * v.<method>                                   
+ * MethodChain.<method>                         
+ * MethodChain(...args)                         
+ * v.Select(selector, ...vNode[])                
+ * v.Query(query, ...vNode[])                    
+ * v.Important(...vNode[])                       
+ * v.Inline(...vNode[])                          
+ * v.Plain(style | () => style)                 
+ * v.Transition(param, ...vNode[])               
+ * v.Animation(param, keyframes)                
  * ```
- *
- * Persistent cons-lists back every chain: previous chains are NEVER mutated,
- * getter fork allocates one cons (O(1)), and call drains pending into steps
- * (O(k) where `k` = pending length). Materialization is O(n) in the total
- * leaf-step count and cached via `WeakMap<step, WeakMap<ctx, StyleRule>>`.
  *
  * @example
  * ```js
@@ -29,10 +24,16 @@
  *
  * const v = Visuals({ unit: [1, 'rem'] });
  *
- * el.Div(v.tc('red').p(1));                            // chain
- * el.Div(v.Select('&:hover', v.Important(v.tc('red'))));
- * el.Div(v.Plain({ color: 'red' }));              // raw object
- * el.Div(v.Plain(() => ({ color: signal() })));   // reactive
+ * const node = el.Article(
+ *   v.bg('#fff').p(1).br(0.5).sh('0 2px 12px rgba(0,0,0,.08)'),
+ *   v.Select('&:hover', v.sh('0 6px 24px rgba(0,0,0,.14)')),
+ *   v.Query('(max-width: 640px)', v.p(0.75)),
+ *   v.Plain(() => ({ borderColor: theme().accent })),
+ *   'Billing summary'
+ * );
+ *
+ * document.body.append(node);
+ * theme.onChange(() => v._.recalculate());
  * ```
  *
  * @module

@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.289",
+  "version": "0.1.290",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",
@@ -29,6 +29,9 @@
       "dom",
       "dom.iterable"
     ]
+  },
+  "imports": {
+    "zx/globals": "npm:zx/globals"
   },
   "exclude": [
     "dist"

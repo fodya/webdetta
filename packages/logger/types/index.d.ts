@@ -3,15 +3,32 @@
  *
  * The exported {@link logger} forwards to whatever logger is installed in the
  * current scope via {@link withLogger}. Formatters installed via
- * {@link withLoggerFormatter} run in LIFO order and may short-circuit the chain.
+ * {@link withLoggerFormatter} run in LIFO order.
  *
  * @example
  * ```js
- * import { logger, withLogger } from '@webdetta/core/logger';
+ * import { logger, withLogger, withLoggerFormatter } from '@webdetta/core/logger';
  *
- * withLogger(console, () => {
- *   logger.info('hello');
- * });
+ * const reqLogger = {
+ *   info: (...a) => console.info('[api]', ...a),
+ *   error: (...a) => console.error('[api]', ...a),
+ * };
+ *
+ * await withLogger(reqLogger, () =>
+ *   withLoggerFormatter(function (args) {
+ *     const [message, details = {}] = args;
+ *     const safeDetails = { ...details, email: undefined };
+ *     return [`[req:${details.requestId}] ${message}`, safeDetails];
+ *   }, async () => {
+ *     logger.info('request-start', { requestId: 'r-42', email: 'secret@x' });
+ *     try {
+ *       await serviceCall();
+ *       logger.info('request-success', { requestId: 'r-42' });
+ *     } catch (error) {
+ *       logger.error('request-failure', { requestId: 'r-42', error });
+ *     }
+ *   })
+ * );
  * ```
  *
  * @module

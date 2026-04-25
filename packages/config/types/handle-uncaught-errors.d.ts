@@ -7,9 +7,15 @@
  */
 
 /** Handler invoked for uncaught synchronous exceptions. */
-export type UncaughtExceptionHandler = (...args: any[]) => void;
+export type UncaughtExceptionHandler = (
+  error: unknown,
+  ...rest: unknown[]
+) => void;
 /** Handler invoked for unhandled promise rejections. */
-export type UncaughtRejectionHandler = (...args: any[]) => void;
+export type UncaughtRejectionHandler = (
+  reason: unknown,
+  ...rest: unknown[]
+) => void;
 
 /** Optional overrides for the default exception and rejection handlers. */
 export type UncaughtHandlersArg = {

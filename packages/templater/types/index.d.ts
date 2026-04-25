@@ -13,8 +13,22 @@
  *   closeBracket: '}',
  *   argumentsSeparator: ',',
  * });
+ * t.register('', (ctx, args) => String(ctx[args[0]] ?? ''));
  * t.register('upper', (ctx, args, render) => render(args, ctx).toUpperCase());
- * t.render('hello ${upper|world}', {}); // 'hello WORLD'
+ * t.register('money', (_ctx, args) => `$${Number(args[0]).toFixed(2)}`);
+ *
+ * const template = (
+ *   'Hello ${customerName}, your order total is $money{${total}}. ' +
+ *   'Status: $upper{${status}}'
+ * );
+ * t.parse(template); // optional pre-validation step
+ *
+ * const text = t.render(template, {
+ *   customerName: 'Ada',
+ *   total: 42,
+ *   status: 'processing',
+ * });
+ * // "Hello Ada, your order total is $42.00. Status: PROCESSING"
  * ```
  *
  * @module
