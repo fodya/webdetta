@@ -1,6 +1,8 @@
 /**
- * **Router** wires named routes to `/patterns/:id`, keeps the URL bar in sync (`history` or `hash`), mounts the matching
- * page after a marker `Text` node, and exposes {@link Router.Ctx} while a route renders so nested code finds the router.
+ * Client-side routing. A single {@link Router} factory produces a router with
+ * hash/history/custom driver, a ready-to-mount DOM `node`, and optional scroll
+ * restoration between route swaps. The module-level {@link Router.Ctx} carries
+ * the active router during page renders.
  *
  * @example
  * ```js

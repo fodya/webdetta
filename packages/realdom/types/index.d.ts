@@ -33,13 +33,6 @@ export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic
 /** Function that creates a DOM element for a specific tag name. */
 export type TagFn = (...args: ElementItem[]) => Node;
 
-/** Single uppercase ASCII letter (PascalCase prefix for {@link el} tag keys). */
-export type UppercaseLetter =
-  | "A" | "B" | "C" | "D" | "E" | "F" | "G"
-  | "H" | "I" | "J" | "K" | "L" | "M" | "N"
-  | "O" | "P" | "Q" | "R" | "S" | "T" | "U"
-  | "V" | "W" | "X" | "Y" | "Z";
-
 /** Tag proxy key: starts with A–Z, then any suffix (e.g. `Div`, `CustomTag`). */
 export type TagName = Capitalize<keyof HTMLElementTagNameMap>;
 
