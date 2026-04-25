@@ -31,8 +31,12 @@ export type SafeFn = {
   /** Default error handler used when no `onError` is provided. */
   defaultErrorHandler: (err: unknown) => void;
 };
-/** The {@link SafeFn} instance. */
-export const safe: SafeFn;
+/** Wraps a function so thrown errors and rejected promises are routed to `onError` instead of propagating. */
+export function safe<T extends AnyFn>(f: T, onError?: (err: unknown) => void): T;
+export namespace safe {
+  /** Default error handler used when no `onError` is provided. */
+  let defaultErrorHandler: (err: unknown) => void;
+}
 
 /** Function with an `isLocked()` method that reports whether a subsequent call would be skipped. */
 export type LockableFn<T extends AnyFn> = T & { isLocked(): boolean };
