@@ -6,15 +6,17 @@
  * ```js
  * import { debounce, safe, backoff, cached } from '@webdetta/core/execution';
  *
- * const formatDraft = cached((text) => text.trim().replaceAll(/\s+/g, ' '));
+ * const formatDraft = cached(safe((text) =>
+ *   text.trim().replaceAll(/\s+/g, ' ')
+ * ));
  *
- * const saveDraft = debounce(400, safe(async (raw) => {
+ * const saveDraft = debounce(400, async (raw) => {
  *   const body = formatDraft(raw);
  *   await backoff(
  *     { retries: 3, delay: { base: 200, factor: 2 }, jitter: 'equal' },
  *     () => api.saveDraft({ body })
  *   );
- * }));
+ * });
  *
  * editor.onChange((text) => saveDraft(text));
  * ```
