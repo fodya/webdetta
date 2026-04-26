@@ -140,10 +140,12 @@ api.prop = Operator((node, names, args) => {
   };
 });
 
+const tagNameRegex = /^(?:$|[:!A-Z])/; // "" | ":" | "!" | A-Z
 const namespace = ns => new Proxy(api, {
   get: (target, key) =>
-    target[key] ??
-    Element.bind(null, ns, kebab(key).slice(1))
+    tagNameRegex.test(key)
+    ? Element.bind(null, ns, kebab(key).slice(1))
+    : target[key]
 });
 api.NS_SVG = namespace('http://www.w3.org/2000/svg');
 api.NS_MATH = namespace('http://www.w3.org/1998/Math/MathML');
