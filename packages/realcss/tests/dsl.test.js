@@ -57,11 +57,11 @@ describe('realcss DSL v2', () => {
   afterEach(teardownDom);
 
   describe('root (v)', () => {
-    it('exposes service handle under _', () => {
+    it('exposes service handle under $', () => {
       const v = Visuals(baseCfg);
-      assert(typeof v._.recalculate === 'function');
-      assert(v._.styleSheet);
-      assert(typeof v._.mount === 'function');
+      assert(typeof v.$.recalculate === 'function');
+      assert(v.$.styleSheet);
+      assert(typeof v.$.mount === 'function');
     });
 
     it('is not callable — typeof v is object', () => {
@@ -202,7 +202,7 @@ describe('realcss DSL v2', () => {
       const v = Visuals(baseCfg);
       const color = r.val('red');
       el.Div(v.tc(() => color()));
-      const sheet = v._.styleSheet.style.sheet;
+      const sheet = v.$.styleSheet.style.sheet;
       color('blue');
       assert([...sheet.cssRules].some((rule) => rule.cssText.includes('blue')));
     });
@@ -211,7 +211,7 @@ describe('realcss DSL v2', () => {
       const v = Visuals(baseCfg);
       const color = r.val('red');
       el.Div(v.Plain(() => ({ color: color() })));
-      const sheet = v._.styleSheet.style.sheet;
+      const sheet = v.$.styleSheet.style.sheet;
       color('green');
       assert([...sheet.cssRules].some((rule) => rule.cssText.includes('green')));
     });
@@ -432,14 +432,14 @@ describe('realcss DSL v2', () => {
     it('static chain: appending to a div inserts rules', () => {
       const v = Visuals(baseCfg);
       el.Div(v.tc('red').p(1));
-      const sheet = v._.styleSheet.style.sheet;
+      const sheet = v.$.styleSheet.style.sheet;
       assert(sheet.cssRules.length >= 2, 'at least 2 rules inserted');
     });
 
     it('Select: inserts one rule with combined selector', () => {
       const v = Visuals(baseCfg);
       el.Div(v.Select('&:hover', v.tc('red')));
-      const sheet = v._.styleSheet.style.sheet;
+      const sheet = v.$.styleSheet.style.sheet;
       let found = false;
       for (const r of sheet.cssRules) {
         if (r.cssText.includes(':hover') && r.cssText.includes('red')) found = true;
@@ -450,7 +450,7 @@ describe('realcss DSL v2', () => {
     it('Plain(plain) inserts one rule', () => {
       const v = Visuals(baseCfg);
       el.Div(v.Plain({ pointerEvents: 'none' }));
-      const sheet = v._.styleSheet.style.sheet;
+      const sheet = v.$.styleSheet.style.sheet;
       let found = false;
       for (const r of sheet.cssRules) {
         if (r.cssText.includes('pointer-events')) found = true;
@@ -465,7 +465,7 @@ describe('realcss DSL v2', () => {
     });
   });
 
-  describe('_.recalculate — identity-preserving rebuild', () => {
+  describe('$.recalculate — identity-preserving rebuild', () => {
     it('keeps StyleRule identity, refreshes .css', () => {
       const v = Visuals(baseCfg);
       const chain = v.tc('red');
@@ -473,7 +473,7 @@ describe('realcss DSL v2', () => {
       const ruleBefore = materialize(step, ctx);
       ruleBefore.rebuild();
       el.Div(chain);
-      v._.recalculate();
+      v.$.recalculate();
       const ruleAfter = materialize(step, ctx);
       assert(ruleBefore === ruleAfter);
     });

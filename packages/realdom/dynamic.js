@@ -64,7 +64,7 @@ const createContainer = (snapshot, content) => {
     if (!startNode) contentEffect.run();
     if (startNode?.parentNode != newStartNode.parentNode) {
       // TODO cleanup operators from old parent
-      for (const o of operators) Operator.apply(startNode.parentNode, o);
+      for (const o of operators) Operator.apply(newStartNode.parentNode, o);
     }
     let tailNode = startNode = newStartNode;
     for (const node of nodes) {

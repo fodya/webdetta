@@ -2,8 +2,6 @@
 import { Element } from './base.js';
 import { kebab } from '../common/dom.js';
 import { callFn } from '../common/utils.js';
-import { Context } from '../context/sync.js';
-import { cached } from '../execution/index.js';
 import { Operator } from './base.js';
 import {
   toString,
@@ -113,4 +111,3 @@ api.NS_SVG = namespace('http://www.w3.org/2000/svg');
 api.NS_MATH = namespace('http://www.w3.org/1998/Math/MathML');
 
 export const el = namespace('http://www.w3.org/1999/xhtml');
-export { Context };

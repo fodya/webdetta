@@ -5,7 +5,8 @@ import { Methods } from './methods.js';
 import { makeOperators } from './operators.js';
 
 const tryInsert = (sheet, css) => {
-  try { sheet.insertRule(css, sheet.cssRules.length); } catch {}
+  try { sheet.insertRule(css, sheet.cssRules.length); }
+  catch { /**/ }
 };
 
 class StyleSheet {
@@ -36,7 +37,7 @@ export const Visuals = (cfg) => {
   chain.proto[Element.toNodes] = function () { return mount(this); };
 
   const proto = {
-    _: { recalculate: () => styleSheet.recalculate(), styleSheet, mount },
+    $: { recalculate: () => styleSheet.recalculate(), styleSheet, mount },
     ...makeOperators(mount),
   };
   for (const name of Object.keys(methods)) {

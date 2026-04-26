@@ -33,7 +33,7 @@
  * );
  *
  * document.body.append(node);
- * theme.onChange(() => v._.recalculate());
+ * theme.onChange(() => v.$.recalculate());
  * ```
  *
  * @module
@@ -94,8 +94,8 @@ export interface StyleSheet {
   recalculate(): void;
 }
 
-/** Service handle exposed as `v._` on the root. */
-export interface VisualsService {
+/** Utils handle exposed as `v.$` on the root. */
+export interface VisualsUtils {
   recalculate(): void;
   readonly styleSheet: StyleSheet;
   readonly mount: (cell: Cell) => unknown;
@@ -153,7 +153,7 @@ export type MethodChainWithMethods<M extends MethodsMap> =
 
 /** Root `v`. NOT callable; only getters for methods and operator props. */
 export interface Root<M extends MethodsMap = MethodsMap> {
-  readonly _: VisualsService;
+  readonly $: VisualsUtils;
 
   Plain(style: Record<string, unknown> | (() => Record<string, unknown>)): ObjectCell;
 
@@ -174,7 +174,7 @@ export type RootWithMethods<M extends MethodsMap> =
 /**
  * Creates a realcss root: appends a `<style>` to `document.head`, sets up the
  * sheet, and returns the root `v`. Mount any cell via realdom; call
- * `v._.recalculate()` to rebuild all cached rules after config changes.
+ * `v.$.recalculate()` to rebuild all cached rules after config changes.
  */
 export function Visuals<M extends MethodsMap = MethodsMap>(
   cfg: MethodsConfig,
