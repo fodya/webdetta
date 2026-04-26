@@ -4,8 +4,9 @@ import { r } from '../reactivity/index.js';
 import { currentEffect } from '../reactivity/base.js';
 import { Element, Operator, processItem } from './base.js';
 
-const listItemKey = d => {
-  return d && typeof d == 'object' ? d.id : d;
+const listItemKey = (d, i) => {
+  if (isObject(d)) return d.id ?? i;
+  return i;
 };
 const listItemsToEntries = (items, keyFn) => (
   Array.isArray(items) ? items.map((d, i, a) => [keyFn(d, i, a), d])
@@ -50,7 +51,7 @@ const createContainer = (snapshot, content) => {
     prevNodes = [];
 
     if (startNode) {
-      // operatorsEffect.run();
+      operatorsEffect.run();
       appendAfter(startNode);
     }
     return () => {
@@ -60,13 +61,15 @@ const createContainer = (snapshot, content) => {
     }
   }, { track: true, writes: false, run: false });
 
+  const operatorsEffect = r.effect(() => {
+    for (const o of operators) Operator.apply(startNode.parentNode, o);
+  }, { track: true, writes: false, run: false });
+
   const appendAfter = (newStartNode) => {
     if (!startNode) contentEffect.run();
-    if (startNode?.parentNode != newStartNode.parentNode) {
-      // TODO cleanup operators from old parent
-      for (const o of operators) Operator.apply(newStartNode.parentNode, o);
-    }
+    const parentChanged = startNode?.parentNode != newStartNode.parentNode;
     let tailNode = startNode = newStartNode;
+    if (parentChanged) operatorsEffect.run();
     for (const node of nodes) {
       if (tailNode.nextSibling !== node) Element.appendAfter(tailNode, node);
       tailNode = tailNodes.get(node) ?? node;
