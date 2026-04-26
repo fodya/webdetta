@@ -156,8 +156,7 @@ export const createSlot = (content) => {
 
 export const createLazy = (arg) => {
   if (typeof arg != 'function') return arg;
-  let content;
-  return  { [Element.lazy]: () => content ??= callFn(arg) };
+  return  { [Element.lazy]: () => callFn(arg) }; // TODO: memo?
 }
 
 export const createIf = (cond, ...args) => {
