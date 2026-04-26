@@ -126,5 +126,5 @@ export const r: {
   /** Like {@link r.store}, but exposes each property as an accessor. */
   readonly proxy: <T extends object>(target: T | (() => T)) => ReactiveProxy<T>;
   /** Registers a callback to run when the surrounding effect is cleaned up. */
-  readonly onCleanup: (handler: () => void) => void;
+  readonly cleanup: (handler: () => void) => void;
 };

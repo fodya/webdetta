@@ -56,22 +56,59 @@ api.hook = Operator((node, names, args) => {
   };
 });
 
-api.on = Operator((node, names, args) => {
-  let handlers = [], options;
+const eventHandlers = (node, args) => {
+  const handlers = [];
+  let options;
   for (const arg of args) {
     if (typeof arg == 'function') handlers.push(arg);
     else options = arg;
   }
+  let target = node;
+  let bindOptions = options;
+  if (options && typeof options == 'object' && Object.hasOwn(options, 'target')) {
+    const rest = { ...options };
+    target = rest.target ?? node;
+    delete rest.target;
+    bindOptions = rest;
+  }
+  return { handlers, options: bindOptions, target };
+};
 
-  const target = options?.target ?? node;
+api.on = Operator((node, names, args) => {
+  const { handlers, options, target } = eventHandlers(node, args);
   for (const e of names) for (const h of handlers) {
     target.addEventListener(e, h, options);
   }
   return () => {
     for (const e of names) for (const h of handlers) {
-      target.removeEventListener(e, h);
+      target.removeEventListener(e, h, options);
     }
-    options = handlers = null;
+  };
+});
+
+api.observe = {};
+api.observe.intersection = Operator((node, _names, args) => {
+  const { handlers, options, target } = eventHandlers(node, args);
+  const observers = [];
+  for (const handler of handlers) {
+    const obs = new IntersectionObserver(handler, options);
+    obs.observe(target);
+    observers.push(obs);
+  }
+  return () => {
+    for (const obs of observers) obs.disconnect();
+  };
+});
+api.observe.mutation = Operator((node, _names, args) => {
+  const { handlers, options, target } = eventHandlers(node, args);
+  const observers = [];
+  for (const handler of handlers) {
+    const obs = new MutationObserver(handler);
+    obs.observe(target, options);
+    observers.push(obs);
+  }
+  return () => {
+    for (const obs of observers) obs.disconnect();
   };
 });
 

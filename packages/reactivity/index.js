@@ -187,10 +187,10 @@ r.proxy = (target) => {
 
 // Utils
 
-r.onCleanup = handler => {
-  assertSyncFunction('r.onCleanup `handler`', handler);
+r.cleanup = handler => {
+  assertSyncFunction('r.cleanup `handler`', handler);
   const effect = currentEffect();
-  if (!effect) throw new Error('r.onCleanup cannot be executed outside r.effect');
+  if (!effect) throw new Error('r.cleanup cannot be executed outside r.effect');
   (effect.cleanups ??= []).push(handler);
 }
 
