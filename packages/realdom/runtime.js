@@ -91,10 +91,12 @@ const createContainer = (snapshot, content) => {
   const remove = () => {
     for (const child of nodes) Element.remove(child);
     contentEffect.cleanup();
+    operatorsEffect.cleanup();
   }
   const destroy = () => {
     for (const child of nodes) Element.remove(child);
     contentEffect.destroy();
+    operatorsEffect.destroy();
   }
 
   return { appendAfter, remove, destroy };

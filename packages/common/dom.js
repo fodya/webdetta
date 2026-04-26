@@ -4,6 +4,13 @@ import { objectPick } from './utils.js';
 import { fileToDatauri } from '../convert/index.js';
 import { cached } from "../execution/index.js";
 
+export const L = new Promise(resolve => {
+  globalThis?.window?.addEventListener('load', resolve);
+});
+export const DCL = new Promise(resolve => {
+  globalThis?.window?.addEventListener('DOMContentLoaded', resolve);
+});
+
 export const kebab = cached(s => {
   let res = '';
   for (const c of s) res += c >= 'A' && c <= 'Z' ? '-' + c.toLowerCase() : c;
@@ -155,9 +162,13 @@ export const getZIndex = (node) => {
   return 0;
 };
 
-export const L = new Promise(resolve => {
-  globalThis?.window?.addEventListener('load', resolve);
-});
-export const DCL = new Promise(resolve => {
-  globalThis?.window?.addEventListener('DOMContentLoaded', resolve);
-});
+export const preventPinchZoom = (container) => {
+  const handler = (event) => event.preventDefault();
+  container.addEventListener('gesturestart', handler, { passive: false });
+  container.addEventListener('gesturechange', handler, { passive: false });
+  container.addEventListener('gestureend', handler, { passive: false });
+  container.addEventListener('touchmove', (event) => {
+    if (event.scale !== undefined && event.scale !== 1) handler(event);
+    if (event.touches && event.touches.length > 1) handler(event);
+  }, { passive: false });
+}
