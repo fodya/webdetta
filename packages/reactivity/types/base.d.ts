@@ -32,10 +32,9 @@ export class Signal<T = unknown> {
   /** Writes the value and triggers subscribed effects. */
   set(value: T): T;
   /**
-   * Functional update: reads previous value via untracked getter, then {@link Signal.set}.
-   * Callback and {@link Signal.set} run inside `currentEffect.run(undefined, …)` so reads in the callback
-   * do not subscribe, and `trigger` does not see the outer effect (avoids self-recursion when the caller
-   * also tracks this signal). Track dependencies outside {@link Signal.update} if the effect must re-run on them.
+   * Functional update: evaluates callback and writes inside an isolated effect scope
+   * (`tracking: false`, `writes: this`) so reads do not subscribe and writes are allowed.
+   * Track dependencies outside {@link Signal.update} if re-run is needed.
    */
   update(fn: (prev: T) => T): T;
   /** Callable form combining {@link Signal.get} and {@link Signal.set}; inherits {@link Signal.update} and {@link Signal.trigger}. */
@@ -58,8 +57,6 @@ export type EffectOptions = {
   /** When a {@link Signal}, must be the cell instance, not `signal.accessor`. */
   writes?: Writes;
   handler: EffectHandler;
-  errorHandler?: (err: unknown) => void;
-  loadingHandler?: (effect: Effect, value: boolean) => void;
 };
 
 /** Reactive computation node: runs its `handler`, tracks signal reads, and re-runs on change. */
@@ -67,21 +64,15 @@ export class Effect {
   constructor(options: EffectOptions);
   parent: Effect | null;
   handler: EffectHandler;
-  errorHandler: ((err: unknown) => void) | undefined;
-  loadingHandler: ((effect: Effect, value: boolean) => void) | undefined;
   tracking: boolean;
   writes: Writes | undefined;
   destroyed: boolean;
   children: Effect[] | null;
-  oncleanup: Array<() => void> | null;
-  queued: Set<Effect> | null;
+  cleanups: Array<() => void> | null;
+  queued: boolean;
   signals: Set<Signal> | null;
   /** Runs the handler while tracking dependencies. */
   run(): void;
-  /** Notifies the installed loading handler. */
-  handleLoading(value: boolean): void;
-  /** Routes `err` to the effect's error handler (or rethrows). */
-  handleError(err: unknown): void;
   /** Invokes registered cleanup callbacks. */
   cleanup(): void;
   /** Tears down the effect and its children. */

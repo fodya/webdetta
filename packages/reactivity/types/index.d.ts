@@ -20,7 +20,7 @@
  *
  * r.effect(() => {
  *   history.replaceState(null, '', `#${endpoint()}`);
- *   renderProducts(products(), products.loading(), products.error());
+ *   renderProducts(products.data(), products.loading(), products.error());
  * });
  *
  * searchInput.oninput = (e) => { query(e.target.value); page(1); };
@@ -57,27 +57,24 @@ export type ReactiveEffectOptions = {
   onError?: (err: unknown) => void;
 };
 
-/** Options for `r.resource()`. */
-export type ResourceOptions<T> = { initial?: T };
-
-/** Async-value accessor with `loading`, `error`, and imperative refresh. */
-export type Resource<T> = Accessor<T | undefined> & {
-  error: Accessor<unknown>;
-  loading: Accessor<boolean>;
-  /** Re-runs source effect and producer (same as dependency-driven refresh). */
-  recompute(): void;
+/** Options for `r.task` (distinct from internal `TaskOptions` in `./task.d.ts`). */
+export type AsyncTaskOptions<T> = {
+  initial?: T;
 };
 
-/** Imperative async task with reactive status tracking. */
-export type Action<A extends unknown[], R> = {
-  run: (...args: A) => Promise<R>;
-  lastResult: Accessor<R | undefined>;
+/** Async task with reactive state tracking and imperative run. */
+export type ReactiveTask<A extends unknown[], R> = ((...args: A) => Promise<R>) & {
+  data: Accessor<R | undefined>;
   loading: Accessor<boolean>;
   error: Accessor<unknown>;
 };
 
-/** Options for `r.store()` and `r.proxy()`. */
-export type StoreOptions = { updateTarget?: boolean };
+/** Source-driven resource accessor with status and manual reload. */
+export type ReactiveResource<S, R> = Accessor<R | undefined> & {
+  error: Accessor<unknown>;
+  loading: Accessor<boolean>;
+  reload: () => Promise<R>;
+};
 
 /** Reactive wrapper around an object; reads/writes trigger reactive updates. */
 export type ReactiveStore<T extends object> = T;
@@ -94,25 +91,40 @@ export const r: {
   /** Creates a reactive value that is deeply reactive for object/array content. */
   readonly dval: <T>(value: T) => Accessor<T>;
   /** Registers a reactive effect that re-runs when tracked signals change. */
-  readonly effect: (handler: EffectHandler, options?: ReactiveEffectOptions) => Effect;
+  readonly effect: ((handler: EffectHandler, options?: ReactiveEffectOptions) => Effect) & {
+    /** Runs `func(source())` when deps change; `func` runs untracked. */
+    explicit: <S>(
+      source: () => S,
+      func: (sourceValue: S) => unknown,
+      options?: ReactiveEffectOptions
+    ) => Effect;
+  };
   /** Registers an effect that does not track reads (runs only on explicit writes). */
   readonly untrack: (handler: EffectHandler, options?: Omit<ReactiveEffectOptions, 'track'>) => Effect;
   /** Creates a derived accessor whose value is recomputed when dependencies change. */
   readonly computed: <T>(func: () => T, options?: { initial?: T }) => ComputedAccessor<T>;
-  /** Creates a {@link Resource} driven by an async/iterable producer. */
-  readonly resource: <T, S>(
-    source: () => S,
-    func: (this: unknown, sourceValue: S) => T | Promise<T> | AsyncIterable<T>,
-    options?: ResourceOptions<T>
-  ) => Resource<T>;
-  /** Creates an imperative {@link Action} with reactive status tracking. */
-  readonly action: <A extends unknown[], R>(
-    func: (...args: A) => R | Promise<R>
-  ) => Action<A, R>;
+  /** Creates a reactive async task with explicit `run(...)`. */
+  readonly task: <A extends unknown[], R>(
+    func: (...args: A) => R | Promise<R> | AsyncIterable<R>,
+    options?: AsyncTaskOptions<R>
+  ) => ReactiveTask<A, R>;
+  /** Creates async resource accessor with `reload()` (source accessor or `null`). */
+  readonly resource: {
+    <R>(
+      source: null,
+      func: () => R | Promise<R> | AsyncIterable<R>,
+      options?: AsyncTaskOptions<R>
+    ): ReactiveResource<null, R>;
+    <S, R>(
+      source: () => S,
+      func: (sourceValue: S) => R | Promise<R> | AsyncIterable<R>,
+      options?: AsyncTaskOptions<R>
+    ): ReactiveResource<S, R>;
+  };
   /** Wraps an object in a reactive store with deep tracking. */
-  readonly store: <T extends object>(target: T | (() => T), options?: StoreOptions) => ReactiveStore<T>;
+  readonly store: <T extends object>(target: T | (() => T)) => ReactiveStore<T>;
   /** Like {@link r.store}, but exposes each property as an accessor. */
-  readonly proxy: <T extends object>(target: T | (() => T), options?: StoreOptions) => ReactiveProxy<T>;
+  readonly proxy: <T extends object>(target: T | (() => T)) => ReactiveProxy<T>;
   /** Registers a callback to run when the surrounding effect is cleaned up. */
   readonly onCleanup: (handler: () => void) => void;
 };

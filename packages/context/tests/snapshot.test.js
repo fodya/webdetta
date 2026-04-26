@@ -15,7 +15,7 @@ const sharedTests = (Ctx) => {
     });
     ctx.run('B', () => {
       assertEquals(ctx(), 'B');
-      const result = snap(() => ctx());
+      const result = snap.run(() => ctx());
       assertEquals(result, 'A');
       assertEquals(ctx(), 'B');
     });
@@ -29,7 +29,7 @@ const sharedTests = (Ctx) => {
       snap = Ctx.Snapshot();
     });
     ctx.run('B', () => {
-      snap(() => {
+      snap.run(() => {
         assertEquals(ctx(), 'A');
         ctx.run('inner', () => {
           assertEquals(ctx(), 'inner');
@@ -48,7 +48,7 @@ const sharedTests = (Ctx) => {
       snap = Ctx.Snapshot();
     });
     assertThrows(() =>
-      snap(() => {
+      snap.run(() => {
         throw new Error('x');
       }),
       Error,
@@ -66,7 +66,7 @@ const sharedTests = (Ctx) => {
     ctx.run('A', () => {
       snap = Ctx.Snapshot();
     });
-    snap(() => {
+    snap.run(() => {
       assertEquals(ctx(), 'A');
     });
     assertEquals(ctx(), 'root');
@@ -79,23 +79,79 @@ const sharedTests = (Ctx) => {
       snap = Ctx.Snapshot();
     });
     ctx.run('B', () => {
-      assertEquals(snap(() => ctx()), 'A');
+      assertEquals(snap.run(() => ctx()), 'A');
       assertEquals(ctx(), 'B');
     });
     ctx.run('C', () => {
-      assertEquals(snap(() => ctx()), 'A');
+      assertEquals(snap.run(() => ctx()), 'A');
       assertEquals(ctx(), 'C');
     });
     assertEquals(ctx(), 'root');
   });
-}
+
+  it('set returns a new snapshot and does not mutate the parent', () => {
+    const a = Ctx('a0');
+    const b = Ctx('b0');
+    let snap;
+    a.run('A', () => b.run('B', () => {
+      snap = Ctx.Snapshot();
+    }));
+    a.run('A2', () => b.run('B2', () => {
+      const branched = snap.set(a).set(b);
+      assertEquals(snap.run(() => [a(), b()]), ['A', 'B']);
+      assertEquals(branched.run(() => [a(), b()]), ['A2', 'B2']);
+    }));
+    assertEquals(snap.run(() => [a(), b()]), ['A', 'B']);
+  });
+};
 
 describe('sync', () => {
   sharedTests(Context);
+
+  it('set accepts explicit data', () => {
+    const a = Context('a0');
+    let snap;
+    a.run('A', () => {
+      snap = Context.Snapshot();
+    });
+    a.run('B', () => {
+      const branched = snap.set(a, 'pinned');
+      assertEquals(snap.run(() => a()), 'A');
+      assertEquals(branched.run(() => a()), 'pinned');
+      assertEquals(a(), 'B');
+    });
+  });
+
+  it('set chain keeps last value for same context', () => {
+    const a = Context('a0');
+    const b = Context('b0');
+    let snap;
+    a.run('A', () => b.run('B', () => {
+      snap = Context.Snapshot();
+    }));
+
+    const chained = snap.set(a, 1).set(b, 2).set(a, 3);
+    assertEquals(chained.run(() => [a(), b()]), [3, 2]);
+    assertEquals(snap.run(() => [a(), b()]), ['A', 'B']);
+  });
 });
 
 describe('async', () => {
   sharedTests(AsyncContext);
+
+  it('set accepts explicit data', async () => {
+    const a = AsyncContext('a0');
+    let snap;
+    await a.run('A', async () => {
+      snap = AsyncContext.Snapshot();
+    });
+    await a.run('B', async () => {
+      const branched = snap.set(a, 'pinned');
+      assertEquals(await snap.run(async () => a()), 'A');
+      assertEquals(await branched.run(async () => a()), 'pinned');
+      assertEquals(a(), 'B');
+    });
+  });
 
   it('preserves the captured value across awaits', async () => {
     const ctx = AsyncContext('root');
@@ -106,7 +162,7 @@ describe('async', () => {
       assertEquals(ctx(), 'A');
     });
     await ctx.run('B', async () => {
-      const result = await snap(async () => {
+      const result = await snap.run(async () => {
         await delay(0);
         return ctx();
       });
@@ -125,7 +181,7 @@ describe('async', () => {
     await assertRejects(
       () =>
         ctx.run('B', () =>
-          snap(async () => {
+          snap.run(async () => {
             assertEquals(ctx(), 'A');
             await delay(0);
             throw new Error('x');
@@ -154,11 +210,11 @@ describe('async', () => {
       }),
     ]);
     const [a, b] = await Promise.all([
-      snapA(async () => {
+      snapA.run(async () => {
         await delay(5);
         return ctx();
       }),
-      snapB(async () => {
+      snapB.run(async () => {
         await delay(2);
         return ctx();
       }),
@@ -175,14 +231,42 @@ describe('async', () => {
       outer = AsyncContext.Snapshot();
     });
     await ctx.run('B', async () => {
-      const result = await outer(async () => {
+      const result = await outer.run(async () => {
         const inner = AsyncContext.Snapshot();
         await delay(0);
-        return inner(() => ctx());
+        return inner.run(() => ctx());
       });
       assertEquals(result, 'A');
       assertEquals(ctx(), 'B');
     });
     assertEquals(ctx(), 'root');
+  });
+
+  it('set chains without mutating parent async snapshot', async () => {
+    const a = AsyncContext('a0');
+    const b = AsyncContext('b0');
+    let snap;
+    await a.run('A', async () => b.run('B', async () => {
+      snap = AsyncContext.Snapshot();
+    }));
+    await a.run('A2', async () => b.run('B2', async () => {
+      const branched = snap.set(a).set(b);
+      assertEquals(await snap.run(async () => [a(), b()]), ['A', 'B']);
+      assertEquals(await branched.run(async () => [a(), b()]), ['A2', 'B2']);
+    }));
+    assertEquals(await snap.run(async () => [a(), b()]), ['A', 'B']);
+  });
+
+  it('set chain keeps last value for same async context', async () => {
+    const a = AsyncContext('a0');
+    const b = AsyncContext('b0');
+    let snap;
+    await a.run('A', async () => b.run('B', async () => {
+      snap = AsyncContext.Snapshot();
+    }));
+
+    const chained = snap.set(a, 1).set(b, 2).set(a, 3);
+    assertEquals(await chained.run(async () => [a(), b()]), [3, 2]);
+    assertEquals(await snap.run(async () => [a(), b()]), ['A', 'B']);
   });
 });

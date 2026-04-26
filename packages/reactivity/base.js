@@ -16,6 +16,7 @@ const flush = (obj, key, cb) => {
   for (const item of queue) cb(item);
 }
 
+let queue;
 export class Signal {
   getter = null;
   setter = null;
@@ -32,10 +33,10 @@ export class Signal {
   trigger() {
     const effect = currentEffect();
     if (effect) {
-      effect.queued ??= new Set();
       flush(this, 'effects', eff => {
-        if (effect == eff) return console.warn('Reactive recursion detected');
-        effect.queued.add(eff);
+        if (eff.queued || effect == eff) return;// console.warn('Reactive recursion detected');
+        (queue ??= []).push(eff);
+        eff.queued = true;
       });
     } else {
       flush(this, 'effects', eff => eff.run());
@@ -76,24 +77,19 @@ export class Signal {
 export class Effect {
   parent = null;
   handler = null;
-  errorHandler = null;
-  loadingHandler = null;
   tracking = false;
   writes = undefined;
   destroyed = false;
   children = null;
-  oncleanup = null;
-  queued = null;
+  cleanups = null;
+  queued = false;
   signals = null;
-  constructor({ parent, tracking, writes, handler, errorHandler, loadingHandler }) {
+  constructor({ parent, tracking, writes, handler }) {
     this.parent = parent;
     this.handler = handler;
-    this.errorHandler = errorHandler;
-    this.loadingHandler = loadingHandler;
     this.tracking = tracking;
     this.writes = writes;
     if (parent) {
-      this.errorHandler ??= parent.errorHandler;
       (parent.children ??= []).push(this);
     }
   }
@@ -105,33 +101,26 @@ export class Effect {
 
     let err;
     try {
-      this.queued = null;
       const cleanup = currentEffect.run(this, this.handler);
-      if (typeof cleanup == 'function') (this.oncleanup ??= []).push(cleanup);
-      flush(this, 'queued', eff => eff.run());
+      if (typeof cleanup == 'function') (this.cleanups ??= []).push(cleanup);
     } catch (e) {
       err = e;
     } finally {
-      this.queued = null;
+      if (queue) {
+        const q = queue; queue = null;
+        for (const eff of q) eff.run();
+        for (const eff of q) eff.queued = false;
+      }
     }
 
     if (!this.signals) this.tracking = false;
 
-    if (err) this.handleError(err);
-  }
-
-  handleLoading(value) {
-    if (this.loadingHandler) this.loadingHandler(this, value);
-  }
-
-  handleError(err) {
-    if (this.errorHandler) this.errorHandler(err);
-    else throw err;
+    if (err) throw err;
   }
 
   cleanup() {
     flush(this, 'signals', signal => signal.effects?.delete(this));
-    flush(this, 'oncleanup', func => func());
+    flush(this, 'cleanups', func => func());
     flush(this, 'children', child => child.cleanup());
   }
 
@@ -139,7 +128,7 @@ export class Effect {
     this.destroyed = true;
     this.parent = null;
     flush(this, 'signals', signal => signal.effects?.delete(this));
-    flush(this, 'oncleanup', func => func());
+    flush(this, 'cleanups', func => func());
     flush(this, 'children', child => child.destroy());
   }
 }

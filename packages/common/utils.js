@@ -51,8 +51,9 @@ export const toFn = d => typeof d == 'function' ? d : () => d;
 
 export const templateCallToArray = args => {
   if (!isTemplateCall(args)) return args;
-  let i = 0, result = [];
-  for (let part of args[0]) {
+  let i = 0;
+  const result = [];
+  for (const part of args[0]) {
     result.push(part);
     if (++i < args.length) result.push(args[i]);
   }

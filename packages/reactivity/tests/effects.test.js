@@ -49,39 +49,15 @@ describe('effect', () => {
   });
 
   it('handling nested errors', () => {
-    const log = [];
-
-    r.effect(() => {
-      r.effect(() => {
-        throw new Error('a');
-      });
-
-      r.effect(() => {
+    assertThrows(
+      () => r.effect(() => {
         r.effect(() => {
-          throw new Error('b');
+          throw new Error('a');
         });
-      }, {
-        onError: err => log.push(`subtree1:${err.message}`),
-      });
-
-      r.effect(() => {
-        r.effect(() => {
-          r.effect(() => {
-            throw new Error('c');
-          });
-        });
-      }, {
-        onError: err => log.push(`subtree2:${err.message}`),
-      });
-    }, {
-      onError: err => log.push(`parent:${err.message}`),
-    });
-
-    assertEquals(log, [
-      'parent:a',
-      'subtree1:b',
-      'subtree2:c',
-    ]);
+      }),
+      Error,
+      'a',
+    );
   });
 
   it('unsubscribe when branch skips read', () => {

@@ -2,12 +2,13 @@
 import { arr } from './utils.js';
 import { objectPick } from './utils.js';
 import { fileToDatauri } from '../convert/index.js';
-import { cached } from '../execution/index.js';
+import { cached } from "../execution/index.js";
 
-const regexAZ = /[A-Z]/g;
-export const kebab = cached(s =>
-  s.replaceAll(regexAZ, c => '-' + c.toLowerCase())
-);
+export const kebab = cached(s => {
+  let res = '';
+  for (const c of s) res += c >= 'A' && c <= 'Z' ? '-' + c.toLowerCase() : c;
+  return res;
+});
 
 export const setThemeColor = (color) => {
   const c = String(color ?? '').trim();
@@ -19,7 +20,7 @@ export const setThemeColor = (color) => {
 export const copyText = async text => {
   try {
     await navigator.clipboard.writeText(text);
-  } catch (e) {
+  } catch (_) {
     const node = document.createElement("textarea");
     node.value = text;
 

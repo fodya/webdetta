@@ -8,7 +8,6 @@ const tryInsert = (sheet, css) => {
   try { sheet.insertRule(css, sheet.cssRules.length); } catch {}
 };
 
-// Keeps rule identity across _.recalculate (WeakMap cache → same StyleRule).
 class StyleSheet {
   processedNodes = new Map();
   constructor(style) { this.style = style; }

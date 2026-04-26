@@ -9,9 +9,7 @@ export const I18N = ({
   let lang;
 
   const definition = (key, lang) => {
-    let obj = translations[lang];
-    for (const k of key.split('.')) obj = obj?.[k];
-    return obj;
+    return [...key.split('.'), lang].reduce((obj, k) => obj?.[k], translations);
   }
 
   const translate = (...args) => {

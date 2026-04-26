@@ -6,24 +6,42 @@
  * ```js
  * import { AsyncContext } from '@webdetta/core/context/async';
  *
- * const reqCtx = AsyncContext();
- * await reqCtx.run({ reqId: 'abc' }, async () => {
+ * const reqCtx = AsyncContext('no-request');
+ * await reqCtx.run('req-42', async () => {
  *   await someAsyncWork();
- *   console.log(reqCtx()); // { reqId: 'abc' }
+ *   console.log(reqCtx()); // 'req-42'
+ * });
+ * ```
+ *
+ * @example Snapshot branch (values read at each `set`)
+ * ```js
+ * const req = AsyncContext('a');
+ * await req.run('live', async () => {
+ *   const snap = AsyncContext.Snapshot();
+ *   await req.run('other', async () => {
+ *     await snap.set(req).run(async () => console.log(req())); // 'live'
+ *   });
  * });
  * ```
  *
  * @module
  */
 
-/** Re-entrant runner that restores a snapshotted async-context state for `func`. */
-export type AsyncSnapshotRunner = <A extends unknown[], R>(
-  func: (...args: A) => R,
-  ...args: A
-) => R;
-
-/** Captures the current state of all async contexts into a replayable runner. */
-export const Snapshot: () => AsyncSnapshotRunner;
+/**
+ * Handle returned by {@link AsyncContext.Snapshot}.
+ * Uses `AsyncLocalStorage.snapshot()`; `run` supports both callable snapshots (Deno)
+ * and `.run(cb)` (Node).
+ */
+export type AsyncContextSnapshot = {
+  run<A extends unknown[], R>(func: (...args: A) => R, ...args: A): R;
+  /** Reads `context` value as seen by this snapshot. */
+  get<T>(context: AsyncContextFn<T>): T;
+  /**
+   * New snapshot that will `run` nested `AsyncContext` layers with
+   * `data` (default: `context()` at call time). Does not mutate `this`.
+   */
+  set<T>(context: AsyncContextFn<T>, data?: T): AsyncContextSnapshot;
+};
 
 /** Callable that reads the current async-context value and provides scoped setters. */
 export type AsyncContextFn<T> = {
@@ -49,6 +67,6 @@ export const AsyncContext: {
   <T>(initialValue: T): AsyncContextFn<T>;
   /** Creates an async context initialized to `undefined`. */
   <T = unknown>(): AsyncContextFn<T | undefined>;
-  /** Captures the current state of all async contexts into a replayable runner. */
-  Snapshot: typeof Snapshot;
+  /** Captures current async-local state into an {@link AsyncContextSnapshot}. */
+  Snapshot(): AsyncContextSnapshot;
 };

@@ -1,12 +1,11 @@
-import { isIterable, isObject, callFn, templateCallToArray } from '../common/utils.js';
-import { once } from '../execution/index.js';
+import { Context } from '../context/sync.js';
+import { isIterable, isObject, callFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
-import { Element, Lazy, Operator, processItem } from './base.js';
+import { currentEffect } from '../reactivity/base.js';
+import { Element, Operator, processItem } from './base.js';
 
-const listItemKey = (d, i) => {
-  if (typeof d == 'number' || typeof d == 'string') return d;
-  if (d && Object.hasOwn(d, 'id')) return d.id;
-  return i;
+const listItemKey = d => {
+  return d && typeof d == 'object' ? d.id : d;
 };
 const listItemsToEntries = (items, keyFn) => (
   Array.isArray(items) ? items.map((d, i, a) => [keyFn(d, i, a), d])
@@ -17,30 +16,28 @@ const listItemsToEntries = (items, keyFn) => (
 
 export const toString = (...args) => {
   let str = '';
-  for (const a of templateCallToArray(args)) str += callFn(a);
+  for (const a of args) str += callFn(a);
   return str;
 }
-export const textContent = arg => Operator(node => {
-  node.textContent = toString(arg);
-});
+
 export const createText = arg => {
   if (typeof arg == 'function') {
     const node = document.createTextNode('');
-    Operator.apply(node, textContent(arg));
+    r.effect(() => node.textContent = callFn(arg));
     return node;
   } else {
     return document.createTextNode(String(arg));
   }
 }
 
-const lastNodes = new WeakMap();
+const tailNodes = new WeakMap();
 const removeNodes = new WeakSet();
-const createContainer = (content, { track=true }) => {
+const createContainer = (snapshot, content) => {
   let startNode;
 
   let nodes = [], prevNodes = [], operators = [];
   const contentEffect = r.detach(() => {
-    const items = callFn(content);
+    const items = snapshot.set(currentEffect).run(callFn, content);
     processItem(items,
       o => operators.push(o),
       c => { nodes.push(c); removeNodes.delete(c); },
@@ -53,7 +50,7 @@ const createContainer = (content, { track=true }) => {
     prevNodes = [];
 
     if (startNode) {
-      operatorsEffect.run();
+      // operatorsEffect.run();
       appendAfter(startNode);
     }
     return () => {
@@ -61,36 +58,29 @@ const createContainer = (content, { track=true }) => {
       nodes = [];
       operators = [];
     }
-  }, { track: track, writes: false, run: false });
-  
-  const operatorsEffect = r.detach(() => {
-    for (const o of operators) Operator.apply(startNode.parentNode, o);
-  }, { track: track, writes: false, run: false });
+  }, { track: true, writes: false, run: false });
 
-  const initContent = once(contentEffect.run.bind(contentEffect));
   const appendAfter = (newStartNode) => {
-    initContent();
-    const parentChanged = startNode?.parentNode != newStartNode.parentNode;
-    let lastNode = startNode = newStartNode;
-    if (parentChanged) operatorsEffect.run();
-    for (const node of nodes) {
-      if (lastNode.nextSibling !== node) Element.appendAfter(lastNode, node);
-
-      // Use registered fragment tail when chaining inserts; otherwise the node itself.
-      lastNode = lastNodes.get(node) ?? node;
+    if (!startNode) contentEffect.run();
+    if (startNode?.parentNode != newStartNode.parentNode) {
+      // TODO cleanup operators from old parent
+      for (const o of operators) Operator.apply(startNode.parentNode, o);
     }
-    return lastNode;
+    let tailNode = startNode = newStartNode;
+    for (const node of nodes) {
+      if (tailNode.nextSibling !== node) Element.appendAfter(tailNode, node);
+      tailNode = tailNodes.get(node) ?? node;
+    }
+    return tailNode;
   };
 
   const remove = () => {
     for (const child of nodes) Element.remove(child);
     contentEffect.cleanup();
-    operatorsEffect.cleanup();
   }
   const destroy = () => {
     for (const child of nodes) Element.remove(child);
     contentEffect.destroy();
-    operatorsEffect.destroy();
   }
 
   return { appendAfter, remove, destroy };
@@ -107,23 +97,28 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
     containers.clear();
   });
 
+  const snapshot = Context.Snapshot();
   const effect = r.effect(() => {
     const items = callFn(itemsFn);
     const entries = new Map(listItemsToEntries(items, keyFn));
 
-    let last = root, i = 0;
+    let tail = root, i = 0;
     for (const [k, v] of entries) {
       let container = containers.get(k);
       if (!container) containers.set(k,
-        container = createContainer(() => renderItem(v, i, items, k), { track: false })
+        container = createContainer(snapshot, () => {
+          let res;
+          r.untrack(() => res = renderItem(v, i, items, k));
+          return res;
+        })
       );
-      last = container.appendAfter(last);
+      tail = container.appendAfter(tail);
       i++;
     }
 
     for (const [k, c] of containers) {
       if (!entries.has(k)) {
-        c.remove();
+        c.destroy();
         containers.delete(k);
       }
     }
@@ -134,9 +129,9 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
 
 export const createSlot = (content) => {
   const root = document.createTextNode('');
-  const container = createContainer(content, { track: true });
+  const container = createContainer(Context.Snapshot(), content);
   Element.registerHook(root, 'afterAppend', () => {
-    lastNodes.set(root, container.appendAfter(root));
+    tailNodes.set(root, container.appendAfter(root));
   });
   Element.registerHook(root, 'beforeRemove', () => {
     container.remove();
@@ -144,7 +139,10 @@ export const createSlot = (content) => {
   return root;
 }
 
-const toLazy = (arg) => (typeof arg === 'function' ? new Lazy(arg) : arg);
+const toLazy = (arg) => 
+  typeof arg === 'function'
+  ? { [Element.toNodes]: arg }
+  : arg;
 
 export const createIf = (cond, ...args) => {
   const conditions = [{ cond, value: args.map(toLazy) }];
@@ -167,12 +165,12 @@ export const createIf = (cond, ...args) => {
 };
 
 export const createDynamic = (deps, func) => {
-  const content = r.val();
-  r.effect(() => {
+  return createSlot(() => {
     const arg = deps();
-    r.effect(() => content(func(arg)), { track: false })
+    let res;
+    r.untrack(() => res = func(arg));
+    return res;
   });
-  return createSlot(content);
 };
 
 export const createPick = (selectedKey, list, renderFn, keyFn = listItemKey) => {

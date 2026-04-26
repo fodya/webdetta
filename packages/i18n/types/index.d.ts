@@ -8,16 +8,11 @@
  * const t = I18N({
  *   fallbackLang: 'en',
  *   translations: {
- *     en: {
- *       checkout: {
- *         title: 'Checkout',
- *         total: (amount) => `Total: $${amount}`,
- *       },
- *     },
- *     fr: {
- *       checkout: {
- *         title: 'Paiement',
- *         total: (amount) => `Total : ${amount} €`,
+ *     checkout: {
+ *       title: { en: 'Checkout', fr: 'Paiement' },
+ *       total: {
+ *         en: (amount) => `Total: $${amount}`,
+ *         fr: (amount) => `Total : ${amount} €`,
  *       },
  *     },
  *   },
@@ -45,7 +40,7 @@ export type TranslationNode = {
 export type I18NOptions = {
   /** Language used when the current language has no translation for a key. */
   fallbackLang: string;
-  /** Nested translation map: `{ [lang]: { [key]: value } }`. */
+  /** Nested translation map: `{ [key]: { [key]: ... { [lang]: value } }`. */
   translations: Record<string, TranslationNode>;
   /** Handler invoked when a key is missing in both the current and fallback language. */
   onNotFound?: (key: string) => unknown;

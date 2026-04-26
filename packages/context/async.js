@@ -1,26 +1,40 @@
 ﻿// @ts-self-types="./types/async.d.ts"
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-export const Snapshot = () => AsyncLocalStorage.snapshot();
+function AsyncContextSnapshot(native, overlays=[]) {
+  const snapshot = {};
+  snapshot.set = (ctx, data = ctx()) => {
+    return AsyncContextSnapshot(native, [
+      ...overlays,
+      { ctx: ctx, value: data },
+    ]);
+  }
+  snapshot.get = (ctx) => snapshot.run(ctx);
+  snapshot.run = (func, ...args) => {
+    return native(overlays.reduceRight(
+      (acc, { ctx, value }) => ctx.bind(value, acc),
+      () => func(...args),
+    ));
+  }
+  return snapshot;
+}
 
 export const AsyncContext = (initialValue) => {
   const storage = new AsyncLocalStorage();
 
-  const context = () => {
+  const ctx = () => {
     const state = storage.getStore();
     return state ? state.value : initialValue;
   };
 
-  const run = context.run = function (data, func, ...args) {
+  ctx.run = function (data, func, ...args) {
     const state = { value: data };
-    return storage.run(state, () => func.apply(this, args));
+    return storage.run(state, func, ...args);
   };
 
-  context.bind = (data, func) => function (...args) {
-    return run.call(this, data, func, ...args);
-  };
+  ctx.bind = (data, func) => ctx.run.bind(null, data, func);
 
-  return context;
+  return ctx;
 };
 
-AsyncContext.Snapshot = Snapshot;
+AsyncContext.Snapshot = () => AsyncContextSnapshot(AsyncLocalStorage.snapshot(), []);

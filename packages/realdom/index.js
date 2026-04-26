@@ -1,5 +1,5 @@
 // @ts-self-types="./types/index.d.ts"
-import { Element, Lazy } from './base.js';
+import { Element } from './base.js';
 import { kebab } from '../common/dom.js';
 import { callFn } from '../common/utils.js';
 import { Context } from '../context/sync.js';
@@ -11,8 +11,7 @@ import {
   createList,
   createPick,
   createSlot,
-  createDynamic,
-  textContent,
+  createDynamic
 } from './dynamic.js';
 
 const api = {};
@@ -30,13 +29,15 @@ api.parse = (...args) => {
 api.append = (node, ...args) => Element.append(node, args);
 api.remove = Element.remove;
 
-api.textContent = textContent;
+api.textContent = Operator((node, _, args) => {
+  node.textContent = toString(...args);
+});
 api.if = createIf;
 api.list = createList;
 api.slot = createSlot;
 api.pick = createPick;
 api.dynamic = createDynamic;
-api.lazy = (fn) => new Lazy(fn);
+api.lazy = func => ({ [Element.toNodes]: func });
 
 api.attr = Operator((node, names, args) => {
   const value = toString(...args);
@@ -104,14 +105,12 @@ api.prop = Operator((node, names, args) => {
 });
 
 const namespace = ns => new Proxy(api, {
-  get: cached((target, key) => (
-    key == '' || key == '!' || key == ':' || key[0] >= 'A' && key[0] <= 'Z'
-    ? Element.bind(null, ns, key[0].toLowerCase() + kebab(key.slice(1)))
-    : target[key]
-  ), (_, key) => key + ns)
+  get: (target, key) =>
+    target[key] ??
+    Element.bind(null, ns, kebab(key).slice(1))
 });
 api.NS_SVG = namespace('http://www.w3.org/2000/svg');
 api.NS_MATH = namespace('http://www.w3.org/1998/Math/MathML');
 
-export const el = namespace(null);
-export { Context, Lazy };
+export const el = namespace('http://www.w3.org/1999/xhtml');
+export { Context };

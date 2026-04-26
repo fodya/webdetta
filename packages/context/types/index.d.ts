@@ -23,6 +23,9 @@
  *     fetchData()
  *   )
  * );
+ *
+ * const snap = Context.Snapshot();
+ * const price = snap.set(localeCtx).run(() => renderPrice(20));
  * ```
  */
 export * from './sync.d.ts';

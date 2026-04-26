@@ -86,7 +86,7 @@ describe('signal', () => {
 
     assertEquals(log, ['parent']);
     assertEquals(childRuns, 1);
-    assertEquals(parent.queued, null);
+    assertEquals(parent.queued, false);
     assertEquals(signal.effects?.has(child), true);
     assertEquals(signal.effects?.size, 1);
   });
@@ -142,7 +142,7 @@ describe('effect', () => {
       handler: () => {},
       tracking: false,
     });
-    effect.oncleanup = [
+    effect.cleanups = [
       () => cleaned++,
       () => cleaned++,
     ];
@@ -150,7 +150,7 @@ describe('effect', () => {
     effect.cleanup();
 
     assertEquals(cleaned, 2);
-    assertEquals(effect.oncleanup, null);
+    assertEquals(effect.cleanups, null);
   });
 
   it('cleanup children', () => {
@@ -176,7 +176,7 @@ describe('effect', () => {
     const effect = new Effect({
       handler: () => {
         signal.get();
-        (currentEffect().oncleanup ??= []).push(() => cleaned++);
+        (currentEffect().cleanups ??= []).push(() => cleaned++);
       },
       tracking: true,
     });
@@ -187,7 +187,7 @@ describe('effect', () => {
     assertEquals(effect.destroyed, true);
     assertEquals(effect.parent, null);
     assertEquals(effect.signals, null);
-    assertEquals(effect.oncleanup, null);
+    assertEquals(effect.cleanups, null);
     assertEquals(cleaned, 1);
     assertEquals(signal.effects?.size, 0);
   });
@@ -211,66 +211,30 @@ describe('effect', () => {
   });
 
   it('clears queue', () => {
+    const signal = valueSignal(1);
     let runs = 0;
     const child = new Effect({
-      handler: () => { runs++; },
-      tracking: false,
+      handler: () => {
+        runs++;
+        signal.get();
+      },
+      tracking: true,
     });
+    child.run();
+    runs = 0;
     const effect = new Effect({
       handler: () => {
-        effect.queued = new Set([child, child]);
+        signal.trigger();
+        signal.trigger();
       },
-      tracking: false,
+      tracking: true,
     });
 
     effect.run();
 
     assertEquals(runs, 1);
-    assertEquals(effect.queued, null);
-  });
-});
-
-describe('errors', () => {
-  it('inherits onError', () => {
-    const seen = [];
-    const parent = new Effect({
-      handler: () => {},
-      errorHandler: err => seen.push(`parent:${err.message}`),
-      tracking: false,
-    });
-    const child = new Effect({
-      parent,
-      handler: () => { throw new Error('boom'); },
-      tracking: false,
-    });
-
-    child.run();
-
-    assertEquals(seen, ['parent:boom']);
-  });
-
-  it('overrides onError', () => {
-    const seen = [];
-    const parent = new Effect({
-      handler: () => {},
-      errorHandler: err => seen.push(`parent:${err.message}`),
-      tracking: false,
-    });
-    const child = new Effect({
-      parent,
-      handler: () => {},
-      errorHandler: err => seen.push(`child:${err.message}`),
-      tracking: false,
-    });
-    const grandchild = new Effect({
-      parent: child,
-      handler: () => { throw new Error('boom'); },
-      tracking: false,
-    });
-
-    grandchild.run();
-
-    assertEquals(seen, ['child:boom']);
+    assertEquals(effect.queued, false);
+    assertEquals(child.queued, false);
   });
 });
 
@@ -346,20 +310,20 @@ describe('leak', () => {
     let cleaned = 0;
     const effect = new Effect({
       handler: () => {
-        (currentEffect().oncleanup ??= []).push(() => cleaned++);
+        (currentEffect().cleanups ??= []).push(() => cleaned++);
       },
       tracking: true,
     });
 
     for (let i = 0; i < 50; i++) {
       effect.run();
-      assertEquals(effect.oncleanup?.length, 1);
+      assertEquals(effect.cleanups?.length, 1);
     }
 
     assertEquals(cleaned, 49);
     effect.cleanup();
     assertEquals(cleaned, 50);
-    assertEquals(effect.oncleanup, null);
+    assertEquals(effect.cleanups, null);
   });
 
   it('stable queue', () => {
@@ -386,7 +350,7 @@ describe('leak', () => {
     for (let i = 0; i < 50; i++) {
       parent.run();
       assertEquals(childRuns, i + 1);
-      assertEquals(parent.queued, null);
+      assertEquals(parent.queued, false);
       assertEquals(signal.effects?.size, 1);
     }
   });

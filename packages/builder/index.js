@@ -3,7 +3,7 @@
 // https://github.com/frameorc/frameorc/blob/github/src/builder.js
 // Original author: Michael Lazarev
 
-export const Builder = (effect, tasks=[], names=[]) => {
+export const Builder = (effect, tasks = [], names = []) => {
   const call = (...args) => {
     if (args[0] === Builder.symbol) return (args[0] = tasks, effect(...args));
     return Builder(effect, [...tasks, { names, args }], []);
@@ -13,7 +13,7 @@ export const Builder = (effect, tasks=[], names=[]) => {
     return Builder(effect, tasks, [...names, k]);
   }
   call[Builder.symbol] = true;
-  return new Proxy(call, { get })
+  return new Proxy(call, { get });
 }
 
 Builder.symbol = Symbol('Builder.symbol');

@@ -1,5 +1,5 @@
 import { describe, it } from 'jsr:@std/testing/bdd';
-import { assert, assertEquals, assertMatch } from 'jsr:@std/assert';
+import { assertEquals } from 'jsr:@std/assert';
 import { r } from '../index.js';
 
 describe('flow', () => {
@@ -131,17 +131,10 @@ describe('flow', () => {
   });
 
   it('cyclic', () => {
-    let err;
-    try {
-      const a = r.val(0);
-      const b = r.val(0);
-      r.effect(() => { b(a() + 1); });
-      r.effect(() => { a(b()); });
-    } catch (e) {
-      err = e;
-    }
-    assert(err, 'expected setup to throw');
-    assertEquals(err.name, 'RangeError');
-    assertMatch(String(err.message), /Maximum call stack|too much recursion/i);
+    const a = r.val(0);
+    const b = r.val(0);
+    r.effect(() => { b(a() + 1); });
+    r.effect(() => { a(b()); });
+    assertEquals({ a: a(), b: b() }, { a: 2, b: 2 });
   });
 });

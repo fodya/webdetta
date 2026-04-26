@@ -1,16 +1,7 @@
 import { Builder } from '../builder/index.js';
-import { templateCallToArray, callFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
+import { templateCallToArray } from '../common/utils.js';
 import { createText } from "./dynamic.js";
-
-export class Lazy {
-  constructor(fn) {
-    this.fn = fn;
-  }
-  static isLazy(item) {
-    return item instanceof Lazy;
-  }
-}
 
 const isFragment = node => node.nodeType === 11;
 
@@ -23,8 +14,6 @@ export const processItem = (item, processOperator, processNode, flattenFragments
     for (const d of item) processItem(d, processOperator, processNode, flattenFragments);
   } else if (isFunc && Operator.isOperator(item)) {
     processOperator(item);
-  } else if (isObj && Lazy.isLazy(item)) {
-    processItem(callFn(item.fn), processOperator, processNode, flattenFragments);
   } else if ((isObj || isFunc) && Element.toNodes in item) {
     processItem(item[Element.toNodes](), processOperator, processNode, flattenFragments);
   } else {
@@ -38,13 +27,13 @@ export const processItem = (item, processOperator, processNode, flattenFragments
 }
 
 export const Element = (ns, tag, ...args) => {
-  const node = (
-    tag === '' ? document.createTextNode('') :
-    tag === '!' ? document.createComment('') :
-    tag === ':' ? document.createDocumentFragment() :
-    ns ? document.createElementNS(ns, tag) :
-    document.createElement(tag)
-  );
+  let node;
+  switch (tag) {
+    case '': node = document.createTextNode(''); break;
+    case '!': node = document.createComment(''); break;
+    case ':': node = document.createDocumentFragment(); break;
+    default: node = document.createElementNS(ns, tag)
+  }
   return Element.append(node, templateCallToArray(args));
 }
 Element.toNodes = Symbol('Element.toNodes');
@@ -96,7 +85,11 @@ Element.remove = (node) => {
 
 export const Operator = (func, { track=true }={}) => Builder((tasks, node) => {
   for (const {names, args} of tasks) {
-    r.effect(() => func(node, names, args), { track });
+    if (args.some(arg => typeof arg == 'function')) {
+      r.effect(() => func(node, names, args), { track });
+    } else {
+      func(node, names, args);
+    }
   }
 });
 Operator.isOperator = Builder.isBuilder;

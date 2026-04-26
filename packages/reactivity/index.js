@@ -54,12 +54,22 @@ r.effect = (handler, {
   const effect = new Effect({
     parent: attach ? parent : null,
     handler,
-    errorHandler: onError,
+    // Kept for public API compatibility; Effect ignores custom handlers for now.
+    onError,
     tracking: track,
     writes,
   });
   if (run) effect.run();
   return effect;
+}
+
+r.effect.explicit = (source, func, options = {}) => {
+  if (source) assertSyncFunction('r.effect.explicit `source`', source);
+  assertFunction('r.effect.explicit `func`', func);
+  return r.effect(() => {
+    const deps = source?.();
+    r.untrack(() => func(deps));
+  }, options);
 }
 
 r.untrack = (handler, options) => r.effect(handler, {
@@ -91,77 +101,64 @@ r.computed = (func, { initial }={}) => {
   return value;
 }
 
-r.resource = (source, func, { initial } = {}) => {
-  assertSyncFunction('r.resource `source`', source);
-  assertFunction('r.resource `func`', func);
+r.task = (func, { initial } = {}) => {
+  assertFunction('r.task `func`', func);
 
-  const value = r.val(initial);
+  const data = r.val(initial);
   const error = r.val(null);
   const loading = r.dval(false);
 
-  const effect = r.effect(() => {
-    const sourceValue = source();
-    r.untrack(() => {
-      const task = Task(() => func(sourceValue), {
-        effect,
-        onLoading: val => {
-          loading(val);
-          effect.handleLoading(val);
-        },
-        onError: err => {
-          loading(false); value(null); error(err);
-          effect.handleError(err);
-        },
-        onValue: val => { loading(false); value(val); error(null); },
-      });
-      return task.destroy;
-    });
-  }, { writes: false, run: false });
-  effect.run();
-
-  value.error = error;
-  value.loading = loading;
-  value.recompute = effect.run.bind(effect);
-  return value;
-}
-
-r.action = (func) => {
-  assertFunction('r.action `func`', func);
-
-  const lastResult = r.val();
-  const error = r.val(null);
-  const loading = r.dval(false);
-  
-  let destroy = null;
+  let effect;
   const run = (...args) => new Promise((resolve, reject) => {
-    destroy?.();
-    let task;
-    r.untrack(() => {
-      task = Task(func.bind(null, ...args), {
+    effect?.destroy();
+    effect = r.detach(() => {
+      const task = Task(func.bind(null, ...args), {
         onLoading: val => loading(val),
-        onError: err => { loading(false); error(err); reject(err); },
-        onValue: val => { loading(false); lastResult(val); error(null); resolve(val); },
+        onError: err => {
+          effect = null;
+          reject(err);
+          loading(false);
+          error(err);
+        },
+        onValue: val => {
+          effect = null;
+          resolve(val);
+          loading(false);
+          data(val);
+          error(null);
+        },
       });
-    }, { attach: false });
-    destroy = () => {
-      task.destroy();
-      reject(new Error('ACTION_CANCELLED'));
-    };
+      return () => {
+        task.destroy();
+        reject?.(new DOMException('task cancelled', 'AbortError'));
+      };
+    });
   });
 
-  return { run, lastResult, loading, error };
+  return Object.assign(run, { data, loading, error });
+}
+
+r.resource = (source, func, { initial } = {}) => {
+  if (source) assertSyncFunction('r.resource `source`', source);
+  assertFunction('r.resource `func`', func);
+  const task = r.task(func, { initial });
+  const effect = r.effect.explicit(source, task, { writes: false });
+  return Object.assign(task.data, {
+    error: task.error,
+    loading: task.loading,
+    reload: effect.run.bind(effect),
+  });
 }
 
 // Stores
 
-const createStore = ({ target, updateTarget=false }) => {
+const createStore = ({ target }) => {
   const refs = {};
   const ref = key => refs[key] ??= new Signal({
     get() { return currentTarget[key]; },
     set(v) {
       currentTarget[key] = v;
-      if (updateTarget) target(currentTarget);
-      else this.trigger();
+      this.trigger();
       return v;
     }
   });
@@ -174,15 +171,15 @@ const createStore = ({ target, updateTarget=false }) => {
 
   return { ref }
 }
-r.store = (target, { updateTarget }={}) => {
-  const { ref } = createStore({ target, updateTarget });
+r.store = (target) => {
+  const { ref } = createStore({ target });
   return new Proxy({}, {
     get(_, key) { return ref(key).accessor(); },
     set(_, key, val) { return ref(key).accessor(val); }
   });
 }
-r.proxy = (target, { updateTarget }={}) => {
-  const { ref } = createStore({ target, updateTarget });
+r.proxy = (target) => {
+  const { ref } = createStore({ target });
   return new Proxy({}, {
     get(_, key) { return ref(key).accessor; }
   });
@@ -194,7 +191,7 @@ r.onCleanup = handler => {
   assertSyncFunction('r.onCleanup `handler`', handler);
   const effect = currentEffect();
   if (!effect) throw new Error('r.onCleanup cannot be executed outside r.effect');
-  (effect.oncleanup ??= []).push(handler);
+  (effect.cleanups ??= []).push(handler);
 }
 
 //

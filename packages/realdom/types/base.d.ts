@@ -6,18 +6,6 @@
  */
 import type { BuilderFn } from '../../builder/types/index.d.ts';
 
-/** Any value that can be converted to a DOM text node. */
-export type Stringifiable =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | (() => Stringifiable);
-
-/** Stringifies a list of {@link Stringifiable} values (recursively calling functions). */
-export function toString(...args: unknown[]): string;
-
 /** An operator is a builder function that, when applied to a node, performs side effects. */
 export type Operator = BuilderFn;
 
@@ -31,12 +19,8 @@ export type OperatorFunc = (
 /** Lifecycle hook names registerable via {@link ElementFn.registerHook}. */
 export type HookName = 'beforeAppend' | 'afterAppend' | 'beforeRemove' | 'afterRemove';
 
-/** Deferred subtree: `fn` runs when processed by {@link processItem}. */
-export class Lazy {
-  constructor(fn: () => ElementItem);
-  fn: () => ElementItem;
-  static isLazy(item: unknown): item is Lazy;
-}
+/** Deferred child item resolved by `processItem` through `Element.toNodes`. */
+export type DeferredElementItem = { [key: symbol]: () => ElementItem };
 
 /** Any value accepted as a child/operator/attribute item in element builders. */
 export type ElementItem =
@@ -47,8 +31,8 @@ export type ElementItem =
   | null
   | undefined
   | Operator
-  | Lazy
-  | (() => Stringifiable)
+  | DeferredElementItem
+  | (() => unknown)
   | ElementItem[];
 
 /** Walks an element-item tree, dispatching operators and nodes to the provided callbacks. */
@@ -63,8 +47,10 @@ export function processItem(
 export interface ElementFn {
   /** Creates an element in `ns` (or null namespace) with the given tag name. */
   (ns: string | null, tag: string, ...args: ElementItem[]): Node;
+  /** Marker symbol used by deferred child objects. */
+  toNodes: symbol;
   /** Coerces a value into a DOM node (text nodes for primitives, etc). */
-  from(arg: Node | string | number | (() => Stringifiable)): Node;
+  from(arg: unknown): Node;
   /** Registers a lifecycle hook on a node. */
   registerHook(node: Node, hook: HookName, handler: () => void): void;
   /** Appends children to a node. */

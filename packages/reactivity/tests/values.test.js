@@ -85,14 +85,6 @@ describe('computed', () => {
     assertThrows(() => {
       r.computed(() => { throw new Error('test'); });
     }, Error, 'test');
-
-    const log = [];
-    r.effect(() => {
-      r.computed(() => { throw new Error('test'); });
-    }, {
-      onError: err => log.push(`error:${err.message}`),
-    });
-    assertEquals(log, ['error:test']);
   });
 
   it('rejects async function', () => {
