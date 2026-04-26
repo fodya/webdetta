@@ -28,15 +28,16 @@ api.parse = (...args) => {
 api.append = (node, ...args) => Element.append(node, args);
 api.remove = Element.remove;
 
-api.textContent = Operator((node, _, args) => {
-  node.textContent = toString(...args);
-});
 api.if = createIf;
 api.list = createList;
 api.slot = createSlot;
 api.pick = createPick;
 api.dynamic = createDynamic;
 api.lazy = createLazy;
+
+api.textContent = Operator((node, _, args) => {
+  node.textContent = toString(...args);
+});
 
 api.attr = Operator((node, names, args) => {
   const value = toString(...args);
@@ -58,21 +59,21 @@ api.hook = Operator((node, names, args) => {
 });
 
 const eventHandlers = (node, args) => {
-  const handlers = [];
   let options;
-  for (const arg of args) {
-    if (typeof arg == 'function') handlers.push(arg);
-    else options = arg;
+  for (let i = 0; i < args.length; i++) {
+    if (typeof args[i] == 'object') {
+      options = args[i];
+      args.splice(i, 1);
+      i--;
+    }
   }
   let target = node;
-  let bindOptions = options;
-  if (options && typeof options == 'object' && Object.hasOwn(options, 'target')) {
-    const rest = { ...options };
-    target = rest.target ?? node;
-    delete rest.target;
-    bindOptions = rest;
+  if (options && Object.hasOwn(options, 'target')) {
+    target = options.target ?? node;
+    options = { ...options };
+    delete options.target;
   }
-  return { handlers, options: bindOptions, target };
+  return { handlers: args, options, target };
 };
 
 api.on = Operator((node, names, args) => {
