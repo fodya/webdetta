@@ -557,7 +557,7 @@ describe('writes', () => {
 });
 
 describe('throws', () => {
-  it('without onError', () => {
+  it('handler throws', () => {
     const effect = new Effect({
       handler: () => { throw new Error('boom'); },
       tracking: false,

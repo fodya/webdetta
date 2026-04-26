@@ -3,6 +3,7 @@
  *
  * @module
  */
+import type { ContextSnapshot } from '../../context/types/sync.d.ts';
 import type { ElementItem } from './base.d.ts';
 
 /**
@@ -133,9 +134,10 @@ export function createDynamic<D>(
 ): Text;
 
 /**
- * Wraps function to lazily resolve subtree on processing.
+ * Wraps function to lazily resolve subtree on processing; `callFn(content)` runs under `snapshot`.
  *
- * @param arg Lazy content factory.
+ * @param snapshot Frame from {@link Context.Snapshot} (e.g. at `createIf` / `createList` boundary).
+ * @param content Subtree, or a function returning it when the lazy slot is processed.
  * @returns Deferred element item understood by `processItem`.
  */
-export function createLazy(arg: unknown): ElementItem;
+export function createLazy(snapshot: ContextSnapshot, content: unknown): ElementItem;

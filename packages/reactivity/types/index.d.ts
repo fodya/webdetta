@@ -60,7 +60,6 @@ export type ReactiveEffectOptions = {
   attach?: boolean;
   writes?: Writes;
   run?: boolean;
-  onError?: (err: unknown) => void;
 };
 
 /** Options for `r.task` (distinct from internal `TaskOptions` in `./task.d.ts`). */

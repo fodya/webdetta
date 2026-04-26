@@ -51,15 +51,12 @@ r.effect = (handler, {
   attach = true,
   writes = undefined,
   run = true,
-  onError,
 } = {}) => {
   assertSyncFunction('effect `handler`', handler);
   const parent = currentEffect();
   const effect = new Effect({
     parent: attach ? parent : null,
     handler,
-    // Kept for public API compatibility; Effect ignores custom handlers for now.
-    onError,
     tracking: track,
     writes,
   });

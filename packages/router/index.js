@@ -159,13 +159,14 @@ export const Router = ({ routes, mode, prefix } = {}) => {
 
   const api = {};
 
+  const snapshot = Context.Snapshot();
   const setPage = (key, page, params) => {
     const paramKeys = Object.keys({ ...params, ...(paramVals[key] ?? {}) });
     for (const p of paramKeys) paramVal(key, p)(params[p]);
 
     if (key && page && !cache.has(key)) {
       const proxy = new Proxy({}, { get: (_, p) => paramVal(key, p) });
-      const dom = Router.Ctx.run(api, () => page(proxy));
+      const dom = snapshot.set(Router.Ctx, api).run(() => page(proxy));
       cache.set(key, dom);
     }
     

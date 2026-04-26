@@ -128,7 +128,7 @@ export class Effect {
 
     if (!this.signals) this.tracking = false;
 
-    if (err) throw err;
+    if (err) { console.error(err); throw err; }
   }
 
   cleanup() {

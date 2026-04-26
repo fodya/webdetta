@@ -1,4 +1,5 @@
 // @ts-self-types="./types/index.d.ts"
+import { Context } from '../context/sync.js';
 import { Element } from './base.js';
 import { kebab } from '../common/dom.js';
 import { callFn } from '../common/utils.js';
@@ -33,7 +34,7 @@ api.list = createList;
 api.slot = createSlot;
 api.pick = createPick;
 api.dynamic = createDynamic;
-api.lazy = createLazy;
+api.lazy = item => createLazy(Context.Snapshot(), item);
 
 api.textContent = Operator((node, _, args) => {
   node.textContent = toString(...args);

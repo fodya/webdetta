@@ -42,6 +42,12 @@ export const createText = arg => {
 
 const TAIL = new WeakMap();
 const REMOVE = new WeakSet();
+
+export const createLazy = (snapshot, content) => {
+  if (typeof content != 'function') return content;
+  return { [Element.lazy]: () => snapshot.run(() => callFn(content)) };
+}
+
 const createContainer = (snapshot, content) => {
   let startNode;
 
@@ -156,23 +162,20 @@ export const createSlot = (content) => {
   return root;
 }
 
-export const createLazy = (arg) => {
-  if (typeof arg != 'function') return arg;
-  return  { [Element.lazy]: () => callFn(arg) }; // TODO: memo?
-}
-
 export const createIf = (cond, ...args) => {
-  const conditions = [{ cond, value: args.map(createLazy) }];
+  const snapshot = Context.Snapshot();
+  const lazyArgs = args => args.map(arg => createLazy(snapshot, arg));
+  const conditions = [{ cond, value: lazyArgs(args) }];
   const node = createSlot(() =>
     conditions.find(d => callFn(d.cond))?.value
   );
 
   node.elif = (cond, ...args) => {
-    conditions.push({ cond, value: args.map(createLazy) });
+    conditions.push({ cond, value: lazyArgs(args) });
     return node;
   }
   node.else = (...args) => {
-    conditions.push({ cond: true, value: args.map(createLazy) });
+    conditions.push({ cond: true, value: lazyArgs(args) });
     delete node.elif;
     delete node.else;
     return node;
