@@ -31,7 +31,13 @@
 export * from './base.d.ts';
 export * from './task.d.ts';
 
-import type { Effect, EffectHandler, Writes } from './base.d.ts';
+import type {
+  Effect,
+  EffectHandler,
+  ReactiveCycleHandler,
+  ReactiveCycleHandlerPreset,
+  Writes,
+} from './base.d.ts';
 
 /** Callable reactive value: read with no args, write with one argument. */
 export type Accessor<T> = {
@@ -127,4 +133,8 @@ export const r: {
   readonly proxy: <T extends object>(target: T | (() => T)) => ReactiveProxy<T>;
   /** Registers a callback to run when the surrounding effect is cleaned up. */
   readonly cleanup: (handler: () => void) => void;
+  /** Debug: same as {@link setReactiveCycleHandler} from `./base`. */
+  readonly _setReactiveCycleHandler: (
+    arg: ReactiveCycleHandlerPreset | ReactiveCycleHandler,
+  ) => void;
 };

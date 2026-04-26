@@ -1,3 +1,4 @@
+// @ts-self-types="./types/runtime.d.ts"
 import { Context } from '../context/sync.js';
 import { isIterable, isObject, callFn } from '../common/utils.js';
 import { r } from '../reactivity/index.js';
@@ -8,12 +9,20 @@ const listItemKey = (d, i) => {
   if (isObject(d)) return d.id ?? i;
   return i;
 };
-const listItemsToEntries = (items, keyFn) => (
-  Array.isArray(items) ? items.map((d, i, a) => [keyFn(d, i, a), d])
-  : isIterable(items) ? Array.from(items.entries())
-  : isObject(items) ? Object.entries(items)
-  : null
-);
+function* listItemsToEntries(items, keyFn) {
+  if (Array.isArray(items)) {
+    for (let i = 0; i < items.length; i++) {
+      const d = items[i];
+      yield [keyFn(d, i, items), d];
+    }
+    return;
+  }
+  if (isIterable(items)) {
+    yield* items.entries();
+    return;
+  }
+  if (isObject(items)) yield* Object.entries(items);
+}
 
 export const toString = (...args) => {
   let str = '';
@@ -31,8 +40,8 @@ export const createText = arg => {
   }
 }
 
-const tailNodes = new WeakMap();
-const removeNodes = new WeakSet();
+const TAIL = new WeakMap();
+const REMOVE = new WeakSet();
 const createContainer = (snapshot, content) => {
   let startNode;
 
@@ -41,12 +50,14 @@ const createContainer = (snapshot, content) => {
     const items = snapshot.set(currentEffect).run(callFn, content);
     processItem(items,
       o => operators.push(o),
-      c => { nodes.push(c); removeNodes.delete(c); },
+      c => { nodes.push(c); REMOVE.delete(c); },
       true
     );
 
     for (const child of prevNodes) {
-      if (removeNodes.has(child)) Element.remove(child);
+      if (REMOVE.has(child)) {
+        Element.remove(child);
+      }
     }
     prevNodes = [];
 
@@ -55,7 +66,7 @@ const createContainer = (snapshot, content) => {
       appendAfter(startNode);
     }
     return () => {
-      for (const child of (prevNodes = nodes)) removeNodes.add(child);
+      for (const child of (prevNodes = nodes)) REMOVE.add(child);
       nodes = [];
       operators = [];
     }
@@ -72,7 +83,7 @@ const createContainer = (snapshot, content) => {
     if (parentChanged) operatorsEffect.run();
     for (const node of nodes) {
       if (tailNode.nextSibling !== node) Element.appendAfter(tailNode, node);
-      tailNode = tailNodes.get(node) ?? node;
+      tailNode = TAIL.get(node) ?? node;
     }
     return tailNode;
   };
@@ -103,10 +114,9 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
   const snapshot = Context.Snapshot();
   const effect = r.effect(() => {
     const items = callFn(itemsFn);
-    const entries = new Map(listItemsToEntries(items, keyFn));
 
     let tail = root, i = 0;
-    for (const [k, v] of entries) {
+    for (const [k, v] of listItemsToEntries(items, keyFn)) {
       let container = containers.get(k);
       if (!container) containers.set(k,
         container = createContainer(snapshot, () => {
@@ -115,15 +125,17 @@ export const createList = (itemsFn, renderItem, keyFn = listItemKey) => {
           return res;
         })
       );
+      REMOVE.delete(container);
       tail = container.appendAfter(tail);
       i++;
     }
 
     for (const [k, c] of containers) {
-      if (!entries.has(k)) {
+      if (REMOVE.has(c)) {
         c.destroy();
         containers.delete(k);
       }
+      REMOVE.add(c);
     }
   }, { run: false });
 
@@ -134,7 +146,7 @@ export const createSlot = (content) => {
   const root = document.createTextNode('');
   const container = createContainer(Context.Snapshot(), content);
   Element.registerHook(root, 'afterAppend', () => {
-    tailNodes.set(root, container.appendAfter(root));
+    TAIL.set(root, container.appendAfter(root));
   });
   Element.registerHook(root, 'beforeRemove', () => {
     container.remove();
@@ -142,23 +154,24 @@ export const createSlot = (content) => {
   return root;
 }
 
-const toLazy = (arg) => 
-  typeof arg === 'function'
-  ? { [Element.toNodes]: arg }
-  : arg;
+export const createLazy = (arg) => {
+  if (typeof arg != 'function') return arg;
+  let content;
+  return  { [Element.lazy]: () => content ??= callFn(arg) };
+}
 
 export const createIf = (cond, ...args) => {
-  const conditions = [{ cond, value: args.map(toLazy) }];
+  const conditions = [{ cond, value: args.map(createLazy) }];
   const node = createSlot(() =>
     conditions.find(d => callFn(d.cond))?.value
   );
 
   node.elif = (cond, ...args) => {
-    conditions.push({ cond, value: args.map(toLazy) });
+    conditions.push({ cond, value: args.map(createLazy) });
     return node;
   }
   node.else = (...args) => {
-    conditions.push({ cond: true, value: args.map(toLazy) });
+    conditions.push({ cond: true, value: args.map(createLazy) });
     delete node.elif;
     delete node.else;
     return node;
@@ -181,19 +194,20 @@ export const createPick = (selectedKey, list, renderFn, keyFn = listItemKey) => 
   return createSlot(() => {
     const items = callFn(list);
     const selected = callFn(selectedKey);
-    const entries = listItemsToEntries(items, keyFn) ?? [];
 
-    const index = entries.findIndex(([key]) => Object.is(key, selected));
-    if (index < 0) return;
-
-    const [key, item] = entries[index];
-    if (!Object.is(cache.key, key)) {
-      cache?.effect?.destroy();
-      cache.key = key;
-      cache.effect = r.detach(() => {
-        cache.val = renderFn(item, index, items, key);
-      });
+    let item, index = 0, found = false;
+    for (const [key, value] of listItemsToEntries(items, keyFn)) {
+      if (Object.is(key, selected)) { item = value; found = true; break; }
+      index++;
     }
+    if (!found) return;
+
+    if (Object.is(cache.key, selected)) return cache.val;
+    cache?.effect?.destroy();
+    cache.key = selected;
+    cache.effect = r.detach(() => {
+      cache.val = renderFn(item, index, items, selected);
+    });
     return cache.val;
   });
 };

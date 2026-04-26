@@ -9,8 +9,9 @@ import {
   createList,
   createPick,
   createSlot,
-  createDynamic
-} from './dynamic.js';
+  createDynamic,
+  createLazy
+} from './runtime.js';
 
 const api = {};
 
@@ -35,7 +36,7 @@ api.list = createList;
 api.slot = createSlot;
 api.pick = createPick;
 api.dynamic = createDynamic;
-api.lazy = func => ({ [Element.toNodes]: func });
+api.lazy = createLazy;
 
 api.attr = Operator((node, names, args) => {
   const value = toString(...args);

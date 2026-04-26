@@ -10,6 +10,20 @@ import type { SyncContext } from '../../context/types/sync.d.ts';
 /** Sync context holding the effect currently being tracked, or `undefined`. */
 export const currentEffect: SyncContext<Effect | undefined>;
 
+/** Called when scheduling would recurse (same running effect or already queued). */
+export type ReactiveCycleHandler = (eff: Effect) => void;
+
+/** Built-in names for {@link setReactiveCycleHandler}. */
+export type ReactiveCycleHandlerPreset = 'throw' | 'warn' | 'ignore';
+
+/**
+ * Controls reaction to reactive recursion: preset (`throw` / `warn` / `ignore`) or custom `(eff) => void`.
+ * Default is `ignore` (skip enqueue, same as previous no-op guard).
+ */
+export function setReactiveCycleHandler(
+  arg: ReactiveCycleHandlerPreset | ReactiveCycleHandler,
+): void;
+
 /** Getter/setter pair that back a reactive {@link Signal}. */
 export type SignalOptions<T> = {
   get(this: Signal<T>): T;

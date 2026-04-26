@@ -42,11 +42,11 @@ import type {
   createPick,
   createSlot,
   createDynamic,
-} from './dynamic.d.ts';
+} from './runtime.d.ts';
 
 export { Context } from '../../context/types/sync.d.ts';
 export type { Operator, OperatorFunc, ElementItem, DeferredElementItem, HookName } from './base.d.ts';
-export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './dynamic.d.ts';
+export type { IfNode, ListItemsSource, ListKeyFn, ListRenderFn } from './runtime.d.ts';
 
 /**
  * ### Handlers + one options object (`el.on`, `el.observe.*`)

@@ -1,6 +1,6 @@
 // @ts-self-types="./types/index.d.ts"
 import { isPlainFunction, isAsyncFunction, isAsyncGeneratorFunction } from '../common/utils.js';
-import { Signal, Effect, currentEffect } from './base.js';
+import { Signal, Effect, currentEffect, setReactiveCycleHandler } from './base.js';
 import { Task } from './task.js';
 
 const assertFunction = (errorPrefix, func) => {
@@ -18,6 +18,10 @@ const assertSyncFunction = (errorPrefix, func) => {
 }
 
 const r = {};
+
+// Debugging
+
+r._setReactiveCycleHandler = setReactiveCycleHandler;
 
 // Values
 

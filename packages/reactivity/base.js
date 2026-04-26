@@ -2,6 +2,16 @@ import { Context } from '../context/sync.js';
 
 export const currentEffect = Context();
 
+const cycleHandlers = {
+  throw: () => { throw new Error('Reactive cycle detected'); },
+  warn: () => console.warn('Reactive cycle detected'),
+  ignore: null
+}
+let reactiveCycleHandler = cycleHandlers.ignore;
+export const setReactiveCycleHandler = (arg) => {
+  reactiveCycleHandler = typeof arg === 'function' ? arg : cycleHandlers[arg];
+}
+
 const allowedToWrite = (effect, signal) => {
   const d = effect?.writes;
   if (d === undefined || d === true) return true;
@@ -34,7 +44,10 @@ export class Signal {
     const effect = currentEffect();
     if (effect) {
       flush(this, 'effects', eff => {
-        if (eff.queued || effect == eff) return;// console.warn('Reactive recursion detected');
+        if (eff.queued || effect == eff) {
+          reactiveCycleHandler?.(eff);
+          return;
+        }
         (queue ??= []).push(eff);
         eff.queued = true;
       });

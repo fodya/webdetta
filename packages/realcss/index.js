@@ -34,7 +34,7 @@ export const Visuals = (cfg) => {
   const { methods } = Methods(cfg);
   const mount = makeMount(styleSheet);
   const chain = MethodChain(methods);
-  chain.proto[Element.toNodes] = function () { return mount(this); };
+  chain.proto[Element.lazy] = function () { return mount(this); };
 
   const proto = {
     $: { recalculate: () => styleSheet.recalculate(), styleSheet, mount },

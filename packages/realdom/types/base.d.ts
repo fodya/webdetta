@@ -19,7 +19,7 @@ export type OperatorFunc = (
 /** Lifecycle hook names registerable via {@link ElementFn.registerHook}. */
 export type HookName = 'beforeAppend' | 'afterAppend' | 'beforeRemove' | 'afterRemove';
 
-/** Deferred child item resolved by `processItem` through `Element.toNodes`. */
+/** Deferred child item resolved by `processItem` through `Element.lazy`. */
 export type DeferredElementItem = { [key: symbol]: () => ElementItem };
 
 /** Any value accepted as a child/operator/attribute item in element builders. */
@@ -48,7 +48,7 @@ export interface ElementFn {
   /** Creates an element in `ns` (or null namespace) with the given tag name. */
   (ns: string | null, tag: string, ...args: ElementItem[]): Node;
   /** Marker symbol used by deferred child objects. */
-  toNodes: symbol;
+  lazy: symbol;
   /** Coerces a value into a DOM node (text nodes for primitives, etc). */
   from(arg: unknown): Node;
   /** Registers a lifecycle hook on a node. */

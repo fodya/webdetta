@@ -1,7 +1,7 @@
 import { Builder } from '../builder/index.js';
 import { r } from '../reactivity/index.js';
 import { templateCallToArray } from '../common/utils.js';
-import { createText } from "./dynamic.js";
+import { createText } from "./runtime.js";
 
 const isFragment = node => node.nodeType === 11;
 
@@ -14,8 +14,8 @@ export const processItem = (item, processOperator, processNode, flattenFragments
     for (const d of item) processItem(d, processOperator, processNode, flattenFragments);
   } else if (isFunc && Operator.isOperator(item)) {
     processOperator(item);
-  } else if ((isObj || isFunc) && Element.toNodes in item) {
-    processItem(item[Element.toNodes](), processOperator, processNode, flattenFragments);
+  } else if ((isObj || isFunc) && Element.lazy in item) {
+    processItem(item[Element.lazy](), processOperator, processNode, flattenFragments);
   } else {
     const itemNode = Element.from(item);
     if (flattenFragments && isFragment(itemNode)) {
@@ -36,7 +36,7 @@ export const Element = (ns, tag, ...args) => {
   }
   return Element.append(node, templateCallToArray(args));
 }
-Element.toNodes = Symbol('Element.toNodes');
+Element.lazy = Symbol('Element.lazy');
 Element.from = arg => {
   if (arg instanceof Node) return arg;
   return createText(arg);

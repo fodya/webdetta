@@ -56,7 +56,7 @@ const animationSynth = (param, keyframes) => ({
 // ─── makeOperators ────────────────────────────────────────────────────────
 export const makeOperators = (mount) => {
   const wrap = (cell) => {
-    cell[Element.toNodes] = function () { return mount(cell); };
+    cell[Element.lazy] = function () { return mount(cell); };
     return cell;
   };
 

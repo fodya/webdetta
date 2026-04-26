@@ -92,9 +92,9 @@ describe('realcss DSL v2', () => {
       }
     });
 
-    it('root does NOT expose Element.toNodes', () => {
+    it('root does NOT expose Element.lazy', () => {
       const v = Visuals(baseCfg);
-      assertEquals(v[Element.toNodes], undefined);
+      assertEquals(v[Element.lazy], undefined);
     });
   });
 
@@ -404,10 +404,10 @@ describe('realcss DSL v2', () => {
     });
   });
 
-  describe('Element.toNodes — mountability', () => {
+  describe('Element.lazy — mountability', () => {
     it('chain is mountable', () => {
       const v = Visuals(baseCfg);
-      assert(Element.toNodes in v.tc('red'));
+      assert(Element.lazy in v.tc('red'));
       const div = el.Div(v.tc('red'));
       assert(div instanceof globalThis.Node);
     });
@@ -423,7 +423,7 @@ describe('realcss DSL v2', () => {
         v.Transition('0.3s ease', v.tc('red')),
         v.Animation('1s linear', { 0: v.tc('red'), 100: v.tc('blue') }),
       ]) {
-        assert(Element.toNodes in cell);
+        assert(Element.lazy in cell);
       }
     });
   });
