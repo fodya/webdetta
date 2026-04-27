@@ -51,7 +51,7 @@ export type Accessor<T> = {
 /** {@link r.computed} accessor: same as {@link Accessor} plus imperative re-run of the derivation. */
 export type ComputedAccessor<T> = Accessor<T> & {
   /** Re-runs backing effect and refreshes cached value (in addition to dependency-driven updates). */
-  recompute(): void;
+  refresh(): void;
 };
 
 /** Options for `r.effect()` and related helpers. */
@@ -74,11 +74,11 @@ export type ReactiveTask<A extends unknown[], R> = ((...args: A) => Promise<R>) 
   error: Accessor<unknown>;
 };
 
-/** Source-driven resource accessor with status and manual reload. */
+/** Source-driven resource accessor with status and manual refresh. */
 export type ReactiveResource<S, R> = Accessor<R | undefined> & {
   error: Accessor<unknown>;
   loading: Accessor<boolean>;
-  reload: () => Promise<R>;
+  refresh: () => Promise<R>;
 };
 
 /** Reactive wrapper around an object; reads/writes trigger reactive updates. */
@@ -113,7 +113,7 @@ export const r: {
     func: (...args: A) => R | Promise<R> | AsyncIterable<R>,
     options?: AsyncTaskOptions<R>
   ) => ReactiveTask<A, R>;
-  /** Creates async resource accessor with `reload()` (source accessor or `null`). */
+  /** Creates async resource accessor with `refresh()` (source accessor or `null`). */
   readonly resource: {
     <R>(
       source: null,

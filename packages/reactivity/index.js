@@ -98,7 +98,7 @@ r.computed = (func, { initial }={}) => {
   }, { track: true, writes: false });
 
   const value = signal.accessor;
-  value.recompute = effect.run.bind(effect);
+  value.refresh = effect.run.bind(effect);
   return value;
 }
 
@@ -147,7 +147,7 @@ r.resource = (source, func, { initial } = {}) => {
   return Object.assign(task.data, {
     error: task.error,
     loading: task.loading,
-    reload: effect.run.bind(effect),
+    refresh: effect.run.bind(effect),
   });
 }
 

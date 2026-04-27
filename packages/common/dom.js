@@ -111,32 +111,76 @@ export const colorToHex = (colorStr) => {
   return ctx.fillStyle;
 }
 
-export const constrainedZoomValue = ({
+/**
+ * Uniform scale so a rectangle fits or fills an outer box (same idea as CSS `object-fit: contain | cover`).
+ * Typical use: keep content at its natural layout size and set `element.style.zoom` to the factor so the
+ * visual footprint matches the frame. Same number also works as `transform: scale(...)` from the center,
+ * or to multiply width/height when you size in JS instead of zoom.
+ *
+ * With `aspectRatio` (width ÷ height), only one of `width` / `height` needs to be positive; the other side is derived.
+ * Returns `1` when the container has non-positive size or no positive content size can be inferred.
+ *
+ * @param options
+ * @param options.containerWidth Outer box width in pixels.
+ * @param options.containerHeight Outer box height in pixels.
+ * @param options.width Content width; pair with `height` or with `aspectRatio` and one side.
+ * @param options.height Content height.
+ * @param options.aspectRatio Optional width÷height when one dimension is inferred.
+ * @param options.mode `contain` — entire content stays inside the box; `cover` — box is fully covered (often with overflow hidden on the frame).
+ * @returns Positive scale factor.
+ *
+ * @example
+ * // Frame from layout; preview keeps intrinsic 1600×900 — shrink with zoom (contain)
+ * const frame = wrapper.getBoundingClientRect();
+ * const scale = objectFit({
+ *   containerWidth: frame.width,
+ *   containerHeight: frame.height,
+ *   width: 1600,
+ *   height: 900,
+ * });
+ * preview.style.zoom = String(scale);
+ *
+ * @example
+ * // Only width known; 16:9 — cover square frame, clip overflow on wrapper
+ * const frame = wrapper.getBoundingClientRect();
+ * const scale = objectFit({
+ *   containerWidth: frame.width,
+ *   containerHeight: frame.height,
+ *   width: 1920,
+ *   height: 0,
+ *   aspectRatio: 16 / 9,
+ *   mode: 'cover',
+ * });
+ * preview.style.zoom = String(scale);
+ */
+export const objectFit = ({
   containerWidth,
   containerHeight,
   width,
   height,
   aspectRatio,
+  mode = 'contain',
 }) => {
-  const containerAspectRatio = containerWidth / containerHeight;
-  const containerZoom = Math.min(...[
-    width > 0 ? containerWidth / width : null,
-    height > 0 ? containerHeight / height : null
-  ].filter(Boolean));
+  if (containerWidth <= 0 || containerHeight <= 0) return 1;
 
-  if (!Number.isFinite(containerZoom)) return 1;
-  if (!aspectRatio) return containerZoom;
-  
-  if (containerAspectRatio > aspectRatio) {
-    const heightConstrainedZoom = containerZoom * aspectRatio / containerAspectRatio;
-    return Math.min(containerZoom, heightConstrainedZoom);
-  }
-  if (containerZoom < 1 || containerAspectRatio < aspectRatio) {
-    return containerZoom;
-  }
+  const base = width > 0 ? width : height > 0 ? height : 0;
+  if (!(base > 0)) return 1;
 
-  return 1;
-}
+  const baseW = aspectRatio
+    ? (width > 0 ? base : base * aspectRatio)
+    : width;
+
+  const baseH = aspectRatio
+    ? (width > 0 ? base / aspectRatio : base)
+    : height;
+
+  const sW = containerWidth / baseW;
+  const sH = containerHeight / baseH;
+
+  return mode === 'cover'
+    ? Math.max(sW, sH)
+    : Math.min(sW, sH);
+};
 
 const overflowRegex = /(auto|scroll|overlay)/;
 export const getScrollContainer = (node) => {

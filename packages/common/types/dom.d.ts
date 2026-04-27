@@ -1,6 +1,6 @@
 /**
- * DOM-specific utility functions: text measurement, color conversion,
- * clipboard, blob download, autogrow inputs, and document-lifecycle promises.
+ * DOM helpers: text measurement, colors, clipboard, downloads, autogrow inputs,
+ * document lifecycle promises, scroll/z-index walks, and `objectFit`-style scale factors.
  *
  * @module
  */
@@ -34,14 +34,31 @@ export function downloadBlob(filename: string, blob: Blob): Promise<void>;
 /** Normalizes any CSS color string to its `#rrggbb` hex form. */
 export function colorToHex(colorStr: string): string;
 
-/** Computes a zoom scale that fits `width`/`height` inside the container while preserving aspect ratio. */
-export function constrainedZoomValue(options: {
+/** `contain`: whole content stays inside the box. `cover`: box is fully filled (often with overflow hidden). */
+export type ObjectFitMode = "contain" | "cover";
+
+/** Box and content sizes in pixels for {@link objectFit}. */
+export type ObjectFitOptions = {
+  /** Outer box width (e.g. from `getBoundingClientRect()`). */
   containerWidth: number;
+  /** Outer box height. */
   containerHeight: number;
+  /** Content width; use `> 0` when deriving the other side with `aspectRatio`. */
   width: number;
+  /** Content height; use `> 0` when deriving the other side with `aspectRatio`. */
   height: number;
+  /** Width ÷ height when only one of `width` / `height` is positive. */
   aspectRatio?: number;
-}): number;
+  /** @default "contain" */
+  mode?: ObjectFitMode;
+};
+
+/**
+ * Uniform scale like CSS `object-fit` for a rectangle in a frame. Main use: `element.style.zoom = String(scale)`
+ * so intrinsic-sized content visually fits or fills the container; same factor works for `transform: scale(...)`
+ * or explicit width/height math. Returns `1` when the container or inferred content size is unusable.
+ */
+export function objectFit(options: ObjectFitOptions): number;
 
 /**
  * Walks ancestors of `node` and returns the nearest element that is scrollable
