@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/core",
-  "version": "0.1.305",
+  "version": "0.1.306",
   "license": "MIT",
   "exports": {
     "./common/dom": "./packages/common/dom.js",

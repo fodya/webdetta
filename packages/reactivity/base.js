@@ -42,18 +42,18 @@ export class Signal {
 
   trigger() {
     const effect = currentEffect();
-    if (effect) {
-      flush(this, 'effects', eff => {
-        if (eff.queued || effect == eff) {
-          reactiveCycleHandler?.(eff);
-          return;
-        }
+    flush(this, 'effects', eff => {
+      if (eff.queued || effect == eff) {
+        reactiveCycleHandler?.(eff);
+        return;
+      }
+      if (effect) {
         (queue ??= []).push(eff);
         eff.queued = true;
-      });
-    } else {
-      flush(this, 'effects', eff => eff.run());
-    }
+      } else {
+        eff.run();
+      }
+    });
   }
 
   get() {
@@ -102,9 +102,7 @@ export class Effect {
     this.handler = handler;
     this.tracking = tracking;
     this.writes = writes;
-    if (parent) {
-      (parent.children ??= []).push(this);
-    }
+    if (parent) (parent.children ??= []).push(this);
   }
 
   run() {
