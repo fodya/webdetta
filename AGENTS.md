@@ -27,6 +27,7 @@ webdetta-new/
 ├── _tools/
 ├── <package>/
 │   ├── deno.json
+│   │   file.js
 │   └── mod.js
 └── .github/
 ```
