@@ -39,9 +39,8 @@ jobs:
 
       - name: Bump versions
         run: |
-          git fetch --unshallow origin || true
           git fetch --tags origin
-          deno eval 'import { bumpWorkspaces } from "jsr:@deno/bump-workspaces@^0.1/mod.ts"; await bumpWorkspaces({ importMap: "deno.json", dryRun: "git" });'
+          deno eval 'import { bumpWorkspaces } from "jsr:@deno/bump-workspaces@^0.1"; await bumpWorkspaces({ importMap: "deno.json", dryRun: "git" });'
 
       - name: Commit version bump
         run: |
