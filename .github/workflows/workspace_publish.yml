@@ -5,8 +5,20 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
+  bump:
+    uses: ./.github/workflows/bump_versions.yml
+    with:
+      branch: ${{ github.event_name == 'release' && github.event.release.target_commitish || github.ref_name }}
+    permissions:
+      contents: write
+
   publish:
+    needs: bump
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -17,6 +29,16 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'release' && github.event.release.target_commitish || github.ref_name }}
+
+      - name: Sync bumped versions
+        run: |
+          BRANCH="${{ github.event_name == 'release' && github.event.release.target_commitish || github.ref_name }}"
+          git fetch origin "$BRANCH"
+          git checkout "$BRANCH"
+          git reset --hard "origin/$BRANCH"
 
       - name: Set up Deno
         uses: denoland/setup-deno@v2

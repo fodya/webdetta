@@ -27,7 +27,7 @@
     "typos": "typos -c ./.github/typos.toml",
     "ok": "deno task lint && deno fmt --check && deno task check"
   },
-  "exclude": ["coverage"],
+  "exclude": ["coverage", "**/*.test.js"],
   "lint": {
     "rules": {
       "tags": ["recommended", "jsr"],
