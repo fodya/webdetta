@@ -1,6 +1,6 @@
 {
   "name": "@webdetta/context",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "exports": {
     ".": "./index.js",
@@ -8,6 +8,10 @@
     "./async": "./async.js"
   },
   "compilerOptions": {
-    "lib": ["deno.ns", "deno.unstable", "dom"]
+    "lib": [
+      "deno.ns",
+      "deno.unstable",
+      "dom"
+    ]
   }
 }
