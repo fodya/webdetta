@@ -5,9 +5,7 @@ permissions:
 
 on:
   push:
-    branches: [new]
   pull_request:
-    branches: [new]
 
 jobs:
   check:
