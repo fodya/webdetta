@@ -30,5 +30,5 @@
  *
  * @module
  */
-export * from './sync.d.ts';
-export * from './async.d.ts';
+export * from "./sync.d.ts";
+export * from "./async.d.ts";

@@ -60,7 +60,7 @@ export type SyncContext<T> = {
   /** Returns a function that always invokes `func` with the context set to `data`. */
   bind<A extends unknown[], R>(
     data: T,
-    func: (...args: A) => R
+    func: (...args: A) => R,
   ): (...args: A) => R;
 };
 

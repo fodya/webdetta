@@ -18,10 +18,10 @@
   "workspace": ["./context"],
   "tasks": {
     "lint:circular": "deno run --allow-env --allow-read --allow-write --allow-net=deno.land,jsr.io _tools/check-circular-package-dependencies.js",
-    "lint:mod-exports": "deno run -A _tools/check-mod-exports.js",
+    "lint:entrypoints": "deno run -A _tools/check-entrypoints.js",
     "lint:import-map": "deno run -A _tools/check-import-map.js",
     "lint:unstable-deps": "deno run -A _tools/check-unstable-deps.js",
-    "lint": "deno lint && deno task lint:circular && deno task lint:mod-exports && deno task lint:import-map && deno task lint:unstable-deps",
+    "lint": "deno lint && deno task lint:circular && deno task lint:entrypoints && deno task lint:import-map && deno task lint:unstable-deps",
     "check": "deno check context/",
     "coverage": "deno run -A _tools/coverage.js",
     "typos": "typos -c ./.github/typos.toml",

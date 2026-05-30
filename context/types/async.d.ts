@@ -57,7 +57,7 @@ export type AsyncContextFn<T> = {
   /** Returns a function that always invokes `func` with the async context set to `data`. */
   bind<A extends unknown[], R>(
     data: T,
-    func: (...args: A) => R
+    func: (...args: A) => R,
   ): (...args: A) => R;
 };
 
