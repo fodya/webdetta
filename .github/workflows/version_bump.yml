@@ -1,6 +1,7 @@
-name: version_bump1
+name: Bump package versions
 permissions:
   contents: write
+  pull-requests: write
 on: workflow_dispatch
 jobs:
   build:
@@ -19,7 +20,8 @@ jobs:
 
       - name: Run version bump
         run: |
-          git fetch --unshallow origin
+          git fetch --unshallow origin || true
+          git fetch --tags origin
           deno run -A jsr:@deno/bump-workspaces@^0.1/cli --import-map deno.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
