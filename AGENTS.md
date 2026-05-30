@@ -14,10 +14,9 @@ Each top-level folder is a JSR package (`@webdetta/<package>`).
 
 Package name, version, exports.
 
-### `<package>/mod.js`
+### `<package>/index.js`
 
-Default entry (`.` export). Subpath exports live in separate files (e.g.
-`sync.js`, `async.js`).
+Module default entrypoint.
 
 ## Layout
 
@@ -27,8 +26,8 @@ webdetta-new/
 ├── _tools/
 ├── <package>/
 │   ├── deno.json
-│   │   file.js
-│   └── mod.js
+│   │   <file>.js
+│   └── index.js
 └── .github/
 ```
 

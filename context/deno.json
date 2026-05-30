@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "license": "MIT",
   "exports": {
-    ".": "./mod.js",
+    ".": "./index.js",
     "./sync": "./sync.js",
     "./async": "./async.js"
   },

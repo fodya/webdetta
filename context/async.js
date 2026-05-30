@@ -1,3 +1,4 @@
+// @ts-self-types="./types/async.d.ts"
 import { AsyncLocalStorage } from "node:async_hooks";
 
 function AsyncContextSnapshot(native, overlays = []) {

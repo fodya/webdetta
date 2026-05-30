@@ -1,3 +1,4 @@
+// @ts-self-types="./types/sync.d.ts"
 class ContextNode {
   constructor(value, children) {
     this.value = value;
