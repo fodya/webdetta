@@ -1,4 +1,4 @@
-name: version_bump
+name: version_bump1
 permissions:
   contents: write
 on: workflow_dispatch
