@@ -1,0 +1,7 @@
+context:
+  - changed-files:
+      - any-glob-to-any-file: context/**
+
+_tools:
+  - changed-files:
+      - any-glob-to-any-file: _tools/**

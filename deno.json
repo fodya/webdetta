@@ -1,59 +1,38 @@
 {
-  "name": "@webdetta/core",
-  "version": "0.1.306",
-  "license": "MIT",
-  "exports": {
-    "./common/dom": "./packages/common/dom.js",
-    "./common/environment": "./packages/common/environment.js",
-    "./common/utils": "./packages/common/utils.js",
-    "./config/enable-polyfills": "./packages/config/enable-polyfills.js",
-    "./config/handle-uncaught-errors": "./packages/config/handle-uncaught-errors.js",
-    "./context/sync": "./packages/context/sync.js",
-    "./context/async": "./packages/context/async.js",
-    "./builder": "./packages/builder/index.js",
-    "./convert": "./packages/convert/index.js",
-    "./execution": "./packages/execution/index.js",
-    "./i18n": "./packages/i18n/index.js",
-    "./logger": "./packages/logger/index.js",
-    "./reactivity": "./packages/reactivity/index.js",
-    "./realcss": "./packages/realcss/index.js",
-    "./realdom": "./packages/realdom/index.js",
-    "./router": "./packages/router/index.js",
-    "./rpc": "./packages/rpc/index.js",
-    "./templater": "./packages/templater/index.js"
-  },
   "compilerOptions": {
-    "lib": [
-      "deno.ns",
-      "deno.unstable",
-      "dom",
-      "dom.iterable"
-    ]
+    "lib": ["deno.ns", "deno.unstable", "dom", "dom.iterable"],
+    "strict": true
   },
   "imports": {
-    "zx/globals": "npm:zx/globals"
+    "@webdetta/context": "jsr:@webdetta/context@^0.1.0",
+    "@deno/graph": "jsr:@deno/graph@^0.89.2",
+    "typescript": "npm:typescript@5.8.3",
+    "graphviz": "npm:node-graphviz@^0.1.1",
+    "@std/collections": "jsr:@std/collections@^1.2.0",
+    "@std/fmt": "jsr:@std/fmt@^1.0.10",
+    "@std/fs": "jsr:@std/fs@^1.0.24",
+    "@std/path": "jsr:@std/path@^1.1.5",
+    "@std/semver": "jsr:@std/semver@^1.0.8",
+    "zx": "npm:zx/globals"
   },
-  "exclude": [
-    "dist"
-  ],
-  "publish": {
-    "exclude": [
-      "benchmarks",
-      "examples",
-      "tasks",
-      "_",
-      "dist",
-      "packages/*/tests"
-    ]
-  },
+  "workspace": ["./context"],
   "tasks": {
-    "test": "deno run -A tasks/test.js",
-    "check": "deno run -A tasks/check.js",
-    "check:types": "deno run -A tasks/check-types.js",
-    "coverage": "deno run -A tasks/coverage.js",
-    "bump": "deno run -A tasks/bump-version.js",
-    "push": "deno run -A tasks/push.js",
-    "generate-docs": "deno run -A tasks/generate-docs.js",
-    "build:npm": "deno run -A tasks/build-npm.js"
+    "lint:circular": "deno run --allow-env --allow-read --allow-write --allow-net=deno.land,jsr.io _tools/check-circular-package-dependencies.js",
+    "lint:mod-exports": "deno run -A _tools/check-mod-exports.js",
+    "lint:import-map": "deno run -A _tools/check-import-map.js",
+    "lint:unstable-deps": "deno run -A _tools/check-unstable-deps.js",
+    "lint": "deno lint && deno task lint:circular && deno task lint:mod-exports && deno task lint:import-map && deno task lint:unstable-deps",
+    "check": "deno check context/",
+    "coverage": "deno run -A _tools/coverage.js",
+    "typos": "typos -c ./.github/typos.toml",
+    "ok": "deno task lint && deno fmt --check && deno task check"
+  },
+  "exclude": ["coverage"],
+  "lint": {
+    "rules": {
+      "tags": ["recommended", "jsr"],
+      "exclude": ["no-slow-types"]
+    },
+    "exclude": ["_tools/*.js"]
   }
 }
