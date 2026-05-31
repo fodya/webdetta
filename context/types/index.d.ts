@@ -1,31 +1,68 @@
 /**
  * Scoped context values for sync and async flows.
  *
- * @example
+ * @example server
  * ```js
- * import { Context } from '@webdetta/context/sync';
  * import { AsyncContext } from '@webdetta/context/async';
  *
- * const localeCtx = Context('en');
- * const reqIdCtx = AsyncContext('no-request');
+ * const requestId = AsyncContext(null);
+ * const userId = AsyncContext(null);
  *
- * function renderPrice(value) {
- *   return localeCtx() === 'fr' ? `${value} EUR` : `$${value}`;
+ * async function dbQuery() {
+ *   await new Promise((r) => setTimeout(r, 10));
+ *   const data = ['a', 'b', 'c'];
+ *   console.log(requestId(), userId(), data);
+ *   return {
+ *     requestId: requestId(),
+ *     userId: userId(),
+ *     data
+ *   };
  * }
  *
- * async function fetchData() {
- *   return { requestId: reqIdCtx(), theme: localeCtx(), user: 'ada' };
+ * async function handler(req) {
+ *   return requestId.run(req.id, () =>
+ *     userId.run(req.userId, async () => {
+ *       const result = await dbQuery();
+ *
+ *       return {
+ *         ok: true,
+ *         result
+ *       };
+ *     })
+ *   );
  * }
  *
- * const html = localeCtx.run('fr', () => renderPrice(20)); // "20 EUR"
- * const profile = await reqIdCtx.run('req-42', async () =>
- *   localeCtx.run('dark', () =>
- *     fetchData()
+ * const response = await handler({ id: 'req-42', userId: 'u-7' });
+ * ```
+ *
+ * @example client
+ * ```js
+ * import { Context } from '@webdetta/context/sync';
+ *
+ * const locale = Context('en-US');
+ * const currency = Context('USD');
+ *
+ * function formatPrice(value) {
+ *   const formatter = new Intl.NumberFormat(locale(), {
+ *     style: 'currency',
+ *     currency: currency()
+ *   });
+ *
+ *   return formatter.format(value);
+ * }
+ *
+ * function renderCard(product) {
+ *   return {
+ *     title: product.name,
+ *     price: formatPrice(product.price)
+ *   };
+ * }
+ *
+ * const ui = locale.run('fr-FR', () =>
+ *   currency.run('EUR', () =>
+ *     renderCard({ name: 'Book', price: 20 })
  *   )
  * );
- *
- * const snap = Context.Snapshot();
- * const price = snap.set(localeCtx).run(() => renderPrice(20));
  * ```
  *
  * @module
