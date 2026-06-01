@@ -31,4 +31,16 @@ jobs:
             chore
             revert
           scopes: |
+            builder
+            common
+            config
             context
+            convert
+            i18n
+            logger
+            reactivity
+            realcss
+            realdom
+            router
+            rpc
+            templater
