@@ -29,9 +29,9 @@ i18n:
   - changed-files:
       - any-glob-to-any-file: i18n/**
 
-logger:
+logging:
   - changed-files:
-      - any-glob-to-any-file: logger/**
+      - any-glob-to-any-file: logging/**
 
 reactivity:
   - changed-files:
