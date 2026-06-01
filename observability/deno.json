@@ -1,5 +1,5 @@
 {
-  "name": "@webdetta/logging",
+  "name": "@webdetta/observability",
   "version": "0.1.0",
   "license": "MIT",
   "exports": {
@@ -7,7 +7,8 @@
   },
   "compilerOptions": {
     "lib": [
-      "deno.ns"
+      "deno.ns",
+      "dom"
     ]
   }
 }

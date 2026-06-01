@@ -13,10 +13,6 @@ common:
   - changed-files:
       - any-glob-to-any-file: common/**
 
-config:
-  - changed-files:
-      - any-glob-to-any-file: config/**
-
 context:
   - changed-files:
       - any-glob-to-any-file: context/**
@@ -29,9 +25,9 @@ i18n:
   - changed-files:
       - any-glob-to-any-file: i18n/**
 
-logging:
+observability:
   - changed-files:
-      - any-glob-to-any-file: logging/**
+      - any-glob-to-any-file: observability/**
 
 reactivity:
   - changed-files:
