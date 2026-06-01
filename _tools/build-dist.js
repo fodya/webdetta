@@ -10,14 +10,14 @@ const COPY_AFTER_BUILD = "deno.json";
 
 const build = async (pkg) => {
   const pkgDir = path.join(rootDir, pkg);
-  const thisDir = path.join(distDir, pkg);
+  const pkgDistDir = path.join(distDir, pkg);
 
-  await Deno.mkdir(thisDir, { recursive: true });
+  await Deno.mkdir(pkgDistDir, { recursive: true });
 
   for await (const entry of Deno.readDir(pkgDir)) {
     if (SKIP_NAMES.has(entry.name) || entry.name === COPY_AFTER_BUILD) continue;
     const src = path.join(pkgDir, entry.name);
-    const dest = path.join(thisDir, entry.name);
+    const dest = path.join(pkgDistDir, entry.name);
     if (entry.isDirectory) await copy(src, dest, { overwrite: true });
     else if (entry.isFile) await Deno.copyFile(src, dest);
   }
@@ -32,9 +32,9 @@ const build = async (pkg) => {
       JSON.stringify(
         {
           extends: path.join(rootDir, "tsconfig.types.json"),
-          include: [path.join(thisDir, "*.js")],
-          exclude: [path.join(thisDir, "_*.js")],
-          compilerOptions: { rootDir: thisDir, paths: {} },
+          include: [path.join(pkgDistDir, "*.js")],
+          exclude: [path.join(pkgDistDir, "_*.js")],
+          compilerOptions: { rootDir: pkgDistDir, paths: {} },
         },
         null,
         2,
@@ -65,7 +65,7 @@ const build = async (pkg) => {
   const denoJson = path.join(pkgDir, COPY_AFTER_BUILD);
   try {
     await Deno.stat(denoJson);
-    await Deno.copyFile(denoJson, path.join(thisDir, COPY_AFTER_BUILD));
+    await Deno.copyFile(denoJson, path.join(pkgDistDir, COPY_AFTER_BUILD));
   } catch (error) {
     if (!(error instanceof Deno.errors.NotFound)) throw error;
   }
