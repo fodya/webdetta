@@ -36,4 +36,4 @@ jobs:
           cache: true
 
       - name: Publish dry run
-        run: deno task build-dist && deno publish --dry-run
+        run: deno task build-dist && cd dist && deno publish --dry-run

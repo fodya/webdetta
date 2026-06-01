@@ -3,15 +3,15 @@ import { copy } from "@std/fs";
 import { listPackages, rootDir } from "./utils.js";
 
 const root = new URL("..", import.meta.url);
+const workspaceDistDir = path.join(rootDir, "dist");
 
 const SKIP_NAMES = new Set(["dist", "tests", "examples"]);
 const COPY_AFTER_BUILD = "deno.json";
 
 const build = async (pkg) => {
   const pkgDir = path.join(rootDir, pkg);
-  const distDir = path.join(pkgDir, "dist");
+  const distDir = path.join(workspaceDistDir, pkg);
 
-  await Deno.remove(distDir, { recursive: true }).catch(() => {});
   await Deno.mkdir(distDir, { recursive: true });
 
   for await (const entry of Deno.readDir(pkgDir)) {
@@ -71,5 +71,13 @@ const build = async (pkg) => {
   }
 };
 
+await Deno.remove(workspaceDistDir, { recursive: true }).catch(() => {});
+await Deno.mkdir(workspaceDistDir, { recursive: true });
+
 const packages = await listPackages();
 await Promise.all(packages.map(({ pkg }) => build(pkg)));
+
+await Deno.copyFile(
+  path.join(rootDir, COPY_AFTER_BUILD),
+  path.join(workspaceDistDir, COPY_AFTER_BUILD),
+);
