@@ -16,7 +16,7 @@
     "@webdetta/realdom": "jsr:@webdetta/realdom@^0.1.0",
     "@webdetta/router": "jsr:@webdetta/router@^0.1.0",
     "@webdetta/rpc": "jsr:@webdetta/rpc@^0.1.0",
-    "@webdetta/templater": "jsr:@webdetta/templater@^0.1.0",
+    "@webdetta/template": "jsr:@webdetta/template@^0.1.0",
     "@deno/graph": "jsr:@deno/graph@^0.89.2",
     "typescript": "npm:typescript@5.8.3",
     "graphviz": "npm:node-graphviz@^0.1.1",
@@ -42,7 +42,7 @@
     "./realdom",
     "./router",
     "./rpc",
-    "./templater"
+    "./template"
   ],
   "tasks": {
     "build-dist": "deno run -A _tools/build-dist.js",

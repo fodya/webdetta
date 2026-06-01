@@ -53,6 +53,6 @@ rpc:
   - changed-files:
       - any-glob-to-any-file: rpc/**
 
-templater:
+template:
   - changed-files:
-      - any-glob-to-any-file: templater/**
+      - any-glob-to-any-file: template/**

@@ -44,4 +44,4 @@ jobs:
             realdom
             router
             rpc
-            templater
+            template
