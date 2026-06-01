@@ -38,7 +38,7 @@ jobs:
             context
             convert
             i18n
-            logger
+            logging
             reactivity
             realcss
             realdom
