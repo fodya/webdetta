@@ -1,6 +1,3 @@
-/**
- * @module
- */
 const { hasOwnProperty } = Object.prototype;
 
 if (!Object.hasOwn) {

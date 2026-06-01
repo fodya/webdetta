@@ -1,6 +1,3 @@
-/**
- * @module
- */
 import process from "node:process";
 import { isClientRuntime, runtime } from "@webdetta/common/environment";
 
@@ -46,16 +43,23 @@ const defaultHandler = ({ error, type, origin }) =>
     origin ?? "",
   );
 
+/** @type {boolean} */
 let initialized = false;
 
 /**
- * @param {UncaughtHandler} [handler=defaultHandler]
+ * @param {UncaughtHandler} [handler]
  * @returns {void}
  */
 export const handleUncaughtErrors = (handler = defaultHandler) => {
   if (initialized) return;
   initialized = true;
 
+  /**
+   * @param {"exception" | "promiseRejection"} type
+   * @param {unknown} value
+   * @param {unknown} [origin]
+   * @returns {void}
+   */
   const emit = (type, value, origin) =>
     handler({
       error: normalizeError(value),

@@ -1,6 +1,3 @@
-/**
- * @module
- */
 import { isServerRuntime } from "@webdetta/common/environment";
 
 /**
@@ -61,6 +58,11 @@ export const withLoggerFormatter = (formatter, func) => {
   return formatterContext.run(formatter, func);
 };
 
+/**
+ * @param {keyof LoggerMethods} method
+ * @param {unknown[]} args
+ * @returns {void}
+ */
 const exec = (method, args) => {
   const logger = loggerContext();
   if (!logger) throw new Error("Logger is not defined in current context");
