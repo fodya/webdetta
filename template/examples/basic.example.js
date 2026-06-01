@@ -1,7 +1,7 @@
 // Example
 
 import { assertEquals } from "@std/assert";
-import { Templater } from "@webdetta/templater";
+import { Templater } from "@webdetta/template";
 
 const t = Templater({
   operatorSymbol: "$",
