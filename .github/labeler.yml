@@ -29,9 +29,9 @@ i18n:
   - changed-files:
       - any-glob-to-any-file: i18n/**
 
-logger:
+logging:
   - changed-files:
-      - any-glob-to-any-file: logger/**
+      - any-glob-to-any-file: logging/**
 
 reactivity:
   - changed-files:
@@ -53,6 +53,6 @@ rpc:
   - changed-files:
       - any-glob-to-any-file: rpc/**
 
-templater:
+template:
   - changed-files:
-      - any-glob-to-any-file: templater/**
+      - any-glob-to-any-file: template/**

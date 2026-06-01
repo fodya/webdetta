@@ -1,5 +1,5 @@
 {
-  "name": "@webdetta/logger",
+  "name": "@webdetta/logging",
   "version": "0.1.0",
   "license": "MIT",
   "exports": {
