@@ -7,6 +7,27 @@ const distDir = path.join(rootDir, "dist");
 
 const SKIP_NAMES = new Set(["dist", "tests", "examples"]);
 const COPY_AFTER_BUILD = "deno.json";
+const TS_SELF_TYPES = /@ts-self-types/;
+
+const addTsSelfTypes = async (pkgDistDir) => {
+  for await (const entry of Deno.readDir(pkgDistDir)) {
+    if (!entry.isFile || !entry.name.endsWith(".js")) continue;
+
+    const dtsName = entry.name.replace(/\.js$/, ".d.ts");
+    try {
+      await Deno.stat(path.join(pkgDistDir, dtsName));
+    } catch {
+      continue;
+    }
+
+    const jsPath = path.join(pkgDistDir, entry.name);
+    const content = await Deno.readTextFile(jsPath);
+    if (TS_SELF_TYPES.test(content)) continue;
+
+    const directive = `/* @ts-self-types="./${dtsName}" */\n`;
+    await Deno.writeTextFile(jsPath, directive + content);
+  }
+};
 
 const build = async (pkg) => {
   const pkgDir = path.join(rootDir, pkg);
@@ -61,6 +82,8 @@ const build = async (pkg) => {
   } finally {
     await Deno.remove(configPath);
   }
+
+  await addTsSelfTypes(pkgDistDir);
 
   const denoJson = path.join(pkgDir, COPY_AFTER_BUILD);
   try {
