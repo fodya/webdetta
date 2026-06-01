@@ -2,10 +2,10 @@
 
 import { createGraph } from "@deno/graph";
 import { partition } from "jsr:@std/collections/partition";
-import { getEntrypoints, getPackagesDenoJsons, resolve } from "./utils.js";
+import { getEntrypoints, listPackages, resolve } from "./utils.js";
 
 const entrypoints = await getEntrypoints();
-const unstablePackageNames = (await getPackagesDenoJsons())
+const unstablePackageNames = (await listPackages())
   .filter(({ denoJson }) => denoJson.version.startsWith("0."))
   .map(({ name }) => name);
 

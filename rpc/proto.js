@@ -1,0 +1,105 @@
+// MIT License
+// (c) 2015­-2023 Michael Lazarev
+// Source: https://github.com/frameorc/frameorc/blob/github/src/rpc/proto.js
+
+/** @type {Uint8Array} */
+export const EMPTY = new Uint8Array(0);
+
+/**
+ * @param {Record<string, Function>} methods
+ * @param {unknown} ctx
+ * @param {string} name
+ * @param {unknown[]} args
+ * @returns {Promise<[unknown, unknown]>}
+ */
+export const processCall = async (methods, ctx, name, args) => {
+  let res, err;
+  const method = methods[name];
+  if (typeof method === "function") {
+    try {
+      res = await method.apply(ctx, args);
+    } catch (e) {
+      console.error(e);
+      err = e;
+    }
+  } else {
+    err = new Error('Method "' + name + '" is not defined');
+  }
+  return [res, err];
+};
+
+/** @class */
+export class RpcError extends Error {
+  /**
+   * @param {Error | undefined} base
+   * @param {...unknown} args
+   */
+  constructor(base, ...args) {
+    super(...args);
+    this.name = "RpcError";
+    this.message = base?.message ?? "";
+    if (base?.stack) this.stack = "RpcError/" + base.stack;
+  }
+}
+
+/**
+ * @param {Object} options
+ * @param {() => Record<string, Function>} options.getMethods
+ * @param {(...args: unknown[]) => void} options.sendMessage
+ * @param {(data: unknown) => unknown} options.encodeMessage
+ * @param {(data: ArrayBuffer) => unknown} options.decodeMessage
+ * @returns {{ process: (ctx: unknown, data: ArrayBuffer) => Promise<void>, cast: (target: string, ...args: unknown[]) => unknown, call: (target: string, ...args: unknown[]) => Promise<unknown>, abort: (e: unknown) => void }}
+ */
+export function Proto(
+  { getMethods, sendMessage, encodeMessage, decodeMessage },
+) {
+  const handlers = {};
+  let counter = 0;
+  async function process(ctx, data /* : ArrayBuffer */) {
+    try {
+      data = decodeMessage(data);
+      // message ::= { call, from, args } | { to, res|err }
+      if ("to" in data) handlers[data.to]?.(data);
+      else if ("call" in data && Array.isArray(data.args)) {
+        const [res, err] = await processCall(
+          getMethods(),
+          ctx,
+          data.call,
+          data.args,
+        );
+        if ("from" in data) {
+          sendMessage(encodeMessage({
+            to: data.from,
+            ...(err ? { err } : { res }),
+          }));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  function call(target, ...args) {
+    return new Promise((resolve, reject) => {
+      const from = ++counter;
+      handlers[from] = (v) => {
+        if ("err" in v) reject(new RpcError(v.err));
+        else resolve(v.res);
+        delete handlers[from];
+      };
+      sendMessage(encodeMessage({ call: target, from, args }));
+    });
+  }
+  function cast(target, ...args) {
+    return sendMessage(encodeMessage({ call: target, args }));
+  }
+  function abort(e) {
+    for (const i in handlers) {
+      try {
+        handlers[i]({ err: e });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+  return { process, cast, call, abort };
+}

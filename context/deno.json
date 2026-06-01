@@ -3,14 +3,12 @@
   "version": "0.1.1",
   "license": "MIT",
   "exports": {
-    ".": "./index.js",
     "./sync": "./sync.js",
     "./async": "./async.js"
   },
   "compilerOptions": {
     "lib": [
       "deno.ns",
-      "deno.unstable",
       "dom"
     ]
   }

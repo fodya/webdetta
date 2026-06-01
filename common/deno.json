@@ -1,0 +1,19 @@
+{
+  "name": "@webdetta/common",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": {
+    "./checks": "./checks.js",
+    "./func": "./func.js",
+    "./object": "./object.js",
+    "./environment": "./environment.js",
+    "./dom": "./dom.js"
+  },
+  "compilerOptions": {
+    "lib": [
+      "deno.ns",
+      "dom",
+      "dom.iterable"
+    ]
+  }
+}

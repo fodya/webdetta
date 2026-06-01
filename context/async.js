@@ -1,6 +1,29 @@
-// @ts-self-types="./types/async.d.ts"
+/**
+ * @example ./examples/async-basic.example.js
+ * @example ./examples/async-snapshot.example.js
+ * @module
+ */
 import { AsyncLocalStorage } from "node:async_hooks";
 
+/**
+ * @typedef {Object} AsyncContextSnapshot
+ * @property {(...args: unknown[]) => unknown} run
+ * @property {<T>(context: AsyncContextFn<T>) => T} get
+ * @property {<T>(context: AsyncContextFn<T>, data?: T) => AsyncContextSnapshot} set
+ */
+
+/**
+ * @template T
+ * @typedef {Object} AsyncContextFn
+ * @property {(data: T, callback: (...args: unknown[]) => unknown, ...args: unknown[]) => unknown} run
+ * @property {<A extends unknown[], R>(data: T, func: (...args: A) => R) => (...args: A) => R} bind
+ */
+
+/**
+ * @param {(...args: unknown[]) => unknown} native
+ * @param {Array<{ ctx: AsyncContextFn<unknown>, value: unknown }>} [overlays]
+ * @returns {AsyncContextSnapshot}
+ */
 function AsyncContextSnapshot(native, overlays = []) {
   const snapshot = {};
   snapshot.set = (ctx, data = ctx()) => {
@@ -19,6 +42,12 @@ function AsyncContextSnapshot(native, overlays = []) {
   return snapshot;
 }
 
+/**
+ * @template T
+ * @param {T} [initialValue]
+ * @returns {AsyncContextFn<T>}
+ * @example ./examples/async-basic.example.js
+ */
 export const AsyncContext = (initialValue) => {
   const storage = new AsyncLocalStorage();
 
@@ -37,5 +66,9 @@ export const AsyncContext = (initialValue) => {
   return ctx;
 };
 
+/**
+ * @returns {AsyncContextSnapshot}
+ * @example ./examples/async-snapshot.example.js
+ */
 AsyncContext.Snapshot = () =>
   AsyncContextSnapshot(AsyncLocalStorage.snapshot(), []);

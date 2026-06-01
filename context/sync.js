@@ -1,4 +1,23 @@
-// @ts-self-types="./types/sync.d.ts"
+/**
+ * @example ./examples/sync-basic.example.js
+ * @example ./examples/sync-snapshot.example.js
+ * @module
+ */
+
+/**
+ * @typedef {Object} ContextSnapshot
+ * @property {<A extends unknown[], R>(func: (...args: A) => R, ...args: A) => R} run
+ * @property {<T>(context: SyncContext<T>) => T} get
+ * @property {<T>(context: SyncContext<T>, data?: T) => ContextSnapshot} set
+ */
+
+/**
+ * @template T
+ * @typedef {Object} SyncContext
+ * @property {<A extends unknown[], R>(data: T, func: (...args: A) => R, ...args: A) => R} run
+ * @property {<A extends unknown[], R>(data: T, func: (...args: A) => R) => (...args: A) => R} bind
+ */
+
 class ContextNode {
   constructor(value, children) {
     this.value = value;
@@ -37,6 +56,14 @@ const Snapshot = (current = snapshot) => ({
 
 let ctxId = 0;
 const ids = new WeakMap();
+
+/**
+ * @template T
+ * @param {T} [initialValue]
+ * @example ./examples/sync-basic.example.js
+ * @returns {SyncContext<T>}
+ * @example ./examples/sync-snapshot.example.js
+ */
 const Context = (initialValue) => {
   const id = ++ctxId;
   const run = (data, func, ...args) =>
@@ -48,5 +75,10 @@ const Context = (initialValue) => {
   return ctx;
 };
 
+/**
+ * @returns {ContextSnapshot}
+ * @example ./examples/sync-snapshot.example.js
+ */
 Context.Snapshot = Snapshot;
+
 export { Context };

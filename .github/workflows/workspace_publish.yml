@@ -26,5 +26,8 @@ jobs:
       - name: Format
         run: deno fmt --check
 
+      - name: Build dist
+        run: deno task build-dist
+
       - name: Publish to JSR
         run: deno publish

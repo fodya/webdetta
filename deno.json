@@ -4,10 +4,24 @@
     "strict": true
   },
   "imports": {
+    "@webdetta/builder": "jsr:@webdetta/builder@^0.1.0",
+    "@webdetta/common": "jsr:@webdetta/common@^0.1.0",
+    "@webdetta/config": "jsr:@webdetta/config@^0.1.0",
     "@webdetta/context": "jsr:@webdetta/context@^0.1.1",
+    "@webdetta/convert": "jsr:@webdetta/convert@^0.1.0",
+    "@webdetta/i18n": "jsr:@webdetta/i18n@^0.1.0",
+    "@webdetta/logger": "jsr:@webdetta/logger@^0.1.0",
+    "@webdetta/reactivity": "jsr:@webdetta/reactivity@^0.1.0",
+    "@webdetta/realcss": "jsr:@webdetta/realcss@^0.1.0",
+    "@webdetta/realdom": "jsr:@webdetta/realdom@^0.1.0",
+    "@webdetta/router": "jsr:@webdetta/router@^0.1.0",
+    "@webdetta/rpc": "jsr:@webdetta/rpc@^0.1.0",
+    "@webdetta/templater": "jsr:@webdetta/templater@^0.1.0",
     "@deno/graph": "jsr:@deno/graph@^0.89.2",
     "typescript": "npm:typescript@5.8.3",
     "graphviz": "npm:node-graphviz@^0.1.1",
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/async": "jsr:@std/async@^1.0.13",
     "@std/collections": "jsr:@std/collections@^1.2.0",
     "@std/fmt": "jsr:@std/fmt@^1.0.10",
     "@std/fs": "jsr:@std/fs@^1.0.24",
@@ -15,24 +29,41 @@
     "@std/semver": "jsr:@std/semver@^1.0.8",
     "zx": "npm:zx/globals"
   },
-  "workspace": ["./context"],
+  "workspace": [
+    "./builder",
+    "./common",
+    "./config",
+    "./context",
+    "./convert",
+    "./i18n",
+    "./logger",
+    "./reactivity",
+    "./realcss",
+    "./realdom",
+    "./router",
+    "./rpc",
+    "./templater"
+  ],
   "tasks": {
+    "build-dist": "deno run -A _tools/build-dist.js",
     "lint:circular": "deno run --allow-env --allow-read --allow-write --allow-net=deno.land,jsr.io _tools/check-circular-package-dependencies.js",
     "lint:entrypoints": "deno run -A _tools/check-entrypoints.js",
     "lint:import-map": "deno run -A _tools/check-import-map.js",
-    "lint:unstable-deps": "deno run -A _tools/check-unstable-deps.js",
-    "lint": "deno lint && deno task lint:circular && deno task lint:entrypoints && deno task lint:import-map && deno task lint:unstable-deps",
-    "check": "deno check context/",
+    "lint:unstable-dependencies": "deno run -A _tools/check-unstable-dependencies.js",
+    "lint:examples": "deno run -A _tools/check-examples.js",
+    "lint": "deno lint && deno task lint:circular && deno task lint:entrypoints && deno task lint:import-map && deno task lint:unstable-dependencies",
+    "check": "deno task build-dist && deno check",
     "coverage": "deno run -A _tools/coverage.js",
+    "release": "deno run -A _tools/publish-release.js",
     "typos": "typos -c ./.github/typos.toml",
     "ok": "deno task lint && deno fmt --check && deno task check"
   },
-  "exclude": ["coverage", "**/*.test.js"],
+  "exclude": ["coverage"],
   "lint": {
     "rules": {
       "tags": ["recommended", "jsr"],
       "exclude": ["no-slow-types"]
     },
-    "exclude": ["_tools/*.js"]
+    "exclude": ["_tools/*.js", "**/*.d.ts", "**/*.d.ts.map", "**/tests/**"]
   }
 }

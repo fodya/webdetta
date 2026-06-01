@@ -1,0 +1,16 @@
+{
+  "name": "@webdetta/realdom",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./base": "./base.js"
+  },
+  "compilerOptions": {
+    "lib": [
+      "deno.ns",
+      "dom",
+      "dom.iterable"
+    ]
+  }
+}

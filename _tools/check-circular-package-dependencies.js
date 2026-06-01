@@ -2,9 +2,9 @@
 
 import { createGraph } from "@deno/graph";
 import { parse } from "@std/semver";
-import { getPackagesDenoJsons, resolve } from "./utils.js";
+import { listPackages, resolve } from "./utils.js";
 
-const packages = await getPackagesDenoJsons();
+const packages = await listPackages();
 const ENTRYPOINTS = Object.fromEntries(
   packages.map(({ pkg, denoJson }) => [
     pkg,
