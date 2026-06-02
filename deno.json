@@ -62,6 +62,6 @@
       "tags": ["recommended", "jsr"],
       "exclude": ["no-slow-types"]
     },
-    "exclude": ["_tools/*.js", "**/*.d.ts", "**/*.d.ts.map", "**/tests/**"]
+    "exclude": ["_tools/*.js", "**/*.d.ts", "**/*.d.ts.map", "**/tests/**", "**/examples/**"]
   }
 }
