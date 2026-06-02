@@ -1,5 +1,25 @@
 ### 2026.06.02
 
+#### @webdetta/common 0.1.0 (minor)
+
+- fix(common): use relative imports
+
+#### @webdetta/context 0.1.2 (patch)
+
+- docs(context): update jsdoc examples
+- style(context): add trailing newline to index
+- chore(context): add test comment to index entrypoint
+
+#### @webdetta/observability 0.1.0 (minor)
+
+- refactor(observability): merge logging and uncaught errors (#8)
+
+#### @webdetta/template 0.1.0 (minor)
+
+- refactor(template): rename templater package to template (#7)
+
+### 2026.06.02
+
 #### @webdetta/context 0.1.2 (patch)
 
 - docs(context): update jsdoc examples
