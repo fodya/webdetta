@@ -1,5 +1,9 @@
 ### 2026.06.02
 
+- fix(*): allow * scope in PR title lint for monorepo-wide changes
+
+### 2026.06.02
+
 #### @webdetta/common 0.1.1 (patch)
 
 - fix(common): use relative imports
