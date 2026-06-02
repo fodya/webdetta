@@ -1,7 +1,8 @@
 /**
+ * General-purpose utilities for building web apps with webdetta
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {'browser' | 'node' | 'webworker' | 'jsdom' | 'deno' | 'bun' | undefined} Runtime
  * @typedef {'edge' | 'opera' | 'samsung' | 'firefox' | 'chrome' | 'safari' | undefined} BrowserKind

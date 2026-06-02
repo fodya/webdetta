@@ -1,8 +1,8 @@
 /**
- * @example ./examples/math-dsl.example.js
+ * Expressive DSL syntax using builder pattern
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {Object} BuilderTask
  * @property {string[]} names

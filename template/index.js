@@ -1,5 +1,6 @@
 /**
- * @example ./examples/basic.example.js
+ * Highly configurable template engine
+ * @example ./examples/index.example.js
  * @module
  */
 import { isPlainObject } from "@webdetta/common/checks";

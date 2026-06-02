@@ -1,7 +1,8 @@
 /**
+ * Pure javascript DSL for generating CSS at runtime with no build step
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {(...args: unknown[]) => Record<string, unknown>} MethodFn
  */

@@ -1,4 +1,6 @@
 /**
+ * A simple reactivity library for complex UI state
+ * @example ./examples/index.example.js
  * @module
  */
 import { isAsyncIterable, isPromise } from "@webdetta/common/checks";

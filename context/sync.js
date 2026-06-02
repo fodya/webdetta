@@ -1,9 +1,8 @@
 /**
- * @example ./examples/sync-basic.example.js
- * @example ./examples/sync-snapshot.example.js
+ * Scoped sync/async variables made easy
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {Object} ContextSnapshot
  * @property {<A extends unknown[], R>(func: (...args: A) => R, ...args: A) => R} run

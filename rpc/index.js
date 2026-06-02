@@ -1,4 +1,6 @@
 /**
+ * Remote Procedure Calls library for web apps
+ * @example ./examples/index.example.js
  * @module
  */
 /**

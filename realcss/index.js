@@ -1,7 +1,8 @@
 /**
+ * Pure javascript DSL for generating CSS at runtime with no build step
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {import('./methods.js').MethodConfigEntry} MethodConfigEntry
  * @typedef {import('./methods.js').MethodFn} MethodFn

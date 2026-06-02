@@ -1,7 +1,8 @@
 /**
+ * Data conversion for text, base64, datauri, file/bytes, formdata, json and more
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {Object} DatauriJson
  * @property {string} mimeType
