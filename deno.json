@@ -5,7 +5,7 @@
   },
   "imports": {
     "@webdetta/builder": "jsr:@webdetta/builder@^0.1.0",
-    "@webdetta/common": "jsr:@webdetta/common@^0.1.0",
+    "@webdetta/common": "jsr:@webdetta/common@^0.1.1",
     "@webdetta/context": "jsr:@webdetta/context@^0.1.2",
     "@webdetta/convert": "jsr:@webdetta/convert@^0.1.0",
     "@webdetta/i18n": "jsr:@webdetta/i18n@^0.1.0",
