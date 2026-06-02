@@ -1,7 +1,7 @@
 /**
  * @module
  */
-import { objectPick } from "@webdetta/common/object";
+import { objectPick } from "./object.js";
 import { fileToDatauri } from "@webdetta/convert";
 
 /** @type {Promise<Event | void>} */
