@@ -1,5 +1,6 @@
 /**
  * General-purpose utilities for building web apps with webdetta
+ * @example ./examples/index.example.js
  * @module
  */
 import { objectPick } from "./object.js";

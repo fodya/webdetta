@@ -1,7 +1,6 @@
 /**
  * Scoped sync/async variables made easy
- * @example ./examples/async-basic.example.js
- * @example ./examples/async-snapshot.example.js
+ * @example ./examples/index.example.js
  * @module
  */
 import { AsyncLocalStorage } from "node:async_hooks";

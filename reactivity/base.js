@@ -1,5 +1,6 @@
 /**
  * A simple reactivity library for complex UI state
+ * @example ./examples/index.example.js
  * @module
  */
 import { Context } from "@webdetta/context/sync";

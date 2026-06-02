@@ -1,5 +1,6 @@
 /**
  * Lightweight and efficient DOM library
+ * @example ./examples/index.example.js
  * @module
  */
 import { Builder } from "@webdetta/builder";

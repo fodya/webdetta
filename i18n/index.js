@@ -1,9 +1,8 @@
 /**
  * Internationalization utility for translating UI texts
- * @example ./examples/basic.example.js
+ * @example ./examples/index.example.js
  * @module
  */
-
 /**
  * @typedef {string | ((...args: unknown[]) => unknown)} TranslationLeaf
  */
