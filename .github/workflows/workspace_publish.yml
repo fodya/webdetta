@@ -26,5 +26,8 @@ jobs:
       - name: Format
         run: deno fmt --check
 
+      - name: Test
+        run: deno test -A --parallel
+
       - name: Publish to JSR
         run: deno task build-dist && cd dist && deno publish
