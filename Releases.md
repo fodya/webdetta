@@ -1,5 +1,11 @@
 ### 2026.06.02
 
+#### @webdetta/common 0.1.1 (patch)
+
+- fix(common): use relative imports
+
+### 2026.06.02
+
 #### @webdetta/context 0.1.2 (patch)
 
 - docs(context): update jsdoc examples
