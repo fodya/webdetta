@@ -1,4 +1,5 @@
 /**
+ * Routing library for single page webapps
  * @module
  */
 import { contentLoaded, getScrollContainer } from "@webdetta/common/dom";

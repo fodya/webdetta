@@ -1,4 +1,5 @@
 /**
+ * Data conversion for text, base64, datauri, file/bytes, formdata, json and more
  * @module
  */
 

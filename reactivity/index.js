@@ -1,4 +1,5 @@
 /**
+ * A simple reactivity library for complex UI state
  * @module
  */
 import {

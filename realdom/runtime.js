@@ -1,4 +1,5 @@
 /**
+ * Lightweight and efficient DOM library
  * @module
  */
 import { Context } from "@webdetta/context/sync";

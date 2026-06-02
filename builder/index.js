@@ -1,4 +1,5 @@
 /**
+ * Expressive DSL syntax using builder pattern
  * @example ./examples/math-dsl.example.js
  * @module
  */

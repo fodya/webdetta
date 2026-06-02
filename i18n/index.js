@@ -1,4 +1,5 @@
 /**
+ * Internationalization utility for translating UI texts
  * @example ./examples/basic.example.js
  * @module
  */

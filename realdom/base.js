@@ -1,4 +1,5 @@
 /**
+ * Lightweight and efficient DOM library
  * @module
  */
 import { Builder } from "@webdetta/builder";

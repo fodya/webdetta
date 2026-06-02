@@ -1,4 +1,5 @@
 /**
+ * General-purpose utilities for building web apps with webdetta
  * @module
  */
 

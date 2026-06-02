@@ -1,4 +1,5 @@
 /**
+ * Highly configurable template engine
  * @example ./examples/basic.example.js
  * @module
  */

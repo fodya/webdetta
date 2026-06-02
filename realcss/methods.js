@@ -1,4 +1,5 @@
 /**
+ * Pure javascript DSL for generating CSS at runtime with no build step
  * @module
  */
 

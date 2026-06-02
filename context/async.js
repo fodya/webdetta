@@ -1,4 +1,5 @@
 /**
+ * Scoped sync/async variables made easy
  * @example ./examples/async-basic.example.js
  * @example ./examples/async-snapshot.example.js
  * @module

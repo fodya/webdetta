@@ -1,4 +1,5 @@
 /**
+ * Remote Procedure Calls library for web apps
  * @module
  */
 /**
