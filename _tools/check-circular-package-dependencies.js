@@ -94,6 +94,7 @@ function checkCircularDeps(pkg, ancestors = []) {
 }
 
 if (Deno.args.includes("--graph")) {
+  const workspacePkgs = new Set(packages.map(({ pkg }) => pkg));
   const graphviz = (await import("graphviz")).default;
   const lines = ["digraph webdetta_deps {"];
   for (const mod of Object.keys(deps)) {
@@ -103,6 +104,7 @@ if (Deno.args.includes("--graph")) {
       : "[shape=circle fixedsize=1 height=1]";
     lines.push(`  "${mod}" ${style};`);
     for (const dep of info.set) {
+      if (!workspacePkgs.has(dep)) continue;
       lines.push(`  "${mod}" -> "${dep}";`);
     }
   }
