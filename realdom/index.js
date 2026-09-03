@@ -215,7 +215,7 @@ const namespace = (ns) =>
   new Proxy(api, {
     get: (target, key) =>
       tagNameRegex.test(key)
-        ? Element.bind(null, ns, toAttributeName(key).slice(1))
+        ? Element.bind(null, ns, toAttributeName(key))
         : target[key],
   });
 api.NS_SVG = namespace("http://www.w3.org/2000/svg");
