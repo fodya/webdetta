@@ -12,7 +12,7 @@
     "@webdetta/observability": "jsr:@webdetta/observability@^0.1.1",
     "@webdetta/reactivity": "jsr:@webdetta/reactivity@^0.1.1",
     "@webdetta/realcss": "jsr:@webdetta/realcss@^0.1.1",
-    "@webdetta/realdom": "jsr:@webdetta/realdom@^0.1.1",
+    "@webdetta/realdom": "jsr:@webdetta/realdom@^0.1.2",
     "@webdetta/router": "jsr:@webdetta/router@^0.1.1",
     "@webdetta/rpc": "jsr:@webdetta/rpc@^0.1.1",
     "@webdetta/template": "jsr:@webdetta/template@^0.1.1",

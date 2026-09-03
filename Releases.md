@@ -1,3 +1,9 @@
+### 2026.09.03
+
+#### @webdetta/realdom 0.1.2 (patch)
+
+- fix(realdom): keep full tag name in namespace element bind
+
 ### 2026.06.02
 
 - fix(*): allow * scope in PR title lint for monorepo-wide changes
